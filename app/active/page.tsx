@@ -239,14 +239,21 @@ export default function ActiveWorkout() {
     
     // Pegar alternativas da biblioteca
     const banned = profile?.bannedExercises || [];
-    const alternatives = libraryExercises.filter(ex => 
-      ex.muscleGroup === currentActiveEx.muscleGroup && 
-      ex.id !== currentActiveEx.exerciseId &&
-      !banned.includes(ex.id)
-    );
+    
+    const normalize = (s: string) => s ? s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
+    const currentMuscle = normalize(currentActiveEx.muscleGroup);
+
+    const alternatives = libraryExercises.filter(ex => {
+      const exMuscle = normalize(ex.muscleGroup);
+      const isSameMuscle = exMuscle && currentMuscle && (exMuscle === currentMuscle || exMuscle.includes(currentMuscle) || currentMuscle.includes(exMuscle));
+      
+      return isSameMuscle && 
+             ex.id !== currentActiveEx.exerciseId &&
+             !banned.includes(ex.id);
+    });
     
     if (alternatives.length === 0) {
-      alert(`Você não tem outras opções de "${currentActiveEx.muscleGroup}" cadastradas na sua biblioteca para fazer a troca.`);
+      alert(`Você não tem outras opções de "${currentActiveEx.muscleGroup || 'mesmo grupo muscular'}" cadastradas na sua biblioteca para fazer a troca.`);
       return;
     }
 
@@ -327,10 +334,14 @@ export default function ActiveWorkout() {
         // Add the newly banned one to the list so we don't pick it as alternative right away if not owner
         if (!isOwner) banned.push(realExerciseId);
 
-        const alternatives = updatedDb.filter(ex => 
-          ex.muscleGroup === currentActiveEx.muscleGroup &&
-          !banned.includes(ex.id)
-        );
+        const normalize = (s: string) => s ? s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
+        const currentMuscle = normalize(currentActiveEx.muscleGroup);
+
+        const alternatives = updatedDb.filter(ex => {
+          const exMuscle = normalize(ex.muscleGroup);
+          const isSameMuscle = exMuscle && currentMuscle && (exMuscle === currentMuscle || exMuscle.includes(currentMuscle) || currentMuscle.includes(exMuscle));
+          return isSameMuscle && !banned.includes(ex.id);
+        });
         
         if (alternatives.length > 0) {
           const randomAlternative = alternatives[Math.floor(Math.random() * alternatives.length)];

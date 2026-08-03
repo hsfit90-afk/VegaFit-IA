@@ -202,14 +202,18 @@ export default function Generator() {
   const handleAutoSwap = (sessionId: string, exerciseId: string, currentMuscle: string, currentDbId: string) => {
     // Pegar alternativas do mesmo grupo muscular que não seja o atual e não esteja banido
     const banned = profile?.bannedExercises || [];
-    const alternatives = dbExercises.filter(ex => 
-      ex.muscleGroup === currentMuscle && 
-      ex.id !== currentDbId && 
-      !banned.includes(ex.id)
-    );
+    
+    const normalize = (s: string) => s ? s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
+    const currentM = normalize(currentMuscle);
+
+    const alternatives = dbExercises.filter(ex => {
+      const exMuscle = normalize(ex.muscleGroup);
+      const isSameMuscle = exMuscle && currentM && (exMuscle === currentM || exMuscle.includes(currentM) || currentM.includes(exMuscle));
+      return isSameMuscle && ex.id !== currentDbId && !banned.includes(ex.id);
+    });
     
     if (alternatives.length === 0) {
-      alert(`Você não tem outras opções de "${currentMuscle}" cadastradas na sua biblioteca para fazer a troca.`);
+      alert(`Você não tem outras opções de "${currentMuscle || 'mesmo grupo muscular'}" cadastradas na sua biblioteca para fazer a troca.`);
       return;
     }
 
@@ -272,7 +276,14 @@ export default function Generator() {
         setDbExercises(updatedDb);
 
         // 3. Tenta fazer um AutoSwap para colocar outro no lugar
-        const alternatives = updatedDb.filter(ex => ex.muscleGroup === currentMuscle);
+        const normalize = (s: string) => s ? s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
+        const currentM = normalize(currentMuscle);
+        
+        const alternatives = updatedDb.filter(ex => {
+          const exMuscle = normalize(ex.muscleGroup);
+          const isSameMuscle = exMuscle && currentM && (exMuscle === currentM || exMuscle.includes(currentM) || currentM.includes(exMuscle));
+          return isSameMuscle;
+        });
         
         if (alternatives.length > 0) {
           const randomAlternative = alternatives[Math.floor(Math.random() * alternatives.length)];
