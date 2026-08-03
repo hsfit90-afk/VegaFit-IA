@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Navigation } from './Navigation';
+import { InstallPrompt } from './InstallPrompt';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -22,6 +23,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       <main className={`flex-1 min-h-screen w-full ${!hideNavigation ? 'md:ml-[240px] pb-24 md:pb-0' : ''}`}>
         {children}
       </main>
+      <InstallPrompt />
     </div>
   );
 }
