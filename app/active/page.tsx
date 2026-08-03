@@ -8,7 +8,7 @@ import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import confetti from 'canvas-confetti';
 
 export default function ActiveWorkout() {
-  const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser } = useAppContext();
+  const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, history } = useAppContext();
   const router = useRouter();
 
   const currentPlan = workoutPlans.length > 0 ? workoutPlans[0] : null;
