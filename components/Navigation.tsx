@@ -70,7 +70,7 @@ export function Navigation() {
       </aside>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#0a0a0f]/90 backdrop-blur-xl border-t border-white/10 p-3 z-50 flex justify-around items-center pb-safe">
+      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#0a0a0f]/95 backdrop-blur-xl border-t border-white/10 px-2 py-3 z-50 flex overflow-x-auto gap-2 pb-safe hide-scrollbar items-center">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -78,7 +78,7 @@ export function Navigation() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+              className={`flex flex-col items-center justify-center gap-1 min-w-[70px] p-2 rounded-xl transition-all ${
                 isActive ? 'text-[#00ff88]' : 'text-gray-400'
               }`}
             >

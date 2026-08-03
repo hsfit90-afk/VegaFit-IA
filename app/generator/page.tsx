@@ -482,42 +482,42 @@ export default function Generator() {
                   <div className="space-y-4">
                     {session.exercises.map((ex, i) => (
                       <div key={i} className="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.08] hover:border-white/20 transition-all">
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-white text-lg mr-2">{ex.name}</p>
-                              
-                              <button 
-                                onClick={() => handleAutoSwap(session.id, ex.id, ex.muscleGroup, ex.exerciseId)}
-                                className="p-1.5 bg-white/5 hover:bg-[#00ff88]/20 text-gray-400 hover:text-[#00ff88] rounded-md transition-colors border border-transparent hover:border-[#00ff88]/30"
-                                title="Mudar Exercício (Substituir por outro)"
-                              >
-                                <RefreshCw className="w-4 h-4" />
-                              </button>
-                              
-                              <button 
-                                onClick={() => handleBanExercise(session.id, ex.id, ex.muscleGroup, ex.exerciseId, ex.name)}
-                                className="p-1.5 bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-md transition-colors border border-transparent hover:border-red-500/30 ml-1"
-                                title="Banir para Sempre (Excluir da Biblioteca)"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                          <div className="flex-1 w-full">
+                            <div className="flex items-start sm:items-center justify-between sm:justify-start gap-2">
+                              <h4 className="text-white font-bold text-lg leading-tight">{ex.name}</h4>
+                              <div className="flex shrink-0">
+                                <button 
+                                  onClick={() => handleAutoSwap(session.id, ex.id, ex.muscleGroup, ex.exerciseId)}
+                                  className="p-1.5 bg-white/5 hover:bg-[#00ff88]/20 text-gray-400 hover:text-[#00ff88] rounded-md transition-colors border border-transparent hover:border-[#00ff88]/30"
+                                  title="Mudar Exercício (Substituir por outro)"
+                                >
+                                  <RefreshCw className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => handleBanExercise(session.id, ex.id, ex.muscleGroup, ex.exerciseId, ex.name)}
+                                  className="p-1.5 bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-md transition-colors border border-transparent hover:border-red-500/30 ml-1"
+                                  title="Banir para Sempre (Excluir da Biblioteca)"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
-                            <p className="text-sm text-gray-400 mt-1 flex items-center gap-2">
-                              <span className="px-2 py-0.5 bg-white/10 rounded-md text-xs">{ex.muscleGroup}</span> 
+                            <p className="text-sm text-gray-400 mt-2 flex items-center gap-2 flex-wrap">
+                              <span className="px-2 py-0.5 bg-white/10 rounded-md text-xs whitespace-nowrap">{ex.muscleGroup}</span> 
                               <span>{ex.tips}</span>
                             </p>
                           </div>
-                          <div className="text-right ml-4 shrink-0 bg-[#00ff88]/10 px-3 py-1.5 rounded-lg border border-[#00ff88]/20">
+                          <div className="sm:text-right shrink-0 bg-[#00ff88]/10 px-3 py-1.5 rounded-lg border border-[#00ff88]/20 w-full sm:w-auto mt-2 sm:mt-0 flex sm:block justify-between items-center">
                             <span className="text-[#00ff88] font-mono text-xl font-bold">{ex.sets}x{ex.reps}</span>
                             {ex.method && (
-                              <p className="text-xs text-[#7c3aed] mt-1 font-medium max-w-[120px] leading-tight">{ex.method}</p>
+                              <p className="text-xs text-[#7c3aed] mt-0 sm:mt-1 font-medium sm:max-w-[120px] leading-tight">{ex.method}</p>
                             )}
                           </div>
                         </div>
                         
                         <div className="grid gap-3 pt-4 border-t border-white/5">
-                          <div className="flex justify-between items-center">
+                          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
                             <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold flex items-center gap-2">
                               <Zap className="w-3 h-3 text-[#7c3aed]" />
                               Planejamento de Cargas e Séries
