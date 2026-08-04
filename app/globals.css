@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
+@theme {
+  --color-befit-bg: #0a1118;
+  --color-befit-surface: #1a222a;
+  --color-befit-surface-light: #252e38;
+  --color-befit-neon: #39FF14;
+  --color-befit-neon-hover: #32e612;
+  --color-befit-text: #ffffff;
+  --color-befit-text-muted: #8b9eb0;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-befit-bg);
+  color: var(--color-befit-text);
+}
+
 @layer utilities {
   .hide-scrollbar::-webkit-scrollbar {
     display: none;

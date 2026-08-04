@@ -18,12 +18,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="flex min-h-screen">
-      {!hideNavigation && <Navigation />}
-      <main className={`flex-1 min-h-screen w-full ${!hideNavigation ? 'md:ml-[240px] pb-24 md:pb-0' : ''}`}>
-        {children}
-      </main>
-      <InstallPrompt />
+    <div className="flex min-h-screen bg-black justify-center">
+      <div className="w-full max-w-md bg-[var(--color-befit-bg)] min-h-screen relative flex flex-col shadow-2xl overflow-hidden">
+        <main className={`flex-1 overflow-y-auto ${!hideNavigation ? 'pb-20' : ''}`}>
+          {children}
+        </main>
+        {!hideNavigation && <Navigation />}
+        <InstallPrompt />
+      </div>
     </div>
   );
 }
