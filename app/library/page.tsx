@@ -5,6 +5,8 @@ import { Search, Info, Play, Plus, Trash2, Loader2, Upload, Link as LinkIcon, Im
 import { Exercise } from '@/lib/types';
 import { getExercises, addExercise, deleteExercise } from '@/lib/db/exercises';
 import { useAppContext } from '@/app/context/AppContext';
+import { Card, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 
 export default function Library() {
   const { profile } = useAppContext();
@@ -162,34 +164,34 @@ export default function Library() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 text-[#00ff88] animate-spin" />
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-6xl mx-auto animate-fade-in relative">
+    <div className="p-6 md:p-10 max-w-6xl mx-auto animate-fade-in relative pb-32">
       <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 className="text-3xl md:text-4xl font-outfit font-bold mb-4">Biblioteca de Exercícios</h1>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1 min-w-[300px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted w-5 h-5" />
               <input 
                 type="text" 
                 placeholder="Buscar exercício..." 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full bg-white/[0.04] backdrop-blur-md border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88] outline-none transition-all"
+                className="w-full bg-surface border border-border rounded-xl py-3 pl-10 pr-4 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
               />
             </div>
             <select 
               value={selectedMuscle}
               onChange={e => setSelectedMuscle(e.target.value)}
-              className="bg-white/[0.04] backdrop-blur-md border border-white/10 rounded-xl py-3 px-4 text-white focus:border-[#00ff88] outline-none"
+              className="bg-surface border border-border rounded-xl py-3 px-4 text-white focus:border-primary outline-none"
             >
-              <option value="" className="bg-[#0a0a0f] text-white">Todos os Músculos</option>
-              {muscleGroups.map(m => <option key={m} value={m} className="bg-[#0a0a0f] text-white">{m}</option>)}
+              <option value="" className="bg-background text-white">Todos os Músculos</option>
+              {muscleGroups.map(m => <option key={m} value={m} className="bg-background text-white">{m}</option>)}
             </select>
           </div>
         </div>
@@ -204,234 +206,249 @@ export default function Library() {
             webkitdirectory="true" 
             directory="true" 
           />
-          <button 
+          <Button 
             onClick={() => bulkInputRef.current?.click()}
-            className="flex items-center gap-2 bg-white/5 border border-white/10 text-white font-semibold px-6 py-3 rounded-xl hover:bg-white/10 transition-all whitespace-nowrap"
+            variant="outline"
           >
-            <Upload className="w-5 h-5" /> Importar Pasta
-          </button>
-          <button 
+            <Upload className="w-4 h-4 mr-2" /> Importar Pasta
+          </Button>
+          <Button 
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 bg-[#00ff88] text-black font-semibold px-6 py-3 rounded-xl hover:bg-[#00ff88]/90 transition-all shadow-[0_0_20px_rgba(0,255,136,0.2)] whitespace-nowrap"
+            className="shadow-[0_0_20px_rgba(0,255,136,0.2)]"
           >
-            <Plus className="w-5 h-5" /> Novo Exercício
-          </button>
+            <Plus className="w-4 h-4 mr-2" /> Novo Exercício
+          </Button>
         </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredExercises.map(ex => (
-          <div key={ex.id} className="bg-white/[0.04] backdrop-blur-md p-5 rounded-[20px] border border-white/10 hover:bg-white/[0.06] transition-all cursor-pointer group relative" onClick={() => setSelectedExercise(ex)}>
-            <div className="flex justify-between items-start mb-4">
-              <span className="px-3 py-1 bg-[#00ff88]/20 text-[#00ff88] text-xs font-semibold rounded-full">{ex.muscleGroup}</span>
+          <Card key={ex.id} variant="glass" className="cursor-pointer group hover:border-primary/50 transition-all" onClick={() => setSelectedExercise(ex)}>
+            <CardContent className="p-5">
+              <div className="flex justify-between items-start mb-4">
+                <span className="px-3 py-1 bg-primary/20 text-primary text-xs font-semibold rounded-full">{ex.muscleGroup}</span>
+                
+                {ex.userId && (
+                  <button 
+                    onClick={(e) => handleDelete(e, ex.id)}
+                    className="p-1.5 text-foreground-muted hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
               
-              {ex.userId && (
-                <button 
-                  onClick={(e) => handleDelete(e, ex.id)}
-                  className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              <h3 className="font-outfit text-xl font-semibold mb-2 group-hover:text-primary transition-colors pr-8">{ex.name}</h3>
+              
+              {ex.mediaUrl ? (
+                <span className="text-xs text-blue-400 flex items-center gap-1 mt-3"><ImageIcon className="w-3 h-3"/> GIF Customizado</span>
+              ) : ex.youtubeId ? (
+                <span className="text-xs text-red-400 flex items-center gap-1 mt-3"><Play className="w-3 h-3"/> YouTube</span>
+              ) : (
+                <span className="text-xs text-foreground-muted flex items-center gap-1 mt-3">Sem mídia</span>
               )}
-            </div>
-            
-            <h3 className="font-outfit text-xl font-semibold mb-2 group-hover:text-[#00ff88] transition-colors pr-8">{ex.name}</h3>
-            
-            {ex.mediaUrl ? (
-              <span className="text-xs text-blue-400 flex items-center gap-1 mt-3"><ImageIcon className="w-3 h-3"/> GIF Customizado</span>
-            ) : ex.youtubeId ? (
-              <span className="text-xs text-red-400 flex items-center gap-1 mt-3"><Play className="w-3 h-3"/> YouTube</span>
-            ) : (
-              <span className="text-xs text-gray-500 flex items-center gap-1 mt-3">Sem mídia</span>
-            )}
-          </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
       {filteredExercises.length === 0 && (
-        <div className="text-center py-20 text-gray-500">Nenhum exercício encontrado.</div>
+        <Card className="text-center py-20 border-dashed border-2">
+           <CardContent className="flex flex-col items-center">
+             <Search className="w-16 h-16 text-foreground-muted mx-auto mb-4 opacity-50" />
+             <h2 className="text-xl font-outfit text-foreground-muted">Nenhum exercício encontrado.</h2>
+           </CardContent>
+         </Card>
       )}
 
       {/* Bulk Import Modal */}
       {isBulkModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#0a0a0f] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
+          <Card className="w-full max-w-md shadow-2xl relative border-primary/30">
             {bulkStatus !== 'uploading' && (
-              <button onClick={() => setIsBulkModalOpen(false)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white transition-all">✕</button>
+              <button onClick={() => setIsBulkModalOpen(false)} className="absolute top-4 right-4 p-2 text-foreground-muted hover:text-white transition-all">✕</button>
             )}
-            <h2 className="text-2xl font-outfit font-bold text-white mb-6">Importação em Massa</h2>
-            
-            {bulkStatus === 'idle' && (
-              <>
-                <p className="text-gray-300 mb-6">
-                  Foram encontrados <strong className="text-[#00ff88]">{bulkFiles.length} arquivos</strong> de mídia.
-                  Eles serão organizados automaticamente pelos nomes das subpastas e cadastrados no banco de dados.
-                </p>
-                
-                <div className="bg-white/5 p-4 rounded-xl mb-6 max-h-40 overflow-y-auto">
-                  <p className="text-xs text-gray-400 mb-2 font-bold uppercase">Exemplo de Leitura:</p>
-                  {bulkFiles.slice(0, 3).map((f, i) => (
-                    <div key={i} className="text-sm text-gray-300 truncate mb-1" title={f.webkitRelativePath}>
-                      📄 {f.webkitRelativePath}
-                    </div>
-                  ))}
-                  {bulkFiles.length > 3 && <div className="text-xs text-gray-500 mt-2 font-semibold">... e mais {bulkFiles.length - 3} arquivos</div>}
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-outfit font-bold text-white mb-6">Importação em Massa</h2>
+              
+              {bulkStatus === 'idle' && (
+                <>
+                  <p className="text-gray-300 mb-6">
+                    Foram encontrados <strong className="text-primary">{bulkFiles.length} arquivos</strong> de mídia.
+                    Eles serão organizados automaticamente pelos nomes das subpastas e cadastrados no banco de dados.
+                  </p>
+                  
+                  <div className="bg-surface p-4 rounded-xl mb-6 max-h-40 overflow-y-auto border border-border">
+                    <p className="text-xs text-foreground-muted mb-2 font-bold uppercase">Exemplo de Leitura:</p>
+                    {bulkFiles.slice(0, 3).map((f, i) => (
+                      <div key={i} className="text-sm text-gray-300 truncate mb-1" title={f.webkitRelativePath}>
+                        📄 {f.webkitRelativePath}
+                      </div>
+                    ))}
+                    {bulkFiles.length > 3 && <div className="text-xs text-foreground-muted mt-2 font-semibold">... e mais {bulkFiles.length - 3} arquivos</div>}
+                  </div>
+  
+                  <Button 
+                    onClick={executeBulkImport}
+                    fullWidth
+                    size="lg"
+                  >
+                    <Play className="w-5 h-5 mr-2" /> Iniciar Importação
+                  </Button>
+                </>
+              )}
+  
+              {bulkStatus === 'uploading' && (
+                <div className="text-center py-6">
+                  <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+                  <p className="text-white font-medium text-lg mb-2">Enviando arquivos...</p>
+                  <p className="text-foreground-muted mb-4">{bulkProgress.current} de {bulkProgress.total} concluídos</p>
+                  <div className="w-full bg-surface rounded-full h-3 overflow-hidden border border-border">
+                    <div 
+                      className="bg-primary h-full transition-all duration-300" 
+                      style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+                    ></div>
+                  </div>
                 </div>
-
-                <button 
-                  onClick={executeBulkImport}
-                  className="w-full bg-[#00ff88] text-black font-bold py-3.5 rounded-xl hover:bg-[#00ff88]/90 transition-all flex justify-center items-center gap-2"
-                >
-                  <Play className="w-5 h-5" /> Iniciar Importação
-                </button>
-              </>
-            )}
-
-            {bulkStatus === 'uploading' && (
-              <div className="text-center py-6">
-                <Loader2 className="w-12 h-12 text-[#00ff88] animate-spin mx-auto mb-4" />
-                <p className="text-white font-medium text-lg mb-2">Enviando arquivos...</p>
-                <p className="text-gray-400 mb-4">{bulkProgress.current} de {bulkProgress.total} concluídos</p>
-                <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
-                  <div 
-                    className="bg-[#00ff88] h-full transition-all duration-300" 
-                    style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
-                  ></div>
+              )}
+  
+              {bulkStatus === 'success' && (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-8 h-8 text-primary" />
+                  </div>
+                  <p className="text-white font-medium text-xl mb-2">Importação Concluída!</p>
+                  <p className="text-foreground-muted mb-6">Todos os exercícios foram adicionados à biblioteca.</p>
+                  <Button 
+                    onClick={() => setIsBulkModalOpen(false)}
+                    variant="outline"
+                    fullWidth
+                  >
+                    Fechar
+                  </Button>
                 </div>
-              </div>
-            )}
-
-            {bulkStatus === 'success' && (
-              <div className="text-center py-6">
-                <div className="w-16 h-16 bg-[#00ff88]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Check className="w-8 h-8 text-[#00ff88]" />
-                </div>
-                <p className="text-white font-medium text-xl mb-2">Importação Concluída!</p>
-                <p className="text-gray-400 mb-6">Todos os exercícios foram adicionados à biblioteca.</p>
-                <button 
-                  onClick={() => setIsBulkModalOpen(false)}
-                  className="w-full bg-white/10 text-white font-bold py-3.5 rounded-xl hover:bg-white/20 transition-all"
-                >
-                  Fechar
-                </button>
-              </div>
-            )}
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* Add Exercise Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#0a0a0f] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
-            <button onClick={() => setIsAddModalOpen(false)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white transition-all">✕</button>
-            <h2 className="text-2xl font-outfit font-bold text-white mb-6">Adicionar Exercício</h2>
-            
-            <form onSubmit={handleAddExercise} className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Nome do Exercício</label>
-                <input 
-                  type="text" required
-                  value={newName} onChange={e => setNewName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-[#00ff88] outline-none"
-                  placeholder="Ex: Supino Reto Máquina"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Grupo Muscular Principal</label>
-                <select 
-                  value={newMuscleGroup} onChange={e => setNewMuscleGroup(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-[#00ff88] outline-none"
-                >
-                  <option value="Peito" className="bg-[#0a0a0f] text-white">Peito</option>
-                  <option value="Costas" className="bg-[#0a0a0f] text-white">Costas</option>
-                  <option value="Ombro" className="bg-[#0a0a0f] text-white">Ombro</option>
-                  <option value="Bíceps" className="bg-[#0a0a0f] text-white">Bíceps</option>
-                  <option value="Tríceps" className="bg-[#0a0a0f] text-white">Tríceps</option>
-                  <option value="Pernas (quadríceps)" className="bg-[#0a0a0f] text-white">Pernas (quadríceps)</option>
-                  <option value="Posterior de coxa" className="bg-[#0a0a0f] text-white">Posterior de coxa</option>
-                  <option value="Glúteos" className="bg-[#0a0a0f] text-white">Glúteos</option>
-                  <option value="Core/Abdômen" className="bg-[#0a0a0f] text-white">Core/Abdômen</option>
-                  <option value="Panturrilhas" className="bg-[#0a0a0f] text-white">Panturrilhas</option>
-                </select>
-              </div>
-
-              <div className="pt-2">
-                <label className="block text-sm text-gray-400 mb-2">Mídia do Exercício (GIF/Vídeo/Imagem)</label>
-                <div className="flex bg-white/5 p-1 rounded-xl mb-4">
-                  <button type="button" onClick={() => setMediaType('upload')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${mediaType === 'upload' ? 'bg-[#00ff88] text-black shadow-md' : 'text-gray-400 hover:text-white'}`}>
-                    <Upload className="w-4 h-4" /> Upload
-                  </button>
-                  <button type="button" onClick={() => setMediaType('url')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${mediaType === 'url' ? 'bg-[#00ff88] text-black shadow-md' : 'text-gray-400 hover:text-white'}`}>
-                    <LinkIcon className="w-4 h-4" /> Link URL
-                  </button>
-                </div>
-
-                {mediaType === 'url' ? (
+          <Card className="w-full max-w-md shadow-2xl relative border-primary/30">
+            <button onClick={() => setIsAddModalOpen(false)} className="absolute top-4 right-4 p-2 text-foreground-muted hover:text-white transition-all">✕</button>
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-outfit font-bold text-white mb-6">Adicionar Exercício</h2>
+              
+              <form onSubmit={handleAddExercise} className="space-y-4">
+                <div>
+                  <label className="block text-sm text-foreground-muted mb-1">Nome do Exercício</label>
                   <input 
-                    type="url" 
-                    value={mediaUrl} onChange={e => setMediaUrl(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-[#00ff88] outline-none"
-                    placeholder="https://exemplo.com/meu-gif.gif"
+                    type="text" required
+                    value={newName} onChange={e => setNewName(e.target.value)}
+                    className="w-full bg-surface border border-border rounded-xl py-3 px-4 text-white focus:border-primary outline-none"
+                    placeholder="Ex: Supino Reto Máquina"
                   />
-                ) : (
-                  <div 
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed ${mediaFile ? 'border-[#00ff88] bg-[#00ff88]/5' : 'border-white/20 hover:border-white/40 hover:bg-white/5'} rounded-xl p-6 text-center cursor-pointer transition-all`}
+                </div>
+  
+                <div>
+                  <label className="block text-sm text-foreground-muted mb-1">Grupo Muscular Principal</label>
+                  <select 
+                    value={newMuscleGroup} onChange={e => setNewMuscleGroup(e.target.value)}
+                    className="w-full bg-surface border border-border rounded-xl py-3 px-4 text-white focus:border-primary outline-none"
                   >
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      className="hidden" 
-                      accept="image/*,video/mp4" 
-                      onChange={e => setMediaFile(e.target.files?.[0] || null)}
-                    />
-                    {mediaFile ? (
-                      <div>
-                        <ImageIcon className="w-8 h-8 text-[#00ff88] mx-auto mb-2" />
-                        <p className="text-white font-medium text-sm">{mediaFile.name}</p>
-                        <p className="text-gray-400 text-xs mt-1">{(mediaFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                      </div>
-                    ) : (
-                      <div>
-                        <Upload className="w-8 h-8 text-gray-500 mx-auto mb-2" />
-                        <p className="text-gray-300 text-sm font-medium">Clique para selecionar</p>
-                        <p className="text-gray-500 text-xs mt-1">GIF, MP4, JPG ou PNG (Máx. 10MB)</p>
-                      </div>
-                    )}
+                    <option value="Peito" className="bg-background text-white">Peito</option>
+                    <option value="Costas" className="bg-background text-white">Costas</option>
+                    <option value="Ombro" className="bg-background text-white">Ombro</option>
+                    <option value="Bíceps" className="bg-background text-white">Bíceps</option>
+                    <option value="Tríceps" className="bg-background text-white">Tríceps</option>
+                    <option value="Pernas (quadríceps)" className="bg-background text-white">Pernas (quadríceps)</option>
+                    <option value="Posterior de coxa" className="bg-background text-white">Posterior de coxa</option>
+                    <option value="Glúteos" className="bg-background text-white">Glúteos</option>
+                    <option value="Core/Abdômen" className="bg-background text-white">Core/Abdômen</option>
+                    <option value="Panturrilhas" className="bg-background text-white">Panturrilhas</option>
+                  </select>
+                </div>
+  
+                <div className="pt-2">
+                  <label className="block text-sm text-foreground-muted mb-2">Mídia do Exercício (GIF/Vídeo/Imagem)</label>
+                  <div className="flex bg-surface p-1 rounded-xl mb-4 border border-border">
+                    <button type="button" onClick={() => setMediaType('upload')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${mediaType === 'upload' ? 'bg-primary text-black shadow-md' : 'text-foreground-muted hover:text-white'}`}>
+                      <Upload className="w-4 h-4" /> Upload
+                    </button>
+                    <button type="button" onClick={() => setMediaType('url')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${mediaType === 'url' ? 'bg-primary text-black shadow-md' : 'text-foreground-muted hover:text-white'}`}>
+                      <LinkIcon className="w-4 h-4" /> Link URL
+                    </button>
                   </div>
-                )}
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={isAdding}
-                className="w-full mt-6 bg-[#00ff88] text-black font-bold py-3.5 rounded-xl hover:bg-[#00ff88]/90 transition-all flex justify-center items-center gap-2"
-              >
-                {isAdding ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar Exercício'}
-              </button>
-            </form>
-          </div>
+  
+                  {mediaType === 'url' ? (
+                    <input 
+                      type="url" 
+                      value={mediaUrl} onChange={e => setMediaUrl(e.target.value)}
+                      className="w-full bg-surface border border-border rounded-xl py-3 px-4 text-white focus:border-primary outline-none"
+                      placeholder="https://exemplo.com/meu-gif.gif"
+                    />
+                  ) : (
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`border-2 border-dashed ${mediaFile ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-white/5'} rounded-xl p-6 text-center cursor-pointer transition-all`}
+                    >
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept="image/*,video/mp4" 
+                        onChange={e => setMediaFile(e.target.files?.[0] || null)}
+                      />
+                      {mediaFile ? (
+                        <div>
+                          <ImageIcon className="w-8 h-8 text-primary mx-auto mb-2" />
+                          <p className="text-white font-medium text-sm">{mediaFile.name}</p>
+                          <p className="text-foreground-muted text-xs mt-1">{(mediaFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <Upload className="w-8 h-8 text-foreground-muted mx-auto mb-2" />
+                          <p className="text-gray-300 text-sm font-medium">Clique para selecionar</p>
+                          <p className="text-foreground-muted text-xs mt-1">GIF, MP4, JPG ou PNG (Máx. 10MB)</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+  
+                <Button 
+                  type="submit" 
+                  disabled={isAdding}
+                  fullWidth
+                  className="mt-6"
+                >
+                  {isAdding ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                  {isAdding ? 'Salvando...' : 'Salvar Exercício'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* View Exercise Modal */}
       {selectedExercise && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedExercise(null)}>
-          <div className="bg-[#0a0a0f]/90 backdrop-blur-xl border border-white/10 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="p-6 md:p-8">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative border-primary/30" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <CardContent className="p-6 md:p-8">
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-2xl font-outfit font-bold text-white mb-2">{selectedExercise.name}</h2>
-                  <span className="px-3 py-1 bg-[#00ff88]/20 text-[#00ff88] text-xs font-semibold rounded-full">{selectedExercise.muscleGroup}</span>
+                  <span className="px-3 py-1 bg-primary/20 text-primary text-xs font-semibold rounded-full">{selectedExercise.muscleGroup}</span>
                 </div>
-                <button onClick={() => setSelectedExercise(null)} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-all">
+                <button onClick={() => setSelectedExercise(null)} className="p-2 bg-surface rounded-full hover:bg-white/10 text-foreground-muted hover:text-white transition-all">
                   ✕
                 </button>
               </div>
-
-              <div className="aspect-video bg-black/50 rounded-xl mb-6 overflow-hidden relative group border border-white/5 flex items-center justify-center">
+  
+              <div className="aspect-video bg-black/50 rounded-xl mb-6 overflow-hidden relative group border border-border flex items-center justify-center">
                 {selectedExercise.mediaUrl ? (
                   selectedExercise.mediaUrl.endsWith('.mp4') ? (
                     <video src={selectedExercise.mediaUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
@@ -448,25 +465,25 @@ export default function Library() {
                     allowFullScreen
                   ></iframe>
                 ) : (
-                  <div className="text-gray-500 flex flex-col items-center">
+                  <div className="text-foreground-muted flex flex-col items-center">
                     <ImageIcon className="w-12 h-12 opacity-20 mb-2" />
                     <span className="text-sm">Nenhuma mídia cadastrada</span>
                   </div>
                 )}
               </div>
-
+  
               {selectedExercise.instructions && selectedExercise.instructions.length > 0 && (
                 <div className="space-y-6">
                   <div>
-                    <h4 className="text-[#00ff88] font-medium mb-2">Instruções</h4>
+                    <h4 className="text-primary font-medium mb-2">Instruções</h4>
                     <ol className="list-decimal list-inside text-gray-300 space-y-2">
                       {selectedExercise.instructions.map((step, i) => <li key={i}>{step}</li>)}
                     </ol>
                   </div>
                 </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple } from 'lucide-react';
+import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2 } from 'lucide-react';
 import { useAppContext } from '@/app/context/AppContext';
 
-const NAV_ITEMS = [
+// Full list for Desktop Sidebar
+const DESKTOP_NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/progress', label: 'Progresso', icon: BarChart2 },
   { href: '/generator', label: 'Gerador IA', icon: Zap },
   { href: '/active', label: 'Treinar', icon: PlayCircle },
   { href: '/library', label: 'Exercícios', icon: Dumbbell },
@@ -14,6 +16,14 @@ const NAV_ITEMS = [
   { href: '/progression', label: 'Check-in', icon: TrendingUp },
   { href: '/nutrition', label: 'Nutrição IA', icon: Apple },
   { href: '/coach', label: 'AI Coach', icon: MessageSquare },
+  { href: '/settings', label: 'Perfil', icon: Settings },
+];
+
+// Core list for Mobile Bottom Nav
+const MOBILE_NAV_ITEMS = [
+  { href: '/', label: 'Início', icon: Home },
+  { href: '/active', label: 'Treinar', icon: PlayCircle },
+  { href: '/progress', label: 'Progresso', icon: BarChart2 },
   { href: '/settings', label: 'Perfil', icon: Settings },
 ];
 
@@ -27,61 +37,66 @@ export function Navigation() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-[240px] h-screen fixed top-0 left-0 bg-[var(--color-befit-surface)] border-r border-[var(--color-befit-surface-light)] p-6 z-50">
+      <aside className="hidden md:flex flex-col w-[260px] h-screen fixed top-0 left-0 bg-surface border-r border-border p-6 z-50">
         <div className="flex items-center gap-3 mb-12">
-          <div className="w-8 h-8 rounded-lg bg-[var(--color-befit-neon)] flex items-center justify-center">
-            <Zap className="w-5 h-5 text-black" />
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+            <Zap className="w-6 h-6 text-primary-foreground" />
           </div>
-          <h1 className="font-outfit text-[22px] font-extrabold tracking-tight text-white uppercase">VegaFit</h1>
+          <h1 className="font-outfit text-2xl font-extrabold tracking-tight text-foreground uppercase">VegaFit</h1>
         </div>
         
-        <nav className="flex-1 flex flex-col gap-2 overflow-y-auto hide-scrollbar">
-          {NAV_ITEMS.map((item) => {
+        <nav className="flex-1 flex flex-col gap-1 overflow-y-auto hide-scrollbar">
+          {DESKTOP_NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold transition-all duration-300 ${
                   isActive 
-                    ? 'bg-[var(--color-befit-surface-light)] text-[var(--color-befit-neon)] border border-[var(--color-befit-neon)]/30' 
-                    : 'text-[var(--color-befit-text-muted)] hover:text-white hover:bg-[var(--color-befit-surface-light)]'
+                    ? 'bg-surface-light text-primary shadow-sm' 
+                    : 'text-foreground-muted hover:text-foreground hover:bg-surface-light/50'
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className={`w-5 h-5 ${isActive ? 'fill-primary/20' : ''}`} />
                 <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-auto pt-6 border-t border-[var(--color-befit-surface-light)]">
+        <div className="mt-auto pt-6 border-t border-border">
           <button
             onClick={() => clearData()}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-all duration-300 w-full"
+            className="flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold text-destructive hover:bg-destructive/10 transition-all duration-300 w-full"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <LogOut className="w-5 h-5" />
             <span>Sair da Conta</span>
           </button>
         </div>
       </aside>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[var(--color-befit-surface)]/95 backdrop-blur-xl border-t border-[var(--color-befit-surface-light)] px-2 py-3 z-50 flex overflow-x-auto gap-2 pb-safe hide-scrollbar items-center justify-around">
-        {NAV_ITEMS.map((item) => {
+      <nav className="md:hidden fixed bottom-0 left-0 w-full glass-panel border-t-white/10 px-2 pt-3 pb-safe z-50 flex items-center justify-around rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        {MOBILE_NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center gap-1 min-w-[60px] p-2 transition-all ${
-                isActive ? 'text-[var(--color-befit-neon)]' : 'text-[var(--color-befit-text-muted)] hover:text-white'
-              }`}
+              className="relative flex flex-col items-center justify-center min-w-[70px] pb-3 pt-1 group"
             >
-              <Icon className={`w-6 h-6 ${isActive ? '' : 'opacity-70'}`} />
-              <span className="text-[10px] font-medium mt-1">{item.label}</span>
+              {isActive && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-primary rounded-b-full shadow-[0_0_10px_rgba(0,255,136,0.5)]" />
+              )}
+              <div className={`p-2 rounded-xl transition-all duration-300 ${isActive ? 'bg-primary/10 text-primary' : 'text-foreground-muted group-hover:text-foreground'}`}>
+                <Icon className={`w-6 h-6 ${isActive ? 'fill-primary/20' : ''}`} />
+              </div>
+              <span className={`text-[11px] font-medium mt-1 transition-all duration-300 ${isActive ? 'text-primary' : 'text-foreground-muted group-hover:text-foreground'}`}>
+                {item.label}
+              </span>
             </Link>
           );
         })}

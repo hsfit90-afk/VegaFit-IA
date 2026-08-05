@@ -6,12 +6,17 @@ import { useRouter } from 'next/navigation';
 import { Check, Clock, Play, PlayCircle, Trophy, X, Zap, RefreshCw, Trash2 } from 'lucide-react';
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import confetti from 'canvas-confetti';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 
 export default function ActiveWorkout() {
-  const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, history } = useAppContext();
+  const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, history, activePlanId } = useAppContext();
   const router = useRouter();
 
-  const currentPlan = workoutPlans.length > 0 ? workoutPlans[0] : null;
+  const currentPlan = activePlanId 
+    ? workoutPlans.find(p => p.id === activePlanId) || (workoutPlans.length > 0 ? workoutPlans[0] : null)
+    : (workoutPlans.length > 0 ? workoutPlans[0] : null);
+    
   // Usa o índice da sessão atual (A, B, C...) em vez de sempre a sessão 0
   const safeIndex = currentPlan ? currentSessionIndex % currentPlan.sessions.length : 0;
   const currentSession = currentPlan ? currentPlan.sessions[safeIndex] : null;
@@ -77,9 +82,9 @@ export default function ActiveWorkout() {
     return (
       <div className="p-6 md:p-10 text-center pt-20">
         <h2 className="text-2xl font-outfit mb-4">Nenhum treino programado.</h2>
-        <button onClick={() => router.push('/generator')} className="px-6 py-3 bg-[#7c3aed] rounded-xl font-bold">
+        <Button onClick={() => router.push('/generator')} size="lg">
           Gerar Treino
-        </button>
+        </Button>
       </div>
     );
   }
@@ -468,14 +473,14 @@ export default function ActiveWorkout() {
   if (isFinished) {
     return (
       <div className="p-6 md:p-10 max-w-2xl mx-auto text-center pt-20 animate-fade-in">
-        <div className="w-24 h-24 bg-gradient-to-br from-[#00ff88] to-[#7c3aed] rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-6">
           <Trophy className="w-12 h-12 text-[#0a0a0f]" />
         </div>
-        <h1 className="text-4xl font-outfit font-bold mb-4 text-[#00ff88]">Treino Concluído!</h1>
-        <p className="text-gray-400 mb-8 text-lg">Excelente trabalho! O descanso também faz parte do processo.</p>
-        <button onClick={() => router.push('/')} className="px-8 py-4 bg-white/[0.04] backdrop-blur-md border border-white/10 rounded-xl font-bold hover:bg-white/[0.06] transition-all">
+        <h1 className="text-4xl font-outfit font-bold mb-4 text-primary">Treino Concluído!</h1>
+        <p className="text-foreground-muted mb-8 text-lg">Excelente trabalho! O descanso também faz parte do processo.</p>
+        <Button onClick={() => router.push('/')} variant="outline" size="lg">
           Voltar ao Início
-        </button>
+        </Button>
 
         {/* Toast Notification */}
         {showToast && (
@@ -494,13 +499,13 @@ export default function ActiveWorkout() {
             ))}
 
             {/* Volume Toast */}
-            <div className="bg-[#0a0a0f]/90 border border-[#00ff88]/30 text-[#00ff88] p-4 rounded-xl backdrop-blur-xl animate-fade-in shadow-[0_0_30px_rgba(0,255,136,0.15)] flex items-center gap-4">
-              <div className="bg-[#00ff88]/20 p-3 rounded-lg">
-                <Zap className="w-6 h-6 text-[#00ff88]" />
+            <div className="bg-background/90 border border-primary/30 text-primary p-4 rounded-xl backdrop-blur-xl animate-fade-in shadow-[0_0_30px_rgba(0,255,136,0.15)] flex items-center gap-4">
+              <div className="bg-primary/20 p-3 rounded-lg">
+                <Zap className="w-6 h-6 text-primary" />
               </div>
               <div className="text-left">
                 <p className="font-semibold text-xs m-0 text-white/70 uppercase tracking-wider">Volume Alcançado</p>
-                <p className="text-[#00ff88] text-xl font-outfit font-bold m-0">{finishedVolume} kg <span className="text-sm font-normal text-white/50">total</span></p>
+                <p className="text-primary text-xl font-outfit font-bold m-0">{finishedVolume} kg <span className="text-sm font-normal text-white/50">total</span></p>
               </div>
             </div>
           </div>
@@ -521,150 +526,120 @@ export default function ActiveWorkout() {
 
   return (
     <div className="p-6 md:p-10 max-w-4xl mx-auto animate-fade-in pb-32">
-      <header className="mb-8 sticky top-0 bg-[#0a0a0f]/80 backdrop-blur-xl z-40 py-4 border-b border-white/[0.08]">
-        <h1 className="text-2xl font-outfit font-bold text-[#7c3aed] mb-2">{currentSession.name}</h1>
+      <header className="mb-8 sticky top-0 bg-background/80 backdrop-blur-xl z-40 py-4 border-b border-white/[0.08]">
+        <h1 className="text-2xl font-outfit font-bold text-accent mb-2">{currentSession.name}</h1>
         <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-          <div className="bg-[#00ff88] h-full transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
+          <div className="bg-primary h-full transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
         </div>
       </header>
 
       {/* Floating Rest Timer */}
       {restTimer > 0 && (
-        <div className="fixed bottom-24 right-6 bg-[#0a0a0f]/80 backdrop-blur-xl border border-[#00ff88]/50 p-4 rounded-[20px] shadow-[0_0_20px_rgba(0,255,136,0.1)] z-50 flex items-center justify-center animate-pulse">
-          <Clock className="w-5 h-5 text-[#00ff88] mr-2" />
-          <span className="font-mono text-[#00ff88] font-bold text-lg">{formatTime(restTimer)}</span>
+        <div className="fixed bottom-24 right-6 bg-background/80 backdrop-blur-xl border border-primary/50 p-4 rounded-[20px] shadow-[0_0_20px_rgba(0,255,136,0.1)] z-50 flex items-center justify-center animate-pulse">
+          <Clock className="w-5 h-5 text-primary mr-2" />
+          <span className="font-mono text-primary font-bold text-lg">{formatTime(restTimer)}</span>
         </div>
       )}
 
       <div className="space-y-6">
-        {activeExercises.map((ex, exIndex) => (
-          <div key={ex.workoutExerciseId} className="bg-[#0a0a0f]/60 backdrop-blur-2xl rounded-[32px] p-6 md:p-8 border border-white/[0.05] shadow-2xl relative overflow-hidden group">
+        {activeExercises.map((ex, exIndex) => {
+          const exercise = currentSession.exercises[exIndex];
+          let dbMatch = libraryExercises.find(e => e.id === exercise.exerciseId || e.name.trim().toLowerCase() === ex.name.trim().toLowerCase());
+          
+          if (!dbMatch) {
+            const exName = ex.name.trim().toLowerCase();
+            dbMatch = libraryExercises.find(e => {
+              const dbName = e.name.toLowerCase();
+              return dbName.includes(exName) || exName.includes(dbName);
+            });
+          }
+
+          const customMediaUrl = dbMatch?.mediaUrl;
+          const searchQuery = encodeURIComponent(exercise.youtubeSearchTerm || `${ex.name} como fazer exercicio`);
+
+          return (
+          <Card key={ex.workoutExerciseId} variant="glass" className="p-0 relative overflow-hidden group">
             {/* Glow effect in background */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#7c3aed]/10 rounded-full blur-[80px] -z-10 group-hover:bg-[#7c3aed]/20 transition-all duration-700"></div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[80px] -z-10 group-hover:bg-accent/20 transition-all duration-700 pointer-events-none"></div>
             
-            <div className="flex justify-between items-start mb-8">
-              <div>
-                <h2 className="text-2xl font-outfit font-bold text-white mb-2">{ex.name}</h2>
-                <p className="text-sm text-[#00ff88] flex items-center gap-2">
-                   <Zap className="w-4 h-4" /> {currentSession.exercises[exIndex].tips}
-                </p>
-              </div>
-              <div className="flex gap-3 items-center">
-                {/* Swap and Ban Buttons */}
-                <div className="flex gap-1 mr-2">
-                  <button 
-                    onClick={() => handleAutoSwap(exIndex)}
-                    className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:text-[#00ff88] transition-all text-gray-400 flex items-center justify-center shadow-lg"
-                    title="Substituir por outro do mesmo músculo"
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={() => handleBanExercise(exIndex)}
-                    className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all text-gray-400 flex items-center justify-center shadow-lg"
-                    title="Banir exercício (excluir da biblioteca)"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Botão de vídeo */}
-                <button
-                  onClick={() => setShowVideoFor(showVideoFor === ex.workoutExerciseId ? null : ex.workoutExerciseId)}
-                  className={`p-3 rounded-2xl border transition-all duration-300 flex items-center gap-2 ${
-                    showVideoFor === ex.workoutExerciseId
-                      ? 'bg-red-500/20 border-red-500/40 text-red-400'
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:bg-[#7c3aed]/20 hover:border-[#7c3aed]/40 hover:text-[#7c3aed]'
-                  }`}
-                  title="Ver vídeo do exercício"
-                >
-                  {showVideoFor === ex.workoutExerciseId ? <X className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                  <span className="text-xs font-bold hidden sm:inline">{showVideoFor === ex.workoutExerciseId ? 'Fechar' : 'Vídeo'}</span>
-                </button>
-                <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
-                   <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Séries</span>
-                   <input
-                     type="number"
-                     value={ex.sets.length}
-                     min={1}
-                     max={20}
-                     onChange={e => handleSetCount(exIndex, parseInt(e.target.value) || 1)}
-                     className="w-12 text-center bg-transparent text-xl font-mono font-bold text-white outline-none"
-                   />
-                </div>
-                <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
-                   <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Volume Atual</span>
-                   <div className="text-xl font-mono font-bold text-white flex items-baseline gap-1">
-                      {ex.sets.filter(s => s.completed).reduce((acc, s) => acc + (s.reps * s.weight), 0)} <span className="text-sm text-gray-500 font-medium">kg</span>
-                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Video Player */}
-            {showVideoFor === ex.workoutExerciseId && (() => {
-              const exercise = currentSession.exercises[exIndex];
-              let dbMatch = libraryExercises.find(e => e.id === exercise.exerciseId || e.name.trim().toLowerCase() === ex.name.trim().toLowerCase());
-              
-              // Fallback para fuzzy match se a IA tiver gerado um nome ligeiramente diferente
-              if (!dbMatch) {
-                const exName = ex.name.trim().toLowerCase();
-                dbMatch = libraryExercises.find(e => {
-                  const dbName = e.name.toLowerCase();
-                  return dbName.includes(exName) || exName.includes(dbName);
-                });
-              }
-
-              const customMediaUrl = dbMatch?.mediaUrl;
-              const searchQuery = encodeURIComponent(exercise.youtubeSearchTerm || `${ex.name} como fazer exercicio`);
-              
-              return (
-                <div className="mb-6 rounded-2xl overflow-hidden border border-white/10 bg-black/50">
-                  {customMediaUrl ? (
-                    <div className="w-full aspect-video relative">
-                      {customMediaUrl.endsWith('.mp4') ? (
-                        <video src={customMediaUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                      ) : (
-                        <img src={customMediaUrl} alt={ex.name} className="w-full h-full object-contain" />
-                      )}
-                    </div>
+            {/* Mídia no TOPO (Header do Card) */}
+            <div className="w-full bg-black/50 border-b border-border/50">
+              {customMediaUrl ? (
+                <div className="w-full h-56 md:h-72 lg:h-80 relative flex items-center justify-center bg-black">
+                  {customMediaUrl.endsWith('.mp4') ? (
+                    <video src={customMediaUrl} autoPlay loop muted playsInline className="w-full h-full object-cover opacity-90" />
                   ) : (
-                    <iframe
-                      width="100%"
-                      height="240"
-                      src={`https://www.youtube.com/embed?listType=search&list=${searchQuery}&autoplay=0`}
-                      title={`Como fazer ${ex.name}`}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="w-full"
-                    />
+                    <img src={customMediaUrl} alt={ex.name} className="w-full h-full object-contain" />
                   )}
-                  
-                  <div className="px-4 py-2 bg-black/40 flex items-center gap-2 border-t border-white/5">
-                    {customMediaUrl ? (
-                      <>
-                        <span className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse"></span>
-                        <span className="text-xs text-[#00ff88] font-medium tracking-wide">Mídia Verificada (Biblioteca Própria)</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-3 h-3 text-red-400" />
-                        <span className="text-xs text-gray-400">Pesquisando: <span className="text-white font-medium">{exercise.youtubeSearchTerm || ex.name}</span></span>
-                        <a 
-                          href={`https://www.youtube.com/results?search_query=${searchQuery}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="ml-auto text-xs text-[#7c3aed] hover:underline"
-                        >
-                          Ver no YouTube ↗
-                        </a>
-                      </>
-                    )}
+                  <div className="absolute bottom-2 left-3 px-2 py-1 bg-black/60 rounded-md backdrop-blur-md flex items-center gap-1.5 border border-white/10">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                    <span className="text-[10px] text-primary font-bold uppercase tracking-wider">Verificado</span>
                   </div>
                 </div>
-              );
-            })()}
+              ) : (
+                <div className="w-full bg-surface-light border-b border-border/50">
+                  <iframe
+                    src={`https://www.youtube.com/embed?listType=search&list=${searchQuery}&autoplay=0`}
+                    title={`Como fazer ${ex.name}`}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-56 md:h-72 lg:h-80"
+                  />
+                  <div className="px-4 py-2 bg-black/40 flex items-center gap-2 border-t border-white/5">
+                    <Play className="w-3 h-3 text-red-400" />
+                    <span className="text-xs text-gray-400">Pesquisa YouTube: <span className="text-white font-medium">{exercise.youtubeSearchTerm || ex.name}</span></span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 md:p-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div>
+                  <h2 className="text-2xl font-outfit font-bold text-white mb-2">{ex.name}</h2>
+                  <p className="text-sm text-primary flex items-center gap-2">
+                     <Zap className="w-4 h-4 shrink-0" /> {currentSession.exercises[exIndex].tips}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3 items-center">
+                  {/* Swap and Ban Buttons */}
+                  <div className="flex gap-1 mr-2">
+                    <button 
+                      onClick={() => handleAutoSwap(exIndex)}
+                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:text-primary transition-all text-gray-400 flex items-center justify-center shadow-lg"
+                      title="Substituir por outro do mesmo músculo"
+                    >
+                      <RefreshCw className="w-5 h-5" />
+                    </button>
+                    <button 
+                      onClick={() => handleBanExercise(exIndex)}
+                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all text-gray-400 flex items-center justify-center shadow-lg"
+                      title="Banir exercício (excluir da biblioteca)"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
+                     <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Séries</span>
+                     <input
+                       type="number"
+                       value={ex.sets.length}
+                       min={1}
+                       max={20}
+                       onChange={e => handleSetCount(exIndex, parseInt(e.target.value) || 1)}
+                       className="w-12 text-center bg-transparent text-xl font-mono font-bold text-white outline-none"
+                     />
+                  </div>
+                  <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
+                     <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Volume Atual</span>
+                     <div className="text-xl font-mono font-bold text-white flex items-baseline gap-1">
+                        {ex.sets.filter(s => s.completed).reduce((acc, s) => acc + (s.reps * s.weight), 0)} <span className="text-sm text-gray-500 font-medium">kg</span>
+                     </div>
+                  </div>
+                </div>
+              </div>
             <div className="space-y-4">
               <div className="grid grid-cols-12 gap-2 text-[10px] text-gray-400 font-bold px-2 mb-2 uppercase tracking-widest">
                 <div className="col-span-1 text-center">#</div>
@@ -677,16 +652,16 @@ export default function ActiveWorkout() {
               {ex.sets.map((set, setIndex) => (
                 <div key={setIndex} className={`grid grid-cols-12 gap-2 items-center p-2 md:p-3 rounded-2xl border transition-all duration-300 relative group ${
                   set.completed 
-                    ? 'bg-gradient-to-r from-[#00ff88]/10 to-transparent border-[#00ff88]/30 shadow-[0_0_20px_rgba(0,255,136,0.15)]' 
-                    : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06] hover:border-white/10'
+                    ? 'bg-gradient-to-r from-primary/10 to-transparent border-primary/30 shadow-[0_0_20px_rgba(0,255,136,0.15)]' 
+                    : 'bg-surface border-border hover:bg-white/[0.06]'
                 }`}>
                   <div className="col-span-1 flex justify-center">
-                    <span className={`text-xs font-mono font-bold ${ set.completed ? 'text-[#00ff88]' : 'text-gray-600' }`}>{setIndex + 1}</span>
+                    <span className={`text-xs font-mono font-bold ${ set.completed ? 'text-primary' : 'text-gray-600' }`}>{setIndex + 1}</span>
                   </div>
                   
                   <div className="col-span-3">
                     <div className={`relative flex items-center bg-black/40 rounded-xl overflow-hidden border transition-all duration-300 ${
-                      set.completed ? 'border-[#00ff88]/30' : 'border-white/5 focus-within:border-[#00ff88]/50 focus-within:bg-black/60'
+                      set.completed ? 'border-primary/30' : 'border-border focus-within:border-primary/50 focus-within:bg-black/60'
                     }`}>
                       <input 
                         type="number" 
@@ -694,7 +669,7 @@ export default function ActiveWorkout() {
                         onChange={e => handleSetUpdate(exIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)}
                         placeholder="0"
                         className={`w-full bg-transparent py-2 md:py-3 text-center font-mono text-lg md:text-xl outline-none transition-all ${
-                          set.completed ? 'text-[#00ff88] font-bold' : 'text-white placeholder:text-white/20'
+                          set.completed ? 'text-primary font-bold' : 'text-white placeholder:text-white/20'
                         }`}
                         disabled={set.completed}
                       />
@@ -703,7 +678,7 @@ export default function ActiveWorkout() {
                   
                   <div className="col-span-3">
                     <div className={`relative flex items-center bg-black/40 rounded-xl overflow-hidden border transition-all duration-300 ${
-                      set.completed ? 'border-[#00ff88]/30' : 'border-white/5 focus-within:border-[#7c3aed]/50 focus-within:bg-black/60'
+                      set.completed ? 'border-primary/30' : 'border-border focus-within:border-accent/50 focus-within:bg-black/60'
                     }`}>
                       <input 
                         type="number" 
@@ -711,7 +686,7 @@ export default function ActiveWorkout() {
                         onChange={e => handleSetUpdate(exIndex, setIndex, 'reps', parseInt(e.target.value) || 0)}
                         placeholder="0"
                         className={`w-full bg-transparent py-2 md:py-3 text-center font-mono text-lg md:text-xl outline-none transition-all ${
-                          set.completed ? 'text-[#00ff88] font-bold' : 'text-white placeholder:text-white/20'
+                          set.completed ? 'text-primary font-bold' : 'text-white placeholder:text-white/20'
                         }`}
                         disabled={set.completed}
                       />
@@ -720,7 +695,7 @@ export default function ActiveWorkout() {
 
                   <div className="col-span-3">
                     <div className={`relative flex items-center bg-black/40 rounded-xl overflow-hidden border transition-all duration-300 ${
-                      set.completed ? 'border-[#00ff88]/30' : 'border-white/5 focus-within:border-blue-500/50 focus-within:bg-black/60'
+                      set.completed ? 'border-primary/30' : 'border-border focus-within:border-blue-500/50 focus-within:bg-black/60'
                     }`}>
                       <input 
                         type="number" 
@@ -742,8 +717,8 @@ export default function ActiveWorkout() {
                       onClick={() => toggleSetComplete(exIndex, setIndex)}
                       className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
                         set.completed 
-                          ? 'bg-[#00ff88] text-[#0a0a0f] shadow-[0_0_20px_rgba(0,255,136,0.5)]' 
-                          : 'bg-white/5 text-gray-500 hover:bg-[#00ff88]/20 hover:text-[#00ff88] hover:scale-110'
+                          ? 'bg-primary text-[#0a0a0f] shadow-[0_0_20px_rgba(0,255,136,0.5)]' 
+                          : 'bg-white/5 text-gray-500 hover:bg-primary/20 hover:text-primary hover:scale-110'
                       }`}
                     >
                       <Check className="w-5 h-5" />
@@ -753,30 +728,38 @@ export default function ActiveWorkout() {
               ))}
               
               <div className="flex justify-center gap-4 mt-4 pt-4 border-t border-white/5">
-                <button 
+                <Button 
                   onClick={() => handleRemoveSet(exIndex)}
-                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 rounded-xl transition-all font-medium text-sm flex items-center gap-2"
+                  variant="ghost"
+                  size="sm"
+                  className="font-medium text-xs"
                 >
                   - Remover
-                </button>
-                <button 
+                </Button>
+                <Button 
                   onClick={() => handleAddExtraSet(exIndex)}
-                  className="px-4 py-2 bg-[#00ff88]/10 hover:bg-[#00ff88]/20 text-[#00ff88] rounded-xl transition-all font-medium text-sm flex items-center gap-2"
+                  variant="outline"
+                  size="sm"
+                  className="font-medium text-xs border-primary/50 text-primary hover:bg-primary/10"
                 >
                   + Adicionar Série
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
-        ))}
+            </div>
+          </Card>
+          );
+        })}
       </div>
 
-      <button 
+      <Button 
         onClick={finishWorkout}
-        className="w-full mt-10 py-5 rounded-2xl bg-gradient-to-r from-[#00ff88] to-[#00cc6a] text-[#0a0a0f] font-bold text-xl hover:shadow-[0_0_30px_rgba(0,255,136,0.3)] transition-all"
+        fullWidth
+        size="lg"
+        className="mt-10 font-bold text-xl shadow-[0_0_30px_rgba(0,255,136,0.3)] h-16"
       >
         Finalizar Treino
-      </button>
+      </Button>
     </div>
   );
 }

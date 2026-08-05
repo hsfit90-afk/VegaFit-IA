@@ -5,6 +5,12 @@ import { UserProfile, WorkoutPlan, WorkoutHistoryEntry } from '@/lib/types';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
+export interface BodyWeightEntry {
+  id: string;
+  date: number;
+  weight: number;
+}
+
 interface AppContextState {
   profile: UserProfile | null;
   userId: string | null;
@@ -12,6 +18,7 @@ interface AppContextState {
   workoutPlans: WorkoutPlan[];
   addWorkoutPlan: (plan: WorkoutPlan) => Promise<void>;
   updateWorkoutPlan: (plan: WorkoutPlan) => Promise<void>;
+  deleteWorkoutPlan: (planId: string) => Promise<void>;
   history: WorkoutHistoryEntry[];
   addHistoryEntry: (entry: WorkoutHistoryEntry) => void;
   clearData: () => void;
@@ -19,6 +26,11 @@ interface AppContextState {
   advanceSession: (totalSessions: number) => void;
   resetSessionIndex: () => void;
   banExerciseForUser: (exerciseId: string) => Promise<void>;
+  // Novidades
+  bodyWeightHistory: BodyWeightEntry[];
+  addBodyWeight: (weight: number) => Promise<void>;
+  activePlanId: string | null;
+  setActivePlan: (planId: string) => void;
 }
 
 const AppContext = createContext<AppContextState | undefined>(undefined);
@@ -30,6 +42,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentSessionIndex, setCurrentSessionIndex] = useState<number>(0);
   const [userId, setUserId] = useState<string | null>(null);
+  const [bodyWeightHistory, setBodyWeightHistory] = useState<BodyWeightEntry[]>([]);
+  const [activePlanId, setActivePlanIdState] = useState<string | null>(null);
 
   const supabase = createClient();
   const router = useRouter();
@@ -47,7 +61,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (mounted) setUserId(user.id);
 
       // Load Profile
-      const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       
       if (profileData && mounted) {
         setProfileState({
@@ -66,7 +80,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } else if (!profileData && mounted) {
         const path = window.location.pathname;
         if (path !== '/onboarding' && path !== '/login' && path !== '/register') {
-          console.log("No profile found, redirecting to onboarding...");
           router.push('/onboarding');
           return;
         }
@@ -83,6 +96,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           createdAt: new Date(p.created_at).getTime()
         }));
         setWorkoutPlans(parsedPlans);
+        
+        // Load activePlanId from localStorage, fallback to first plan
+        const storedActivePlanId = localStorage.getItem(`vegafit_active_plan_${user.id}`);
+        const validActivePlan = parsedPlans.find(p => p.id === storedActivePlanId);
+        if (mounted) {
+          setActivePlanIdState(validActivePlan ? storedActivePlanId : (parsedPlans[0]?.id || null));
+        }
       }
 
       // Load History
@@ -106,6 +126,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const { data: indexData } = await supabase.from('user_session_index').select('current_session_index').eq('user_id', user.id).single();
       if (indexData && mounted) {
         setCurrentSessionIndex(indexData.current_session_index);
+      }
+
+      // Load Body Weight History (tabela criada separadamente)
+      const { data: weightData } = await supabase
+        .from('body_weight_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: true });
+      
+      if (weightData && mounted) {
+        setBodyWeightHistory(weightData.map(w => ({
+          id: w.id,
+          date: new Date(w.date).getTime(),
+          weight: w.weight
+        })));
       }
 
       if (mounted) setIsLoaded(true);
@@ -141,21 +176,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (currentBanned.includes(exerciseId)) return;
     
     const newBanned = [...currentBanned, exerciseId];
-    
-    setProfileState({
-      ...profile,
-      bannedExercises: newBanned
-    });
-
-    await supabase.from('profiles').update({
-      banned_exercises: newBanned
-    }).eq('id', userId);
+    setProfileState({ ...profile, bannedExercises: newBanned });
+    await supabase.from('profiles').update({ banned_exercises: newBanned }).eq('id', userId);
   };
 
   const addWorkoutPlan = async (plan: WorkoutPlan) => {
     setWorkoutPlans(prev => [plan, ...prev]);
+    setActivePlanIdState(plan.id);
     setCurrentSessionIndex(0);
     if (!userId) return;
+
+    if (userId) {
+      localStorage.setItem(`vegafit_active_plan_${userId}`, plan.id);
+    }
 
     await supabase.from('workout_plans').insert({
       id: plan.id,
@@ -180,6 +213,55 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       split: plan.split,
       sessions: plan.sessions
     }).eq('id', plan.id).eq('user_id', userId);
+  };
+
+  const deleteWorkoutPlan = async (planId: string) => {
+    const remaining = workoutPlans.filter(p => p.id !== planId);
+    setWorkoutPlans(remaining);
+    
+    // Se deletou o plano ativo, muda para o próximo
+    if (activePlanId === planId) {
+      const newActivePlanId = remaining[0]?.id || null;
+      setActivePlanIdState(newActivePlanId);
+      if (userId && newActivePlanId) {
+        localStorage.setItem(`vegafit_active_plan_${userId}`, newActivePlanId);
+      }
+    }
+    
+    if (!userId) return;
+    await supabase.from('workout_plans').delete().eq('id', planId).eq('user_id', userId);
+  };
+
+  const setActivePlan = (planId: string) => {
+    setActivePlanIdState(planId);
+    setCurrentSessionIndex(0);
+    if (userId) {
+      localStorage.setItem(`vegafit_active_plan_${userId}`, planId);
+    }
+    // Reset session index no Supabase
+    if (userId) {
+      supabase.from('user_session_index').upsert({
+        user_id: userId,
+        current_session_index: 0
+      });
+    }
+  };
+
+  const addBodyWeight = async (weight: number) => {
+    const newEntry: BodyWeightEntry = {
+      id: crypto.randomUUID(),
+      date: Date.now(),
+      weight
+    };
+    setBodyWeightHistory(prev => [...prev, newEntry]);
+    
+    if (!userId) return;
+    await supabase.from('body_weight_history').insert({
+      id: newEntry.id,
+      user_id: userId,
+      weight: newEntry.weight,
+      date: new Date(newEntry.date).toISOString()
+    });
   };
 
   const addHistoryEntry = async (entry: WorkoutHistoryEntry) => {
@@ -225,6 +307,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProfileState(null);
     setWorkoutPlans([]);
     setHistory([]);
+    setBodyWeightHistory([]);
+    setActivePlanIdState(null);
     setCurrentSessionIndex(0);
     await supabase.auth.signOut();
     router.push('/login');
@@ -232,8 +316,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#00ff88] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -247,6 +331,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         workoutPlans,
         addWorkoutPlan,
         updateWorkoutPlan,
+        deleteWorkoutPlan,
         history,
         addHistoryEntry,
         clearData,
@@ -254,6 +339,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         advanceSession,
         resetSessionIndex,
         banExerciseForUser,
+        bodyWeightHistory,
+        addBodyWeight,
+        activePlanId,
+        setActivePlan,
       }}
     >
       {children}

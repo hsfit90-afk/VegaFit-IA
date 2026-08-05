@@ -1,13 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --color-befit-bg: #0a1118;
-  --color-befit-surface: #1a222a;
-  --color-befit-surface-light: #252e38;
-  --color-befit-neon: #39FF14;
-  --color-befit-neon-hover: #32e612;
-  --color-befit-text: #ffffff;
-  --color-befit-text-muted: #8b9eb0;
+  /* Core Colors */
+  --color-background: #000000;
+  --color-surface: #121212;
+  --color-surface-hover: #1c1c1e;
+  --color-surface-light: #2c2c2e;
+  
+  --color-primary: #00ff88;
+  --color-primary-hover: #00cc6a;
+  --color-primary-active: #009950;
+  --color-primary-foreground: #000000;
+  
+  --color-secondary: #7c3aed;
+  --color-secondary-hover: #6d28d9;
+  
+  --color-foreground: #f5f5f7;
+  --color-foreground-muted: #8e8e93;
+  
+  --color-border: #2c2c2e;
+  --color-border-light: #3a3a3c;
+  
+  --color-destructive: #ff453a;
+  --color-success: #32d74b;
+  --color-warning: #ffd60a;
 }
 
 :root {
@@ -15,10 +31,15 @@
 }
 
 body {
-  background-color: var(--color-befit-bg);
-  color: var(--color-befit-text);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  /* Prevent pull-to-refresh and bounce effects on mobile apps */
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Utilities for hiding scrollbars but keeping functionality */
 @layer utilities {
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
@@ -26,5 +47,9 @@ body {
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  
+  .glass-panel {
+    @apply bg-surface/80 backdrop-blur-xl border border-white/5 shadow-lg;
   }
 }

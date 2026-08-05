@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { Dumbbell, Flame, Trophy, Calendar, Lightbulb } from 'lucide-react';
+import { Dumbbell, Flame, Trophy, Calendar, Lightbulb, ChevronRight, Activity, Zap, Star, LayoutList, Trash2, CheckCircle2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { motion } from 'motion/react';
+import { WorkoutPlan } from '@/lib/types';
 
 export default function Dashboard() {
-  const { profile, history, workoutPlans, currentSessionIndex } = useAppContext();
+  const { profile, history, workoutPlans, activePlanId, setActivePlan, deleteWorkoutPlan, currentSessionIndex } = useAppContext();
   const [chartPeriod, setChartPeriod] = useState<'week' | 'month' | 'total'>('week');
   const [dailyTip, setDailyTip] = useState<string>('Carregando dica do dia...');
 
@@ -42,7 +46,7 @@ export default function Dashboard() {
       }
     };
 
-    fetchTip();
+    if (profile) fetchTip();
   }, [profile]);
 
   const greeting = () => {
@@ -52,11 +56,65 @@ export default function Dashboard() {
     return 'Boa noite';
   };
 
+  // --- Active Plan Logic ---
+  const activePlan = useMemo(() => {
+    if (!workoutPlans.length) return null;
+    if (activePlanId) {
+      const plan = workoutPlans.find(p => p.id === activePlanId);
+      if (plan) return plan;
+    }
+    return workoutPlans[0];
+  }, [workoutPlans, activePlanId]);
+
+  // --- Streak Logic ---
+  const streak = useMemo(() => {
+    if (history.length === 0) return 0;
+    
+    // Agrupar treinos por dia (ignorando horário)
+    const uniqueDays = Array.from(new Set(
+      history.map(h => new Date(h.date).setHours(0,0,0,0))
+    )).sort((a, b) => b - a); // Decrescente
+
+    let currentStreak = 0;
+    const today = new Date().setHours(0,0,0,0);
+    const yesterday = today - 86400000;
+
+    // Se o último treino não foi hoje nem ontem, streak zerou
+    if (uniqueDays[0] !== today && uniqueDays[0] !== yesterday) {
+      return 0;
+    }
+
+    let expectedDay = uniqueDays[0];
+    for (const day of uniqueDays) {
+      if (day === expectedDay) {
+        currentStreak++;
+        expectedDay -= 86400000; // Subtrai 1 dia em ms
+      } else {
+        break; // Quebrou a sequência
+      }
+    }
+
+    return currentStreak;
+  }, [history]);
+
+  // --- Achievements Logic ---
+  const achievements = useMemo(() => {
+    const list = [];
+    if (history.length >= 1) list.push({ icon: <CheckCircle2 className="w-5 h-5 text-green-400"/>, title: "Primeiro Passo", desc: "Completou seu 1º treino!" });
+    if (streak >= 3) list.push({ icon: <Flame className="w-5 h-5 text-orange-400"/>, title: "No Ritmo", desc: "3 dias seguidos treinando!" });
+    if (history.length >= 10) list.push({ icon: <Star className="w-5 h-5 text-yellow-400"/>, title: "Dedicado", desc: "10 treinos concluídos" });
+    
+    const totalVol = history.reduce((acc, h) => acc + h.totalVolume, 0);
+    if (totalVol >= 10000) list.push({ icon: <Trophy className="w-5 h-5 text-blue-400"/>, title: "Monstro", desc: "10 Toneladas levantadas" });
+
+    return list.slice(0, 3); // Mostra os 3 mais relevantes (primeiros da fila)
+  }, [history, streak]);
+
+  // --- Chart Logic ---
   const currentWeekWorkouts = history.filter(h => {
     const today = new Date();
     const workoutDate = new Date(h.date);
-    const diffTime = Math.abs(today.getTime() - workoutDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    const diffDays = Math.ceil(Math.abs(today.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24)); 
     return diffDays <= 7;
   });
 
@@ -64,19 +122,14 @@ export default function Dashboard() {
 
   const filteredWorkoutsForChart = history.filter(h => {
     if (chartPeriod === 'total') return true;
-    
     const today = new Date();
     const workoutDate = new Date(h.date);
-    const diffTime = Math.abs(today.getTime() - workoutDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    
+    const diffDays = Math.ceil(Math.abs(today.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24)); 
     if (chartPeriod === 'week') return diffDays <= 7;
     if (chartPeriod === 'month') return diffDays <= 30;
-    
     return true;
   });
 
-  // Calc volume by muscle group for chart
   const muscleVolumeMap: Record<string, number> = {};
   filteredWorkoutsForChart.forEach(workout => {
     workout.exercises.forEach(ex => {
@@ -91,202 +144,340 @@ export default function Dashboard() {
 
   const chartData = Object.entries(muscleVolumeMap).map(([name, volume]) => ({ name, volume }));
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+  };
+
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto animate-fade-in">
-      <header className="mb-10">
-        <h1 className="text-4xl md:text-5xl font-outfit font-bold mb-2">
-          {greeting()}, <span className="text-[#00ff88]">{profile?.name || 'Atleta'}</span>
+    <motion.div 
+      className="p-5 md:p-8 max-w-7xl mx-auto min-h-screen pb-32"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
+      <motion.header variants={itemVariants} className="mb-8 mt-2">
+        <h1 className="text-3xl md:text-4xl font-outfit font-bold tracking-tight mb-1">
+          {greeting()}, <span className="text-primary">{profile?.name || 'Atleta'}</span>
         </h1>
-        <p className="text-gray-400 text-lg">Pronto para superar seus limites hoje?</p>
-      </header>
+        <p className="text-foreground-muted text-sm md:text-base">Pronto para superar seus limites hoje?</p>
+      </motion.header>
 
-      <div className="mb-10 bg-gradient-to-r from-[#0a0a0f] to-[#12121a] border border-white/10 rounded-2xl p-5 md:p-6 flex items-start gap-4 shadow-lg">
-        <div className="bg-[#00ff88]/20 p-3 rounded-full flex-shrink-0">
-          <Lightbulb className="w-6 h-6 text-[#00ff88]" />
-        </div>
-        <div>
-          <h4 className="text-[#00ff88] font-semibold mb-1">Dica do Dia</h4>
-          <p className="text-gray-300 text-sm md:text-base leading-relaxed">{dailyTip}</p>
-        </div>
-      </div>
+      {/* Dica do Dia */}
+      <motion.div variants={itemVariants} className="mb-8">
+        <Card variant="glass" className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4 md:p-5 flex items-start gap-4">
+            <div className="bg-primary/20 p-2.5 rounded-xl flex-shrink-0">
+              <Lightbulb className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h4 className="text-primary font-semibold text-sm mb-1 uppercase tracking-wider">Dica do Dia</h4>
+              <p className="text-foreground/90 text-sm md:text-base leading-relaxed">{dailyTip}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      {/* Métricas Principais */}
+      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-8">
         <DashboardCard 
-          title="Treinos na Semana" 
+          title="Treinos (Semana)" 
           value={currentWeekWorkouts.length.toString()} 
           icon={Calendar} 
           color="text-blue-400" 
+          bg="bg-blue-400/10"
         />
         <DashboardCard 
           title="Volume Semanal" 
-          value={`${totalVolume.toLocaleString()} kg`} 
+          value={`${totalVolume.toLocaleString()}kg`} 
           icon={Dumbbell} 
-          color="text-[#00ff88]" 
+          color="text-primary" 
+          bg="bg-primary/10"
         />
         <DashboardCard 
           title="Streak Atual" 
-          value={`${currentWeekWorkouts.length > 0 ? 'Ativo' : '0 dias'}`} 
+          value={`${streak} ${streak === 1 ? 'dia' : 'dias'}`} 
           icon={Flame} 
           color="text-orange-400" 
+          bg="bg-orange-400/10"
         />
         <DashboardCard 
-          title="Próximo Treino" 
-          value={workoutPlans.length > 0 
-            ? workoutPlans[0].sessions[currentSessionIndex % workoutPlans[0].sessions.length]?.name 
-            : 'Nenhum'} 
+          title="Total Treinos" 
+          value={history.length.toString()} 
           icon={Trophy} 
-          color="text-[#7c3aed]" 
-          subtitle={workoutPlans.length > 0 
-            ? `Sessão ${currentSessionIndex % workoutPlans[0].sessions.length + 1} de ${workoutPlans[0].sessions.length}`
-            : undefined}
+          color="text-secondary" 
+          bg="bg-secondary/10"
         />
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white/[0.03] border border-white/[0.08] rounded-3xl p-6 backdrop-blur-md flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="m-0 text-lg font-semibold flex items-center gap-2">
-              <BarChart className="w-5 h-5 text-[#00ff88]" />
-              Volume por Grupo Muscular
-            </h4>
-            <div className="flex bg-white/5 rounded-lg p-1">
-              <button 
-                onClick={() => setChartPeriod('week')}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${chartPeriod === 'week' ? 'bg-white/10 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
-              >
-                Semana
-              </button>
-              <button 
-                onClick={() => setChartPeriod('month')}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${chartPeriod === 'month' ? 'bg-white/10 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
-              >
-                Mês
-              </button>
-              <button 
-                onClick={() => setChartPeriod('total')}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${chartPeriod === 'total' ? 'bg-white/10 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
-              >
-                Total
-              </button>
-            </div>
-          </div>
-          {chartData.length > 0 ? (
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <XAxis dataKey="name" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${val/1000}k`} />
-                  <Tooltip 
-                    cursor={{fill: '#ffffff10'}}
-                    contentStyle={{ backgroundColor: '#0a0a0f', borderColor: '#ffffff20', borderRadius: '12px', color: '#fff' }}
-                  />
-                  <Bar dataKey="volume" radius={[4, 4, 0, 0]}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#00ff88' : '#7c3aed'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="h-[300px] flex items-center justify-center text-gray-500 flex-col gap-4">
-              <Dumbbell className="w-12 h-12 opacity-20" />
-              <p>Nenhum treino registrado esta semana.</p>
-            </div>
-          )}
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-8">
+        {/* Gráfico de Volume */}
+        <motion.div variants={itemVariants} className="lg:col-span-2">
+          <Card className="h-full flex flex-col">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-primary" />
+                <CardTitle>Carga Total por Músculo</CardTitle>
+              </div>
+              <div className="flex bg-surface-light rounded-lg p-1">
+                {(['week', 'month', 'total'] as const).map(period => (
+                  <button 
+                    key={period}
+                    onClick={() => setChartPeriod(period)}
+                    className={`px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-md transition-all ${chartPeriod === period ? 'bg-surface text-primary shadow-sm' : 'text-foreground-muted hover:text-foreground'}`}
+                  >
+                    {period === 'week' ? 'Sem' : period === 'month' ? 'Mês' : 'Tudo'}
+                  </button>
+                ))}
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 pt-4">
+              {chartData.length > 0 ? (
+                <div className="h-[250px] md:h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <XAxis dataKey="name" stroke="#8e8e93" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#8e8e93" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${val/1000}k`} />
+                      <Tooltip 
+                        cursor={{fill: 'var(--color-surface-light)'}}
+                        contentStyle={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                        itemStyle={{ color: 'var(--color-primary)' }}
+                      />
+                      <Bar dataKey="volume" radius={[4, 4, 0, 0]}>
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? 'var(--color-primary)' : 'var(--color-secondary)'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-[250px] md:h-[300px] flex items-center justify-center text-foreground-muted flex-col gap-3">
+                  <Dumbbell className="w-10 h-10 opacity-20" />
+                  <p className="text-sm">Nenhum treino registrado.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <div className="bg-gradient-to-br from-[#00ff88]/15 to-[#7c3aed]/15 border border-[#00ff88]/20 rounded-3xl p-6 relative overflow-hidden group flex flex-col backdrop-blur-md">
-          <div className="relative z-10 flex flex-col h-full justify-between">
-            <div>
-              <h4 className="m-0 mb-2 text-lg font-semibold">Treino de Hoje</h4>
-              {workoutPlans.length > 0 ? (
+        {/* CTA Treino de Hoje e Conquistas */}
+        <motion.div variants={itemVariants} className="space-y-6">
+          
+          {/* Box de Treino */}
+          <div className="bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 rounded-3xl p-6 relative overflow-hidden shadow-[0_0_40px_rgba(0,255,136,0.1)]">
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
+            
+            <div className="relative z-10 mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(0,255,136,1)]" />
+                <h4 className="text-lg font-bold text-white m-0">Plano Ativo</h4>
+              </div>
+              
+              {activePlan ? (
                 <>
-                  <p className="text-sm text-white/70 mb-5">{workoutPlans[0].sessions[0].name}</p>
-                  <div className="space-y-3 mb-8">
-                    {workoutPlans[0].sessions[0].exercises.slice(0, 3).map((ex, i) => (
-                      <div key={i} className="flex justify-between items-center text-sm">
-                        <span className="text-gray-300 truncate max-w-[150px]">{ex.name}</span>
-                        <span className="text-[#00ff88] font-mono">{ex.sets}x{ex.reps}</span>
+                  <p className="text-xl font-bold text-primary mb-1">{activePlan.name}</p>
+                  <p className="text-xs text-foreground-muted mb-4 uppercase tracking-wider font-semibold">Próximo Treino: {activePlan.sessions[currentSessionIndex % activePlan.sessions.length]?.name}</p>
+                  
+                  <div className="space-y-3 bg-surface/40 backdrop-blur-sm p-4 rounded-2xl border border-white/5">
+                    {activePlan.sessions[currentSessionIndex % activePlan.sessions.length]?.exercises.slice(0, 3).map((ex, i) => (
+                      <div key={i} className="flex justify-between items-center text-sm border-b border-white/5 last:border-0 pb-2 last:pb-0">
+                        <span className="text-foreground/90 font-medium truncate pr-4">{ex.name}</span>
+                        <span className="text-primary font-mono bg-primary/10 px-2 py-0.5 rounded text-xs">{ex.sets}x{ex.reps}</span>
                       </div>
                     ))}
-                    {workoutPlans[0].sessions[0].exercises.length > 3 && (
-                      <p className="text-xs text-gray-500 italic">+ {workoutPlans[0].sessions[0].exercises.length - 3} exercícios</p>
-                    )}
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-white/70 mb-5">Você ainda não tem um treino programado.</p>
+                <p className="text-sm text-foreground/70 mb-5 mt-2">Você ainda não tem um treino programado para hoje.</p>
               )}
             </div>
-            {workoutPlans.length > 0 ? (
-              <Link 
-                href="/active"
-                className="w-full block text-center bg-[#00ff88] text-black border-none py-3 px-6 rounded-xl font-bold hover:bg-[#00cc6a] transition-all"
-              >
-                INICIAR AGORA
-              </Link>
-            ) : (
-              <Link 
-                href="/generator"
-                className="w-full block text-center bg-[#00ff88] text-black border-none py-3 px-6 rounded-xl font-bold hover:bg-[#00cc6a] transition-all"
-              >
-                GERAR COM IA
-              </Link>
-            )}
+
+            <div className="relative z-10">
+              {activePlan ? (
+                <Link href="/active" className="block">
+                  <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
+                    INICIAR TREINO
+                    <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/generator" className="block">
+                  <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
+                    GERAR TREINO COM IA
+                    <Zap className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
-        </div>
+
+          {/* Box de Conquistas (Gamification) */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Star className="w-4 h-4 text-yellow-400" /> Suas Conquistas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {achievements.length > 0 ? (
+                <div className="space-y-3">
+                  {achievements.map((ach, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-border">
+                      <div className="bg-background rounded-lg p-2 shrink-0 border border-border">{ach.icon}</div>
+                      <div>
+                        <p className="font-bold text-sm text-white">{ach.title}</p>
+                        <p className="text-[11px] text-foreground-muted">{ach.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-sm text-foreground-muted py-6">
+                  Treine para desbloquear conquistas!
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+        </motion.div>
       </div>
 
-      <div className="mt-8 bg-white/[0.03] border border-white/[0.08] rounded-3xl p-6 backdrop-blur-md">
-        <h4 className="m-0 mb-4 text-base font-semibold">Recuperação Muscular</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {['Peito', 'Costas', 'Ombro', 'Bíceps', 'Tríceps', 'Pernas (quadríceps)'].map(muscle => {
-            // Find last time trained
+      {/* Meus Planos de Treino */}
+      <motion.div variants={itemVariants} className="mb-8">
+        <h4 className="text-lg font-bold mb-4 px-1 flex items-center gap-2">
+          <LayoutList className="w-5 h-5 text-primary" /> Meus Planos de Treino
+        </h4>
+        
+        {workoutPlans.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {workoutPlans.map(plan => (
+              <Card key={plan.id} className={`transition-all ${activePlanId === plan.id ? 'border-primary shadow-[0_0_15px_rgba(0,255,136,0.1)]' : 'border-border'}`}>
+                <CardContent className="p-5">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-bold text-lg text-white mb-1">{plan.name}</h4>
+                      <p className="text-xs text-foreground-muted">{plan.split} • {plan.sessions.length} sessões</p>
+                    </div>
+                    {activePlanId === plan.id && (
+                      <span className="bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full">
+                        Ativo
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2 mt-4 pt-4 border-t border-border">
+                    {activePlanId !== plan.id ? (
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        fullWidth 
+                        onClick={() => setActivePlan(plan.id)}
+                      >
+                        Ativar Plano
+                      </Button>
+                    ) : (
+                      <Button size="sm" disabled fullWidth variant="outline" className="opacity-50">
+                        Plano em Uso
+                      </Button>
+                    )}
+                    
+                    <button 
+                      onClick={() => {
+                        if (confirm(`Deseja realmente apagar o plano "${plan.name}"?`)) {
+                          deleteWorkoutPlan(plan.id);
+                        }
+                      }}
+                      className="p-2 bg-surface hover:bg-destructive/20 text-foreground-muted hover:text-destructive rounded-lg border border-border hover:border-destructive/30 transition-colors shrink-0"
+                      title="Apagar plano"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-8 text-center flex flex-col items-center">
+              <LayoutList className="w-10 h-10 text-foreground-muted opacity-30 mb-3" />
+              <p className="text-white font-medium mb-1">Nenhum plano salvo.</p>
+              <p className="text-sm text-foreground-muted mb-4">Gere um treino com IA para começar.</p>
+              <Link href="/generator">
+                <Button size="sm">Criar Plano</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+      </motion.div>
+
+      {/* Recuperação Muscular */}
+      <motion.div variants={itemVariants} className="mt-8">
+        <h4 className="text-lg font-bold mb-4 px-1">Recuperação Muscular</h4>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {['Peito', 'Costas', 'Ombro', 'Bíceps', 'Tríceps', 'Pernas (quadríceps)'].map((muscle) => {
             const latestWorkout = [...history].sort((a,b) => b.date - a.date).find(h => 
               h.exercises.some(ex => ex.muscleGroup === muscle)
             );
-            let statusColor = 'bg-[#00ff88]';
+            let statusColor = 'bg-success';
+            let glowColor = 'shadow-success/40';
             let label = 'Recuperado';
             
             if (latestWorkout) {
               const diffHours = (Date.now() - latestWorkout.date) / (1000 * 60 * 60);
               if (diffHours < 24) {
-                statusColor = 'bg-red-500';
+                statusColor = 'bg-destructive';
+                glowColor = 'shadow-destructive/40';
                 label = 'Em Fadiga';
               } else if (diffHours < 48) {
-                statusColor = 'bg-yellow-400';
+                statusColor = 'bg-warning';
+                glowColor = 'shadow-warning/40';
                 label = 'Recuperando';
               }
             }
 
+            const displayMuscle = muscle.replace(' (quadríceps)', '');
+
             return (
-              <div key={muscle} className="bg-white/5 p-4 rounded-2xl flex flex-col items-center justify-center text-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-[#0a0a0f] flex items-center justify-center border border-white/10">
-                  <div className={`w-4 h-4 rounded-full ${statusColor} shadow-[0_0_10px] shadow-current`}></div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{muscle}</p>
-                  <p className="text-xs text-gray-400">{label}</p>
-                </div>
-              </div>
+              <Card key={muscle} className="bg-surface/50 border-white/5 hover:bg-surface transition-colors">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-surface-light flex items-center justify-center">
+                    <div className={`w-3.5 h-3.5 rounded-full ${statusColor} shadow-[0_0_12px] ${glowColor}`}></div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground/90">{displayMuscle}</p>
+                    <p className="text-[11px] text-foreground-muted font-medium mt-0.5 uppercase tracking-wider">{label}</p>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
-function DashboardCard({ title, value, icon: Icon, color, subtitle }: { title: string, value: string, icon: any, color: string, subtitle?: string }) {
+function DashboardCard({ title, value, icon: Icon, color, bg }: { title: string, value: string, icon: any, color: string, bg: string }) {
   return (
-    <div className="bg-white/[0.04] backdrop-blur-md p-5 rounded-[20px] border border-white/10 hover:bg-white/[0.06] transition-all group">
-      <div className="flex items-start justify-between mb-2">
-        <p className="text-[12px] text-white/40 m-0 uppercase tracking-widest">{title}</p>
-        <Icon className={`w-4 h-4 ${color} opacity-80`} />
-      </div>
-      <h3 className={`text-2xl m-0 font-bold ${title === 'Streak Atual' ? 'text-[#00ff88]' : 'text-white'}`}>{value}</h3>
-      {subtitle && <p className="text-xs text-white/30 mt-1">{subtitle}</p>}
-    </div>
+    <Card className="hover:border-primary/20 transition-colors group">
+      <CardContent className="p-4 md:p-5">
+        <div className="flex items-start justify-between mb-3">
+          <div className={`p-2 rounded-xl ${bg}`}>
+            <Icon className={`w-4 h-4 md:w-5 md:h-5 ${color}`} />
+          </div>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold text-foreground-muted uppercase tracking-wider mb-1">{title}</p>
+          <h3 className="text-xl md:text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{value}</h3>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
