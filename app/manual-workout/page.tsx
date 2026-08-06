@@ -254,20 +254,6 @@ export default function ManualWorkoutCreator() {
         </motion.div>
 
         <motion.div variants={itemVariants} className="space-y-6">
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="p-5">
-              <h3 className="font-bold text-white mb-2 flex items-center gap-2">
-                <Import className="w-4 h-4 text-primary" />
-                Importar Treino
-              </h3>
-              <p className="text-sm text-foreground-muted mb-4">
-                Cole o código ou JSON do treino de um amigo para importar diretamente.
-              </p>
-              <Button variant="outline" fullWidth className="border-primary/30 text-primary hover:bg-primary/10">
-                Importar de Código
-              </Button>
-            </CardContent>
-          </Card>
 
           <Button 
             size="lg" 

@@ -29,9 +29,11 @@ export function InstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Force show prompt after a few seconds anyway, for iOS or HTTP LAN testing
+    // Force show prompt after a few seconds only for iOS
     const timer = setTimeout(() => {
-      setShowPrompt(true);
+      if (isIosDevice) {
+        setShowPrompt(true);
+      }
     }, 3000);
 
     return () => {

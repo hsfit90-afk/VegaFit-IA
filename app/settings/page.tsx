@@ -150,52 +150,7 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          <Card variant="glass">
-            <CardHeader className="mb-6">
-              <CardTitle className="flex items-center gap-2">
-                <Sliders className="w-5 h-5 text-accent" /> Preferências
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-surface rounded-2xl border border-border">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/20 rounded-xl">
-                      <Volume2 className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-medium">Sons do Timer</h3>
-                      <p className="text-xs text-foreground-muted">Tocar alerta quando o descanso terminar</p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={form.soundEnabled} onChange={e => setForm({...form, soundEnabled: e.target.checked})} />
-                    <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                  </label>
-                </div>
 
-                <div>
-                  <label className="text-sm text-foreground-muted block mb-3">Tempo de Descanso Padrão</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[30, 60, 90, 120].map((time) => (
-                      <button
-                        key={time}
-                        onClick={() => setForm({ ...form, defaultRestTimer: time })}
-                        className={`py-2 px-3 rounded-lg text-sm transition-colors border ${
-                          form.defaultRestTimer === time
-                            ? 'bg-primary/20 border-primary text-primary font-bold'
-                            : 'bg-surface border-border text-foreground-muted hover:bg-white/10'
-                        }`}
-                      >
-                        {time}s
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-foreground-muted mt-2">Usado automaticamente ao iniciar o descanso entre as séries.</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <div className="space-y-6">
