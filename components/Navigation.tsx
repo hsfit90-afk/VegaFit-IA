@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2 } from 'lucide-react';
+import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2, PlusCircle } from 'lucide-react';
 import { useAppContext } from '@/app/context/AppContext';
 
 // Full list for Desktop Sidebar
@@ -10,6 +10,7 @@ const DESKTOP_NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/progress', label: 'Progresso', icon: BarChart2 },
   { href: '/generator', label: 'Gerador IA', icon: Zap },
+  { href: '/manual-workout', label: 'Criar Treino', icon: PlusCircle },
   { href: '/active', label: 'Treinar', icon: PlayCircle },
   { href: '/library', label: 'Exercícios', icon: Dumbbell },
   { href: '/history', label: 'Histórico', icon: History },

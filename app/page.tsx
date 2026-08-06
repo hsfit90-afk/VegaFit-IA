@@ -307,12 +307,20 @@ export default function Dashboard() {
                   </Button>
                 </Link>
               ) : (
-                <Link href="/generator" className="block">
-                  <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
-                    GERAR TREINO COM IA
-                    <Zap className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
-                  </Button>
-                </Link>
+                <div className="flex flex-col gap-3">
+                  <Link href="/generator" className="block">
+                    <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
+                      GERAR TREINO COM IA
+                      <Zap className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
+                    </Button>
+                  </Link>
+                  <Link href="/manual-workout" className="block">
+                    <Button size="lg" variant="outline" fullWidth className="group text-base border-primary/50 hover:bg-primary/10">
+                      CRIAR TREINO MANUALMENTE
+                      <Dumbbell className="w-5 h-5 ml-2 group-hover:rotate-12 transition-transform" />
+                    </Button>
+                  </Link>
+                </div>
               )}
             </div>
           </div>
@@ -350,9 +358,23 @@ export default function Dashboard() {
 
       {/* Meus Planos de Treino */}
       <motion.div variants={itemVariants} className="mb-8">
-        <h4 className="text-lg font-bold mb-4 px-1 flex items-center gap-2">
-          <LayoutList className="w-5 h-5 text-primary" /> Meus Planos de Treino
-        </h4>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 px-1 gap-3">
+          <h4 className="text-lg font-bold flex items-center gap-2">
+            <LayoutList className="w-5 h-5 text-primary" /> Meus Planos de Treino
+          </h4>
+          <div className="flex gap-2">
+            <Link href="/manual-workout">
+              <Button size="sm" variant="outline" className="text-xs border-primary/30 hover:bg-primary/10">
+                <Dumbbell className="w-3.5 h-3.5 mr-1.5" /> Criar Manual
+              </Button>
+            </Link>
+            <Link href="/generator">
+              <Button size="sm" className="text-xs shadow-[0_2px_10px_rgba(0,255,136,0.2)]">
+                <Zap className="w-3.5 h-3.5 mr-1.5" /> Gerar com IA
+              </Button>
+            </Link>
+          </div>
+        </div>
         
         {workoutPlans.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -408,10 +430,15 @@ export default function Dashboard() {
             <CardContent className="p-8 text-center flex flex-col items-center">
               <LayoutList className="w-10 h-10 text-foreground-muted opacity-30 mb-3" />
               <p className="text-white font-medium mb-1">Nenhum plano salvo.</p>
-              <p className="text-sm text-foreground-muted mb-4">Gere um treino com IA para começar.</p>
-              <Link href="/generator">
-                <Button size="sm">Criar Plano</Button>
-              </Link>
+              <p className="text-sm text-foreground-muted mb-4">Gere um treino com IA ou crie o seu próprio plano.</p>
+              <div className="flex gap-3 justify-center">
+                <Link href="/generator">
+                  <Button size="sm">Com IA</Button>
+                </Link>
+                <Link href="/manual-workout">
+                  <Button size="sm" variant="outline">Manual</Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         )}
