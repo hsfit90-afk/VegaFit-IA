@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Minus, Plus, Target, Zap, Clock, ChevronRight } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
 import { useAppContext } from '@/app/context/AppContext';
+import { useSearchParams } from 'next/navigation';
 
 export default function Onboarding() {
   const [step, setStep] = useState(1);
@@ -24,6 +25,9 @@ export default function Onboarding() {
   const [age, setAge] = useState(25);
   const [days, setDays] = useState(4);
   const [duration, setDuration] = useState('60');
+
+  const searchParams = useSearchParams();
+  const trainerId = searchParams.get('trainer');
 
   const totalSteps = 6;
 
@@ -56,6 +60,8 @@ export default function Onboarding() {
       geminiApiKey: '',
       soundEnabled: true,
       defaultRestTimer: 60,
+      role: 'client',
+      trainerId: trainerId || null,
     };
 
     const { error } = await supabase.from('profiles').upsert({
@@ -68,7 +74,9 @@ export default function Onboarding() {
       level: newProfile.level,
       intent: newProfile.intent,
       sound_enabled: newProfile.soundEnabled,
-      default_rest_timer: newProfile.defaultRestTimer
+      default_rest_timer: newProfile.defaultRestTimer,
+      role: newProfile.role,
+      trainer_id: newProfile.trainerId
     });
 
     if (error) {

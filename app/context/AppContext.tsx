@@ -76,7 +76,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           soundEnabled: profileData.sound_enabled,
           defaultRestTimer: profileData.default_rest_timer,
           bannedExercises: profileData.banned_exercises || [],
+          role: profileData.role || 'client',
+          trainerId: profileData.trainer_id || null,
         });
+
+        const path = window.location.pathname;
+        const role = profileData.role || 'client';
+        
+        if (role === 'master' && path !== '/admin' && !path.startsWith('/admin')) {
+          router.push('/admin');
+          return;
+        } else if (role === 'trainer' && path !== '/trainer' && !path.startsWith('/trainer')) {
+          router.push('/trainer');
+          return;
+        }
+
       } else if (!profileData && mounted) {
         const path = window.location.pathname;
         if (path !== '/onboarding' && path !== '/login' && path !== '/register') {
@@ -166,7 +180,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       gemini_api_key: newProfile.geminiApiKey,
       sound_enabled: newProfile.soundEnabled,
       default_rest_timer: newProfile.defaultRestTimer,
-      banned_exercises: newProfile.bannedExercises || []
+      banned_exercises: newProfile.bannedExercises || [],
+      role: newProfile.role || 'client',
+      trainer_id: newProfile.trainerId || null
     });
   };
 

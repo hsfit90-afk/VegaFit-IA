@@ -5,10 +5,14 @@ import { useEffect } from 'react';
 import { Navigation } from './Navigation';
 import { InstallPrompt } from './InstallPrompt';
 import { AnimatePresence, motion } from 'motion/react';
+import { useAppContext } from '@/app/context/AppContext';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const hideNavigation = ['/login', '/register', '/onboarding'].includes(pathname);
+  const { profile } = useAppContext();
+  const hideNavigation = ['/login', '/register', '/onboarding'].includes(pathname) || 
+                         profile?.role === 'master' || 
+                         profile?.role === 'trainer';
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {

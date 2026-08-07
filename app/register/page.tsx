@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Dumbbell, Loader2 } from 'lucide-react';
 
@@ -13,6 +13,9 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
+
+  const searchParams = useSearchParams();
+  const trainerId = searchParams.get('trainer');
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +34,7 @@ export default function Register() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push('/onboarding');
+      router.push(`/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`);
     }
   };
 

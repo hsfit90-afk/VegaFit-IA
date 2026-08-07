@@ -88,4 +88,6 @@ export interface UserProfile {
   soundEnabled: boolean;
   defaultRestTimer: number;
   bannedExercises?: string[];
+  role?: string;
+  trainerId?: string | null;
 }
