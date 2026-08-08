@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { Dumbbell, Flame, Trophy, Calendar, Lightbulb, ChevronRight, Activity, Zap, Star, LayoutList, Trash2, CheckCircle2 } from 'lucide-react';
+import { Dumbbell, Flame, Trophy, Calendar, Lightbulb, ChevronRight, Activity, Zap, Star, LayoutList, Trash2, CheckCircle2, PlayCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
@@ -308,18 +308,26 @@ export default function Dashboard() {
                 </Link>
               ) : (
                 <div className="flex flex-col gap-3">
-                  <Link href="/generator" className="block">
-                    <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
-                      GERAR TREINO COM IA
-                      <Zap className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
-                    </Button>
-                  </Link>
-                  <Link href="/manual-workout" className="block">
-                    <Button size="lg" variant="outline" fullWidth className="group text-base border-primary/50 hover:bg-primary/10">
-                      CRIAR TREINO MANUALMENTE
-                      <Dumbbell className="w-5 h-5 ml-2 group-hover:rotate-12 transition-transform" />
-                    </Button>
-                  </Link>
+                  {!profile?.trainerId ? (
+                    <>
+                      <Link href="/generator" className="block">
+                        <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
+                          GERAR TREINO COM IA
+                          <Zap className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
+                        </Button>
+                      </Link>
+                      <Link href="/manual-workout" className="block">
+                        <Button size="lg" variant="outline" fullWidth className="group text-base border-primary/50 hover:bg-primary/10">
+                          CRIAR TREINO MANUALMENTE
+                          <Dumbbell className="w-5 h-5 ml-2 group-hover:rotate-12 transition-transform" />
+                        </Button>
+                      </Link>
+                    </>
+                  ) : (
+                    <div className="text-center p-4 bg-surface rounded-xl border border-white/5">
+                      <p className="text-foreground-muted">Aguardando seu professor enviar o seu treino.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -363,82 +371,92 @@ export default function Dashboard() {
             <LayoutList className="w-5 h-5 text-primary" /> Meus Planos de Treino
           </h4>
           <div className="flex gap-2">
-            <Link href="/manual-workout">
-              <Button size="sm" variant="outline" className="text-xs border-primary/30 hover:bg-primary/10">
-                <Dumbbell className="w-3.5 h-3.5 mr-1.5" /> Criar Manual
-              </Button>
-            </Link>
-            <Link href="/generator">
-              <Button size="sm" className="text-xs shadow-[0_2px_10px_rgba(0,255,136,0.2)]">
-                <Zap className="w-3.5 h-3.5 mr-1.5" /> Gerar com IA
-              </Button>
-            </Link>
+            {!profile?.trainerId ? (
+              <>
+                <Link href="/manual-workout">
+                  <Button size="sm" variant="outline" className="text-xs border-primary/30 hover:bg-primary/10">
+                    <Dumbbell className="w-3.5 h-3.5 mr-1.5" /> Criar Manual
+                  </Button>
+                </Link>
+                <Link href="/generator">
+                  <Button size="sm" className="text-xs shadow-[0_2px_10px_rgba(0,255,136,0.2)]">
+                    <Zap className="w-3.5 h-3.5 mr-1.5" /> Gerar com IA
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <span className="text-xs text-primary px-3 py-1.5 bg-primary/10 rounded-lg flex items-center gap-2 font-semibold border border-primary/20">
+                <Star className="w-3.5 h-3.5" /> Acompanhamento Personalizado
+              </span>
+            )}
           </div>
         </div>
         
         {workoutPlans.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {workoutPlans.map(plan => (
-              <Card key={plan.id} className={`transition-all ${activePlanId === plan.id ? 'border-primary shadow-[0_0_15px_rgba(0,255,136,0.1)]' : 'border-border'}`}>
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start mb-3">
+          <div className="w-full">
+            {(() => {
+              // Puxar o plano ativo, se não achar puxar o primeiro (mais recente)
+              const activePlan = workoutPlans.find(p => p.id === activePlanId) || workoutPlans[0];
+              return (
+              <Card key={activePlan.id} className="border-primary shadow-[0_0_20px_rgba(0,255,136,0.15)] bg-surface-light relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+                
+                <CardContent className="p-6 md:p-8 relative z-10">
+                  <div className="flex justify-between items-start mb-6">
                     <div>
-                      <h4 className="font-bold text-lg text-white mb-1">{plan.name}</h4>
-                      <p className="text-xs text-foreground-muted">{plan.split} • {plan.sessions.length} sessões</p>
-                    </div>
-                    {activePlanId === plan.id && (
-                      <span className="bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full">
-                        Ativo
+                      <span className="bg-primary/20 text-primary text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full inline-block mb-3">
+                        🏋️ TREINO ATUAL
                       </span>
-                    )}
+                      <h4 className="font-outfit font-extrabold text-3xl text-white mb-1">{activePlan.name}</h4>
+                      <p className="text-sm text-gray-400 font-medium">{activePlan.split} • {activePlan.sessions.length} sessões</p>
+                    </div>
                   </div>
                   
-                  <div className="flex gap-2 mt-4 pt-4 border-t border-border">
-                    {activePlanId !== plan.id ? (
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        fullWidth 
-                        onClick={() => setActivePlan(plan.id)}
-                      >
-                        Ativar Plano
+                  <div className="flex flex-col md:flex-row items-center gap-3 mt-8">
+                    <Link href="/active" className="w-full md:w-auto flex-1">
+                      <Button size="lg" className="w-full font-bold text-base h-14 shadow-[0_2px_15px_rgba(0,255,136,0.3)]">
+                        <PlayCircle className="w-6 h-6 mr-2" /> INICIAR TREINO DE HOJE
                       </Button>
-                    ) : (
-                      <Button size="sm" disabled fullWidth variant="outline" className="opacity-50">
-                        Plano em Uso
-                      </Button>
-                    )}
+                    </Link>
                     
                     <button 
                       onClick={() => {
-                        if (confirm(`Deseja realmente apagar o plano "${plan.name}"?`)) {
-                          deleteWorkoutPlan(plan.id);
+                        if (confirm(`Deseja realmente excluir este plano?`)) {
+                          deleteWorkoutPlan(activePlan.id);
                         }
                       }}
-                      className="p-2 bg-surface hover:bg-destructive/20 text-foreground-muted hover:text-destructive rounded-lg border border-border hover:border-destructive/30 transition-colors shrink-0"
-                      title="Apagar plano"
+                      className="w-full md:w-auto h-14 px-6 rounded-xl bg-surface border border-white/5 text-gray-400 hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 flex items-center justify-center gap-2 transition-all font-semibold"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" /> Excluir
                     </button>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })()}
           </div>
         ) : (
           <Card>
             <CardContent className="p-8 text-center flex flex-col items-center">
               <LayoutList className="w-10 h-10 text-foreground-muted opacity-30 mb-3" />
               <p className="text-white font-medium mb-1">Nenhum plano salvo.</p>
-              <p className="text-sm text-foreground-muted mb-4">Gere um treino com IA ou crie o seu próprio plano.</p>
-              <div className="flex gap-3 justify-center">
-                <Link href="/generator">
-                  <Button size="sm">Com IA</Button>
-                </Link>
-                <Link href="/manual-workout">
-                  <Button size="sm" variant="outline">Manual</Button>
-                </Link>
-              </div>
+              {!profile?.trainerId ? (
+                <>
+                  <p className="text-sm text-foreground-muted mb-4">Gere um treino com IA ou crie o seu próprio plano.</p>
+                  <div className="flex gap-3 justify-center">
+                    <Link href="/generator">
+                      <Button size="sm">Com IA</Button>
+                    </Link>
+                    <Link href="/manual-workout">
+                      <Button size="sm" variant="outline">Manual</Button>
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-foreground-muted mb-4 mt-2">
+                  Você está sendo acompanhado por um treinador. Seus treinos aparecerão aqui assim que forem enviados.
+                </p>
+              )}
             </CardContent>
           </Card>
         )}

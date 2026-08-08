@@ -78,24 +78,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           bannedExercises: profileData.banned_exercises || [],
           role: profileData.role || 'client',
           trainerId: profileData.trainer_id || null,
+          maxClients: profileData.max_clients || 5,
         });
 
         const path = window.location.pathname;
         const role = profileData.role || 'client';
         
-        if (role === 'master' && path !== '/admin' && !path.startsWith('/admin')) {
-          router.push('/admin');
-          return;
-        } else if (role === 'trainer' && path !== '/trainer' && !path.startsWith('/trainer')) {
-          router.push('/trainer');
-          return;
+        // Removido o bloqueio estrito de rotas para permitir navegação
+        // Apenas redireciona se estiver na tela de login/onboarding
+        if (path === '/login' || path === '/register') {
+          if (role === 'master') {
+            router.push('/admin');
+          } else if (role === 'trainer') {
+            router.push('/trainer');
+          } else {
+            router.push('/');
+          }
         }
-
       } else if (!profileData && mounted) {
         const path = window.location.pathname;
         if (path !== '/onboarding' && path !== '/login' && path !== '/register') {
           router.push('/onboarding');
-          return;
+          // Important: We don't return here so that setIsLoaded(true) is reached
         }
       }
 
@@ -182,7 +186,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       default_rest_timer: newProfile.defaultRestTimer,
       banned_exercises: newProfile.bannedExercises || [],
       role: newProfile.role || 'client',
-      trainer_id: newProfile.trainerId || null
+      trainer_id: newProfile.trainerId || null,
+      max_clients: newProfile.maxClients || 5
     });
   };
 

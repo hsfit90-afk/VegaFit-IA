@@ -36,7 +36,7 @@ export default function TrainerDashboard() {
     if (profile && (profile.role === 'trainer' || profile.role === 'master')) {
       loadClients();
     }
-  }, [profile, userId, router, supabase]);
+  }, [profile, userId, router]);
 
   if (loading) {
     return (
@@ -54,17 +54,39 @@ export default function TrainerDashboard() {
           <p className="text-gray-400">Gerencie seus alunos e acompanhe o progresso.</p>
         </div>
         <button 
-          onClick={() => alert(`Seu link de convite: ${window.location.origin}/register?trainer=${userId}`)}
-          className="bg-primary text-black font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+          onClick={() => {
+            if (clients.length >= (profile?.maxClients || 5)) {
+              alert("Você atingiu o limite máximo de alunos. Contate o administrador para aumentar o seu plano.");
+              return;
+            }
+            const link = `${window.location.origin}/register?trainer=${profile?.id}`;
+            navigator.clipboard.writeText(link).then(() => {
+              alert(`O link foi COPIADO para o seu "Control C"!\n\nAgora é só abrir uma nova aba anônima e dar "Control V" na barra de endereços (lá em cima) para colar o link: \n\n${link}`);
+            }).catch(() => {
+              alert(`Copie o link inteiro abaixo e cole na barra de endereços:\n\n${link}`);
+            });
+          }}
+          disabled={clients.length >= (profile?.maxClients || 5)}
+          className={`font-semibold px-4 py-2 rounded-lg transition-colors ${
+            clients.length >= (profile?.maxClients || 5) 
+              ? 'bg-surface-light text-foreground-muted cursor-not-allowed opacity-50' 
+              : 'bg-primary text-black hover:bg-primary/90'
+          }`}
         >
-          + Convidar Aluno
+          {clients.length >= (profile?.maxClients || 5) ? 'Limite Atingido' : '+ Convidar Aluno'}
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-6 bg-surface border-white/5">
           <h3 className="text-gray-400 font-medium mb-1">Total de Alunos</h3>
-          <p className="text-4xl font-bold text-white">{clients.length}</p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-4xl font-bold text-white">{clients.length}</p>
+            <p className="text-gray-500 font-medium text-lg">/ {profile?.maxClients || 5}</p>
+          </div>
+          {clients.length >= (profile?.maxClients || 5) && (
+            <p className="text-xs text-destructive mt-2">Limite máximo atingido</p>
+          )}
         </Card>
       </div>
 
@@ -80,7 +102,7 @@ export default function TrainerDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {clients.map(client => (
               <Card key={client.id} className="p-6 bg-surface border-white/5 hover:border-primary/30 transition-colors cursor-pointer"
-                onClick={() => alert('Em breve: Ver progresso e montar treino para ' + client.name)}
+                onClick={() => router.push(`/trainer/${client.id}`)}
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>

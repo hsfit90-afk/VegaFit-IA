@@ -58,7 +58,8 @@ export async function POST(req: NextRequest) {
       exercisesPerSession = level.includes('inici') ? 6 : level.includes('interm') ? 7 : 8;
     }
 
-    const prompt = `Você é um personal trainer especialista em musculação e periodização.
+    const prompt = `Você é um personal trainer especialista em musculação, hipertrofia e periodização esportiva.
+Baseie-se ESTRITAMENTE no consenso científico atual sobre hipertrofia (Schoenfeld et al., 2021 - IUSCA).
 Crie um plano de treino estruturado em JSON para um aluno com o seguinte perfil:
 - Objetivo: ${config.goal || profile?.goal || 'Hipertrofia'}
 - Nível de experiência: ${config.level || profile?.level || 'Iniciante'}
@@ -72,12 +73,12 @@ Crie um plano de treino estruturado em JSON para um aluno com o seguinte perfil:
 REGRA CRÍTICA DE EXERCÍCIOS DISPONÍVEIS:
 Você DEVE escolher os exercícios APENAS desta lista aprovada:
 [${exerciseListStr}]
-NÃO invente exercícios fora dessa lista. Use o NOME EXATO que está na lista. Se você mudar uma única letra ou inventar um exercício, o vídeo vai quebrar no aplicativo. Se precisar de um substituto, escolha o mais próximo dentro desta lista, copiando o nome perfeitamente.
+NÃO invente exercícios fora dessa lista. Use o NOME EXATO que está na lista. Se precisar de um substituto, escolha o mais próximo dentro desta lista, copiando o nome perfeitamente.
 
-REGRA CRÍTICA SOBRE QUANTIDADE DE EXERCÍCIOS:
-Cada sessão DEVE conter EXATAMENTE ${exercisesPerSession} exercícios. Não menos, não mais.
-Isso é calculado com base na duração de ${config.duration} minutos e nível ${config.level || profile?.level || 'Iniciante'}.
-Um treino de ${config.duration} minutos para nível ${config.level || profile?.level || 'Iniciante'} REQUER ${exercisesPerSession} exercícios para preencher o tempo adequadamente com aquecimento, séries e descanso.
+REGRA CRÍTICA SOBRE QUANTIDADE DE EXERCÍCIOS E VOLUME (SCHOENFELD, 2021):
+1. Cada sessão DEVE conter EXATAMENTE ${exercisesPerSession} exercícios para preencher a duração de ${config.duration} minutos.
+2. Volume Semanal: Busque entre 10 a 20 séries semanais por grupo muscular.
+3. Periodização de 4 Semanas: O plano DEVE ser um Mesociclo de 4 semanas com progressão de volume (Progressive Overload). O campo "sets" e "reps" deve refletir a Semana 1. O campo "method" OBRIGATORIAMENTE deve conter como o aluno vai progredir nas próximas semanas (ex: "Semana 1: 3 séries | Semana 2: 4 séries | Semana 3: 5 séries | Semana 4 (Deload): 2 séries").
 
 RETORNE APENAS O JSON, SEM MARCAÇÃO MARKDOWN.
 Formato OBRIGATÓRIO do JSON:
@@ -95,8 +96,8 @@ Formato OBRIGATÓRIO do JSON:
           "sets": 3,
           "reps": "10-12",
           "restSeconds": 60,
-          "tips": "Dica curta de execução",
-          "method": "Descrição breve do método aplicado a este exercício (ex: Drop Set nas últimas 2 séries)",
+          "tips": "Dica curta de execução focada na tensão mecânica.",
+          "method": "DESCRIÇÃO DA PROGRESSÃO DE 4 SEMANAS + Método Aplicado (ex: Semana 1-2: 3 séries. Semana 3: 4 séries. Sem 4: Deload. Use pirâmide de cargas).",
           "youtubeSearchTerm": "nome do exercício como executar corretamente"
         }
       ]

@@ -88,6 +88,7 @@ export interface UserProfile {
   soundEnabled: boolean;
   defaultRestTimer: number;
   bannedExercises?: string[];
-  role?: string;
+  role?: 'client' | 'trainer' | 'master';
   trainerId?: string | null;
+  maxClients?: number;
 }

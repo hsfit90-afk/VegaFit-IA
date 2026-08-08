@@ -10,9 +10,7 @@ import { useAppContext } from '@/app/context/AppContext';
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { profile } = useAppContext();
-  const hideNavigation = ['/login', '/register', '/onboarding'].includes(pathname) || 
-                         profile?.role === 'master' || 
-                         profile?.role === 'trainer';
+  const hideNavigation = ['/login', '/register', '/onboarding'].includes(pathname);
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {

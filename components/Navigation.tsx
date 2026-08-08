@@ -30,10 +30,36 @@ const MOBILE_NAV_ITEMS = [
 
 export function Navigation() {
   const pathname = usePathname();
-  const { clearData } = useAppContext();
+  const { profile, clearData } = useAppContext();
 
   const hideNavigation = ['/login', '/register', '/onboarding'].includes(pathname);
   if (hideNavigation) return null;
+
+  // Filtrar menu baseado no perfil
+  const role = profile?.role || 'client';
+  
+  let desktopItems = [...DESKTOP_NAV_ITEMS];
+  
+  // Adicionar painéis específicos baseados na role
+  if (role === 'master') {
+    desktopItems.unshift({ href: '/admin', label: 'Admin (Master)', icon: Settings });
+    desktopItems.unshift({ href: '/trainer', label: 'Meus Alunos', icon: Zap });
+  } else if (role === 'trainer') {
+    desktopItems.unshift({ href: '/trainer', label: 'Meus Alunos', icon: Zap });
+  }
+
+  const filteredDesktopNav = desktopItems.filter(item => {
+    // Alunos com personal não devem gerar próprios treinos
+    if (profile?.trainerId) {
+      if (item.href === '/generator' || item.href === '/manual-workout' || item.href === '/library') return false;
+    }
+    return true;
+  });
+
+  const filteredMobileNav = MOBILE_NAV_ITEMS.filter(item => {
+    // Same filtering logic for mobile if needed, though MOBILE_NAV_ITEMS doesn't have generator
+    return true;
+  });
 
   return (
     <>
@@ -47,7 +73,7 @@ export function Navigation() {
         </div>
         
         <nav className="flex-1 flex flex-col gap-1 overflow-y-auto hide-scrollbar">
-          {DESKTOP_NAV_ITEMS.map((item) => {
+          {filteredDesktopNav.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
@@ -80,7 +106,7 @@ export function Navigation() {
 
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full glass-panel border-t-white/10 px-2 pt-3 pb-safe z-50 flex items-center justify-around rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-        {MOBILE_NAV_ITEMS.map((item) => {
+        {filteredMobileNav.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           return (

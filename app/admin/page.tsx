@@ -32,7 +32,25 @@ export default function AdminDashboard() {
     if (profile?.role === 'master') {
       loadUsers();
     }
-  }, [profile, router, supabase]);
+  }, [profile, router]);
+
+  const updateLimit = async (userId: string, currentLimit: number) => {
+    const newLimit = prompt('Digite o novo limite máximo de alunos para este personal:', currentLimit.toString());
+    if (newLimit !== null) {
+      const parsed = parseInt(newLimit, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        const { error } = await supabase.from('profiles').update({ max_clients: parsed }).eq('id', userId);
+        if (error) {
+          alert('Erro ao atualizar limite: ' + error.message);
+        } else {
+          setUsers(prev => prev.map(u => u.id === userId ? { ...u, max_clients: parsed } : u));
+          alert('Limite atualizado com sucesso!');
+        }
+      } else {
+        alert('Valor inválido.');
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -77,7 +95,8 @@ export default function AdminDashboard() {
                   <th className="px-6 py-4">Nome</th>
                   <th className="px-6 py-4">Papel (Role)</th>
                   <th className="px-6 py-4">Trainer ID</th>
-                  <th className="px-6 py-4">Criado em</th>
+                  <th className="px-6 py-4">Limite</th>
+                  <th className="px-6 py-4 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -93,7 +112,19 @@ export default function AdminDashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-4 font-mono text-xs text-gray-500">{u.trainer_id || '-'}</td>
-                    <td className="px-6 py-4">{new Date(u.created_at || Date.now()).toLocaleDateString('pt-BR')}</td>
+                    <td className="px-6 py-4 font-bold text-white">
+                      {u.role === 'trainer' ? (u.max_clients || 5) : '-'}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {u.role === 'trainer' && (
+                        <button 
+                          onClick={() => updateLimit(u.id, u.max_clients || 5)}
+                          className="text-xs bg-surface-light hover:bg-primary/20 hover:text-primary transition-colors px-3 py-1.5 rounded-lg border border-white/5"
+                        >
+                          Editar Limite
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
