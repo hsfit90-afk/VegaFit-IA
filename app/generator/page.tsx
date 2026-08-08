@@ -70,6 +70,23 @@ export default function Generator() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao gerar treino');
 
+      // BUG FIX: Validação do schema do JSON retornado pela IA
+      if (!data.sessions || !Array.isArray(data.sessions) || data.sessions.length === 0) {
+        throw new Error('A IA não gerou sessões de treino válidas. Por favor, tente novamente.');
+      }
+
+      // BUG FIX: Fallback para exercícios inventados pela IA
+      // Se a IA criar um exercício que não existe na biblioteca, buscamos um real do mesmo músculo
+      const findFallbackExercise = (muscleGroup: string, excludeName: string): DbExercise | null => {
+        const normalize = (s: string) => s ? s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim() : '';
+        const targetMuscle = normalize(muscleGroup);
+        if (!targetMuscle || targetMuscle === 'geral') return null;
+        return dbExercises.find(dbEx =>
+          normalize(dbEx.muscleGroup) === targetMuscle &&
+          dbEx.name.trim().toLowerCase() !== excludeName.trim().toLowerCase()
+        ) || null;
+      };
+
       // Cruza os nomes da IA com a biblioteca local para obter os IDs reais
       const plan = {
         ...data,
@@ -79,14 +96,41 @@ export default function Generator() {
           ...session,
           id: crypto.randomUUID(),
           exercises: session.exercises.map((ex: any) => {
+            // Tenta encontrar por nome exato
             const matchedDbEx = dbExercises.find((dbEx: DbExercise) =>
               dbEx.name.trim().toLowerCase() === ex.name.trim().toLowerCase()
             );
+
+            if (matchedDbEx) {
+              // Exercício encontrado na biblioteca
+              return {
+                ...ex,
+                id: crypto.randomUUID(),
+                exerciseId: matchedDbEx.id,
+                muscleGroup: matchedDbEx.muscleGroup
+              };
+            }
+
+            // BUG FIX: A IA inventou um exercício — tenta substituir por um real do mesmo músculo
+            const fallback = findFallbackExercise(ex.muscleGroup || '', ex.name);
+            if (fallback) {
+              console.warn(`[VegaFit] IA inventou "${ex.name}" (não encontrado na biblioteca). Substituindo por "${fallback.name}" (${fallback.muscleGroup}).`);
+              return {
+                ...ex,
+                id: crypto.randomUUID(),
+                exerciseId: fallback.id,
+                name: fallback.name,
+                muscleGroup: fallback.muscleGroup
+              };
+            }
+
+            // Ültimo recurso: exerce o plano sem ID válido (custom)
+            console.warn(`[VegaFit] Não foi possível encontrar substituto para "${ex.name}" (músculo: ${ex.muscleGroup}).`);
             return {
               ...ex,
               id: crypto.randomUUID(),
-              exerciseId: matchedDbEx ? matchedDbEx.id : ('custom-' + crypto.randomUUID()),
-              muscleGroup: matchedDbEx ? matchedDbEx.muscleGroup : (ex.muscleGroup || 'Geral')
+              exerciseId: 'custom-' + crypto.randomUUID(),
+              muscleGroup: ex.muscleGroup || 'Desconhecido'
             };
           })
         }))

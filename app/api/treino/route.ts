@@ -58,10 +58,17 @@ export async function POST(req: NextRequest) {
       exercisesPerSession = level.includes('inici') ? 6 : level.includes('interm') ? 7 : 8;
     }
 
+    const userGoal = config.goal || profile?.goal || 'Hipertrofia';
+    
+    // Novo: Base científica dinâmica baseada no objetivo
+    const scientificBasis = userGoal.toLowerCase().includes('emagrec') || userGoal.toLowerCase().includes('perder peso')
+      ? "Baseie-se ESTRITAMENTE no consenso EASO (Bellicha et al., 2021) e ACSM para emagrecimento: priorize a manutenção de massa magra com musculação (tensão mecânica) associada a alto gasto calórico no volume total."
+      : "Baseie-se ESTRITAMENTE no consenso científico atual sobre hipertrofia (Schoenfeld et al., 2021 - IUSCA).";
+
     const prompt = `Você é um personal trainer especialista em musculação, hipertrofia e periodização esportiva.
-Baseie-se ESTRITAMENTE no consenso científico atual sobre hipertrofia (Schoenfeld et al., 2021 - IUSCA).
+${scientificBasis}
 Crie um plano de treino estruturado em JSON para um aluno com o seguinte perfil:
-- Objetivo: ${config.goal || profile?.goal || 'Hipertrofia'}
+- Objetivo: ${userGoal}
 - Nível de experiência: ${config.level || profile?.level || 'Iniciante'}
 - Dias por semana: ${config.daysPerWeek}
 - Duração por sessão: ${config.duration} minutos
@@ -114,7 +121,9 @@ Aplique o método ${methodLabel.toUpperCase()} de forma coerente em todos os exe
       model: "llama-3.3-70b-versatile",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      max_tokens: 2500,
+      // BUG FIX: 2500 tokens era insuficiente para planos de 5-6 dias com muitos exercícios
+      // JSON truncado causava JSON.parse() falhar silenciosamente
+      max_tokens: 4096,
     });
 
     const text = response.choices[0]?.message?.content;
@@ -124,6 +133,18 @@ Aplique o método ${methodLabel.toUpperCase()} de forma coerente em todos os exe
     }
 
     const json = JSON.parse(text);
+
+    // BUG FIX: Validação do schema antes de retornar ao cliente
+    if (!json.sessions || !Array.isArray(json.sessions) || json.sessions.length === 0) {
+      throw new Error('A IA não gerou sessões de treino. Tente novamente.');
+    }
+
+    // Garante que nenhuma sessão veio sem exercícios
+    for (const session of json.sessions) {
+      if (!session.exercises || !Array.isArray(session.exercises) || session.exercises.length === 0) {
+        throw new Error(`A sessão "${session.name || 'sem nome'}" veio sem exercícios. Tente novamente.`);
+      }
+    }
 
     return NextResponse.json(json);
 

@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { useRouter } from 'next/navigation';
-import { Check, Clock, Play, PlayCircle, Trophy, X, Zap, RefreshCw, Trash2 } from 'lucide-react';
+import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame } from 'lucide-react';
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import confetti from 'canvas-confetti';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { getExercises, deleteExercise } from '@/lib/db/exercises';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, history, activePlanId } = useAppContext();
@@ -26,11 +27,16 @@ export default function ActiveWorkout() {
   const [restTimer, setRestTimer] = useState<number>(0);
   const [isFinished, setIsFinished] = useState(false);
   const [finishedVolume, setFinishedVolume] = useState(0);
+  const [finishedDuration, setFinishedDuration] = useState(0);
+  const [finishedExercises, setFinishedExercises] = useState<ActiveExercise[]>([]);
   const [showToast, setShowToast] = useState(false);
+  // BUG FIX: Substituído o hack window.recentPRs por useState
+  const [recentPRs, setRecentPRs] = useState<string[]>([]);
+  // FEATURE: Cronômetro ao vivo do treino
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showVideoFor, setShowVideoFor] = useState<string | null>(null);
   const [libraryExercises, setLibraryExercises] = useState<any[]>([]); // To store DB exercises for mediaUrl
-  const { getExercises, deleteExercise } = require('@/lib/db/exercises');
 
   useEffect(() => {
     // Load library exercises to map mediaUrl
@@ -59,6 +65,15 @@ export default function ActiveWorkout() {
     // Initialize audio
     audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
   }, [currentSession, activeExercises.length]);
+
+  // FEATURE: Cronômetro ao vivo — atualiza a cada segundo
+  useEffect(() => {
+    if (startTime === 0 || isFinished) return;
+    const interval = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [startTime, isFinished]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -245,12 +260,21 @@ export default function ActiveWorkout() {
     // Pegar alternativas da biblioteca
     const banned = profile?.bannedExercises || [];
     
+    // BUG FIX: Normalização sem includes() bidirecional — evita falsos positivos
+    // Ex: "Peito".includes("") === true (string vazia bate com tudo!)
     const normalize = (s: string) => s ? s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
     const currentMuscle = normalize(currentActiveEx.muscleGroup);
 
+    // Se o muscleGroup estiver vazio ou 'geral', não permite swap (exercício inválido da IA)
+    if (!currentMuscle || currentMuscle === 'geral' || currentMuscle === 'desconhecido') {
+      alert(`O exercício "${currentActiveEx.name}" não tem um grupo muscular válido definido. Não é possível buscar alternativas.`);
+      return;
+    }
+
     const alternatives = libraryExercises.filter(ex => {
       const exMuscle = normalize(ex.muscleGroup);
-      const isSameMuscle = exMuscle && currentMuscle && (exMuscle === currentMuscle || exMuscle.includes(currentMuscle) || currentMuscle.includes(exMuscle));
+      // BUG FIX: Comparação ESTRITA por igualdade — sem includes() que causava falsos positivos
+      const isSameMuscle = exMuscle === currentMuscle;
       
       return isSameMuscle && 
              ex.id !== currentActiveEx.exerciseId &&
@@ -277,7 +301,7 @@ export default function ActiveWorkout() {
       return updated;
     });
 
-    // 2. Atualizar o plano master no Supabase (se quisermos persistir)
+    // 2. Atualizar o plano master no Supabase (persiste a troca)
     if (currentPlan) {
       const updatedPlan = {
         ...currentPlan,
@@ -335,17 +359,18 @@ export default function ActiveWorkout() {
         const updatedDb = libraryExercises.filter(e => e.id !== realExerciseId);
         setLibraryExercises(updatedDb);
         
-        const banned = profile?.bannedExercises || [];
-        // Add the newly banned one to the list so we don't pick it as alternative right away if not owner
-        if (!isOwner) banned.push(realExerciseId);
+        // BUG FIX: Não mutamos o array do profile diretamente — criamos uma nova lista
+        const currentBanned = [...(profile?.bannedExercises || [])];
+        if (!isOwner) currentBanned.push(realExerciseId);
 
+        // BUG FIX: Comparação estrita — sem includes() bidirecional
         const normalize = (s: string) => s ? s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
         const currentMuscle = normalize(currentActiveEx.muscleGroup);
 
         const alternatives = updatedDb.filter(ex => {
           const exMuscle = normalize(ex.muscleGroup);
-          const isSameMuscle = exMuscle && currentMuscle && (exMuscle === currentMuscle || exMuscle.includes(currentMuscle) || currentMuscle.includes(exMuscle));
-          return isSameMuscle && !banned.includes(ex.id);
+          // Comparação estrita por igualdade evita falsos positivos
+          return exMuscle === currentMuscle && !currentBanned.includes(ex.id);
         });
         
         if (alternatives.length > 0) {
@@ -448,14 +473,11 @@ export default function ActiveWorkout() {
       advanceSession(currentPlan.sessions.length);
     }
     
-    // Configura os estados de finalização
+    // BUG FIX: Substituído o hack window.recentPRs por useState
     setFinishedVolume(totalVolume);
-    // Se teve PR, salva no state provisório (vamos reaproveitar o showToast para exibir PR)
-    if (newPrs.length > 0) {
-      (window as any).recentPRs = newPrs; // Hack rápido para passar o estado sem criar novo useState agora
-    } else {
-      (window as any).recentPRs = [];
-    }
+    setFinishedDuration(durationSeconds);
+    setFinishedExercises([...activeExercises]);
+    setRecentPRs(newPrs);
 
     setIsFinished(true);
     setShowToast(true);
@@ -470,35 +492,82 @@ export default function ActiveWorkout() {
     });
   };
 
+  // FEATURE: Compartilhar treino concluído via Web Share API
+  const handleShare = async () => {
+    const durationMin = Math.floor(finishedDuration / 60);
+    const completedExNames = finishedExercises.map(ex => `• ${ex.name}`).join('\n');
+    const prText = recentPRs.length > 0 ? `\n\n🏆 Recordes pessoais:\n${recentPRs.map(pr => `• ${pr}`).join('\n')}` : '';
+    const text = `💪 Treino concluído no VegaFit!\n\n📋 ${currentSession?.name || 'Treino'}\n⏱️ Duração: ${durationMin} min\n🔥 Volume: ${finishedVolume} kg\n\nExercícios:\n${completedExNames}${prText}\n\n🚀 Gerado com IA no VegaFit`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'VegaFit — Treino Concluído!', text });
+      } catch (e) { /* usuário cancelou */ }
+    } else {
+      // Fallback: copia para clipboard
+      await navigator.clipboard.writeText(text);
+      alert('Resumo copiado! Cole onde quiser 😊');
+    }
+  };
+
   if (isFinished) {
+    const durationMin = Math.floor(finishedDuration / 60);
+    const completedSetsCount = finishedExercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
+
     return (
-      <div className="p-6 md:p-10 max-w-2xl mx-auto text-center pt-20 animate-fade-in">
-        <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-6">
+      <div className="p-6 md:p-10 max-w-2xl mx-auto text-center pt-12 animate-fade-in pb-32">
+        {/* Trophy Icon */}
+        <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_60px_rgba(0,255,136,0.4)]">
           <Trophy className="w-12 h-12 text-[#0a0a0f]" />
         </div>
-        <h1 className="text-4xl font-outfit font-bold mb-4 text-primary">Treino Concluído!</h1>
-        <p className="text-foreground-muted mb-8 text-lg">Excelente trabalho! O descanso também faz parte do processo.</p>
-        <Button onClick={() => router.push('/')} variant="outline" size="lg">
-          Voltar ao Início
-        </Button>
+        <h1 className="text-4xl font-outfit font-bold mb-2 text-primary">Treino Concluído!</h1>
+        <p className="text-foreground-muted mb-8 text-base">Excelente trabalho, {profile?.name || 'Atleta'}! 🔥</p>
 
-        {/* Toast Notification */}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="bg-surface border border-border rounded-2xl p-4 flex flex-col items-center gap-2">
+            <Timer className="w-5 h-5 text-blue-400" />
+            <span className="text-2xl font-mono font-bold text-white">{durationMin}</span>
+            <span className="text-[10px] text-foreground-muted uppercase tracking-widest font-semibold">min</span>
+          </div>
+          <div className="bg-surface border border-border rounded-2xl p-4 flex flex-col items-center gap-2">
+            <Zap className="w-5 h-5 text-primary" />
+            <span className="text-2xl font-mono font-bold text-white">{finishedVolume}</span>
+            <span className="text-[10px] text-foreground-muted uppercase tracking-widest font-semibold">kg vol.</span>
+          </div>
+          <div className="bg-surface border border-border rounded-2xl p-4 flex flex-col items-center gap-2">
+            <Flame className="w-5 h-5 text-orange-400" />
+            <span className="text-2xl font-mono font-bold text-white">{completedSetsCount}</span>
+            <span className="text-[10px] text-foreground-muted uppercase tracking-widest font-semibold">séries</span>
+          </div>
+        </div>
+
+        {/* PR destaque */}
+        {recentPRs.length > 0 && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-[#ffd700]/10 to-transparent border border-[#ffd700]/30 rounded-2xl text-left">
+            <p className="text-[11px] text-[#ffd700]/70 uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
+              <Trophy className="w-4 h-4" /> Novos Recordes Pessoais!
+            </p>
+            {recentPRs.map((pr, i) => (
+              <p key={i} className="text-[#ffd700] font-bold font-outfit text-base">{pr}</p>
+            ))}
+          </div>
+        )}
+
+        {/* Botões de ação */}
+        <div className="flex flex-col gap-3">
+          <Button onClick={handleShare} variant="outline" size="lg" className="border-primary/40 text-primary hover:bg-primary/10 gap-2">
+            <Share2 className="w-5 h-5" />
+            Compartilhar Treino
+          </Button>
+          <Button onClick={() => router.push('/')} size="lg">
+            Voltar ao Início
+          </Button>
+        </div>
+
+        {/* Toast de volume (fica embaixo da tela) */}
         {showToast && (
           <div className="fixed bottom-6 left-6 right-6 md:left-auto md:right-10 md:bottom-10 flex flex-col gap-3 z-50">
-            {/* PR Gamification Toast */}
-            {((window as any).recentPRs || []).map((pr: string, idx: number) => (
-              <div key={idx} className="bg-gradient-to-r from-[#ffd700]/20 to-[#ffd700]/5 border border-[#ffd700]/50 text-[#ffd700] p-4 rounded-xl backdrop-blur-xl animate-fade-in shadow-[0_0_30px_rgba(255,215,0,0.2)] flex items-center gap-4">
-                <div className="bg-[#ffd700]/20 p-3 rounded-lg">
-                  <Trophy className="w-6 h-6 text-[#ffd700]" />
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold text-xs m-0 text-white/90 uppercase tracking-wider">Novo Recorde Pessoal!</p>
-                  <p className="text-[#ffd700] text-lg font-outfit font-bold m-0">{pr}</p>
-                </div>
-              </div>
-            ))}
-
-            {/* Volume Toast */}
             <div className="bg-background/90 border border-primary/30 text-primary p-4 rounded-xl backdrop-blur-xl animate-fade-in shadow-[0_0_30px_rgba(0,255,136,0.15)] flex items-center gap-4">
               <div className="bg-primary/20 p-3 rounded-lg">
                 <Zap className="w-6 h-6 text-primary" />
@@ -527,9 +596,20 @@ export default function ActiveWorkout() {
   return (
     <div className="p-6 md:p-10 max-w-4xl mx-auto animate-fade-in pb-32">
       <header className="mb-8 sticky top-0 bg-background/80 backdrop-blur-xl z-40 py-4 border-b border-white/[0.08]">
-        <h1 className="text-2xl font-outfit font-bold text-accent mb-2">{currentSession.name}</h1>
+        {/* FEATURE: Cronômetro ao vivo + nome da sessão */}
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-outfit font-bold text-accent">{currentSession.name}</h1>
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl">
+            <Clock className="w-4 h-4 text-primary" />
+            <span className="font-mono text-primary font-bold text-base">{formatTime(elapsedSeconds)}</span>
+          </div>
+        </div>
         <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
           <div className="bg-primary h-full transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
+        </div>
+        <div className="flex justify-between text-[10px] text-foreground-muted mt-1.5 font-semibold uppercase tracking-wider">
+          <span>{completedSets}/{totalSets} séries</span>
+          <span>{Math.round(progressPercent)}% concluído</span>
         </div>
       </header>
 

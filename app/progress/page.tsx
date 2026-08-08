@@ -4,13 +4,15 @@ import { useState, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { TrendingUp, Scale, Trophy, Activity, Plus } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { TrendingUp, Scale, Trophy, Activity, Plus, BarChart2, ChevronDown } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, ReferenceLine } from 'recharts';
 
 export default function ProgressPage() {
   const { profile, bodyWeightHistory, addBodyWeight, history } = useAppContext();
   const [newWeight, setNewWeight] = useState('');
   const [isAddingWeight, setIsAddingWeight] = useState(false);
+  // FEATURE: Seleção de exercício para gráfico de evolução
+  const [selectedExercise, setSelectedExercise] = useState<string>('');
 
   const handleAddWeight = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,6 +103,48 @@ export default function ProgressPage() {
       .map(([name, sets]) => ({ name, series: sets }))
       .sort((a, b) => b.series - a.series);
   }, [history]);
+
+  // FEATURE: Lista de exercícios únicos do histórico para o dropdown
+  const exercisesInHistory = useMemo(() => {
+    const names = new Set<string>();
+    history.forEach(session => {
+      session.exercises.forEach(ex => names.add(ex.name));
+    });
+    return Array.from(names).sort();
+  }, [history]);
+
+  // FEATURE: Dados do gráfico de evolução para o exercício selecionado
+  const exerciseEvolutionData = useMemo(() => {
+    if (!selectedExercise) return [];
+    
+    return [...history]
+      .reverse() // ordem cronológica
+      .filter(session => session.exercises.some(ex => ex.name === selectedExercise))
+      .map(session => {
+        const ex = session.exercises.find(e => e.name === selectedExercise)!;
+        const completedSets = ex.sets.filter(s => s.completed && s.weight > 0);
+        const maxWeight = completedSets.length > 0 ? Math.max(...completedSets.map(s => s.weight)) : 0;
+        const totalReps = completedSets.reduce((sum, s) => sum + s.reps, 0);
+        const date = new Date(session.date);
+        return {
+          dateStr: `${date.getDate()}/${date.getMonth() + 1}`,
+          maxWeight,
+          totalReps,
+          volume: completedSets.reduce((sum, s) => sum + s.reps * s.weight, 0)
+        };
+      })
+      .filter(d => d.maxWeight > 0);
+  }, [history, selectedExercise]);
+
+  // Calcula variação percentual do início ao fim
+  const evolutionDiff = useMemo(() => {
+    if (exerciseEvolutionData.length < 2) return null;
+    const first = exerciseEvolutionData[0].maxWeight;
+    const last = exerciseEvolutionData[exerciseEvolutionData.length - 1].maxWeight;
+    const diff = last - first;
+    const pct = ((diff / first) * 100).toFixed(1);
+    return { diff, pct, isPositive: diff >= 0 };
+  }, [exerciseEvolutionData]);
 
   if (!profile) return null;
 
@@ -214,6 +258,95 @@ export default function ProgressPage() {
               ) : (
                 <div className="py-10 text-center text-foreground-muted">
                   Nenhum treino registrado nos últimos 7 dias.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* FEATURE: Gráfico de Evolução por Exercício */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <BarChart2 className="w-5 h-5 text-secondary" /> Evolução por Exercício
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-foreground-muted mb-4">Selecione um exercício para ver a evolução da sua carga máxima ao longo do tempo.</p>
+
+              {exercisesInHistory.length > 0 ? (
+                <>
+                  {/* Dropdown de seleção */}
+                  <div className="relative mb-5">
+                    <select
+                      value={selectedExercise}
+                      onChange={e => setSelectedExercise(e.target.value)}
+                      className="w-full bg-surface border border-border rounded-xl p-3 pr-10 text-white focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-colors appearance-none cursor-pointer"
+                    >
+                      <option value="">-- Selecione um exercício --</option>
+                      {exercisesInHistory.map(name => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted pointer-events-none" />
+                  </div>
+
+                  {/* Gráfico ou placeholder */}
+                  {selectedExercise && exerciseEvolutionData.length > 0 ? (
+                    <>
+                      {/* Resumo numérico */}
+                      <div className="flex gap-4 mb-5">
+                        <div className="flex-1 bg-surface rounded-xl p-3 border border-border text-center">
+                          <p className="text-[10px] text-foreground-muted uppercase tracking-wider font-bold mb-1">Máx. Atual</p>
+                          <p className="text-2xl font-mono font-bold text-secondary">{exerciseEvolutionData[exerciseEvolutionData.length - 1].maxWeight}<span className="text-sm text-foreground-muted ml-1">kg</span></p>
+                        </div>
+                        <div className="flex-1 bg-surface rounded-xl p-3 border border-border text-center">
+                          <p className="text-[10px] text-foreground-muted uppercase tracking-wider font-bold mb-1">Início</p>
+                          <p className="text-2xl font-mono font-bold text-white">{exerciseEvolutionData[0].maxWeight}<span className="text-sm text-foreground-muted ml-1">kg</span></p>
+                        </div>
+                        {evolutionDiff && (
+                          <div className="flex-1 bg-surface rounded-xl p-3 border border-border text-center">
+                            <p className="text-[10px] text-foreground-muted uppercase tracking-wider font-bold mb-1">Evolução</p>
+                            <p className={`text-2xl font-mono font-bold ${evolutionDiff.isPositive ? 'text-primary' : 'text-destructive'}`}>
+                              {evolutionDiff.isPositive ? '+' : ''}{evolutionDiff.pct}%
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Gráfico de linha */}
+                      <div className="h-[220px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={exerciseEvolutionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                            <XAxis dataKey="dateStr" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
+                            <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} domain={['dataMin - 5', 'dataMax + 5']} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#0f0f13', borderColor: '#1f2937', borderRadius: '12px', fontSize: '12px' }}
+                              formatter={(val: any) => [`${val} kg`, 'Carga Máx.']}
+                            />
+                            {exerciseEvolutionData.length > 0 && (
+                              <ReferenceLine y={exerciseEvolutionData[0].maxWeight} stroke="#374151" strokeDasharray="4 4" />
+                            )}
+                            <Line
+                              type="monotone"
+                              dataKey="maxWeight"
+                              stroke="var(--color-secondary)"
+                              strokeWidth={3}
+                              dot={{ r: 4, fill: 'var(--color-secondary)', strokeWidth: 0 }}
+                              activeDot={{ r: 6, fill: 'var(--color-secondary)', stroke: '#1f2937', strokeWidth: 2 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </>
+                  ) : selectedExercise ? (
+                    <div className="py-10 text-center text-foreground-muted text-sm">
+                      Nenhuma sessão registrada com carga para este exercício.
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <div className="py-10 text-center text-foreground-muted text-sm">
+                  Complete treinos registrando cargas para ver sua evolução.
                 </div>
               )}
             </CardContent>
