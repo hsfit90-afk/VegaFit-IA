@@ -66,6 +66,41 @@ export default function Dashboard() {
     return workoutPlans[0];
   }, [workoutPlans, activePlanId]);
 
+  // --- Smart Session Suggestion (Fadiga Muscular) ---
+  // Detecta músculos em fadiga (treinados nas últimas 24h)
+  const fatigueMuscleSets = useMemo(() => {
+    const fatigued = new Set<string>();
+    const recentHistory = [...history].sort((a, b) => b.date - a.date);
+    recentHistory.forEach(h => {
+      const diffHours = (Date.now() - h.date) / (1000 * 60 * 60);
+      if (diffHours < 24) {
+        h.exercises.forEach(ex => {
+          if (ex.muscleGroup) fatigued.add(ex.muscleGroup.toLowerCase());
+        });
+      }
+    });
+    return fatigued;
+  }, [history]);
+
+  // Encontra a próxima sessão cujos músculos estejam recuperados
+  const smartSessionIndex = useMemo(() => {
+    if (!activePlan || fatigueMuscleSets.size === 0) return currentSessionIndex;
+    const total = activePlan.sessions.length;
+    for (let i = 0; i < total; i++) {
+      const idx = (currentSessionIndex + i) % total;
+      const session = activePlan.sessions[idx];
+      const sessionMuscles = session.exercises.map(ex => (ex.muscleGroup || '').toLowerCase());
+      const hasFatigue = sessionMuscles.some(m => fatigueMuscleSets.has(m));
+      if (!hasFatigue) return idx;
+    }
+    // Todos os treinos têm fadiga — retorna o próximo mesmo assim
+    return currentSessionIndex;
+  }, [activePlan, currentSessionIndex, fatigueMuscleSets]);
+
+  const suggestedSession = activePlan?.sessions[smartSessionIndex % (activePlan?.sessions.length || 1)];
+  const originalSession = activePlan?.sessions[currentSessionIndex % (activePlan?.sessions.length || 1)];
+  const wasRedirectedDueToFatigue = smartSessionIndex !== currentSessionIndex;
+
   // --- Streak Logic ---
   const streak = useMemo(() => {
     if (history.length === 0) return 0;
@@ -282,10 +317,25 @@ export default function Dashboard() {
               {activePlan ? (
                 <>
                   <p className="text-xl font-bold text-primary mb-1">{activePlan.name}</p>
-                  <p className="text-xs text-foreground-muted mb-4 uppercase tracking-wider font-semibold">Próximo Treino: {activePlan.sessions[currentSessionIndex % activePlan.sessions.length]?.name}</p>
+                  
+                  {wasRedirectedDueToFatigue && (
+                    <div className="flex items-start gap-2 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 mb-3">
+                      <span className="text-lg">⚠️</span>
+                      <div>
+                        <p className="text-orange-400 font-bold text-xs uppercase tracking-wider">Fadiga Detectada</p>
+                        <p className="text-orange-300/80 text-xs mt-0.5">
+                          {originalSession?.name} usa músculos em recuperação. Sugerindo sessão alternativa!
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-foreground-muted mb-4 uppercase tracking-wider font-semibold">
+                    {wasRedirectedDueToFatigue ? '💪 Treino Alternativo:' : 'Próximo Treino:'} {suggestedSession?.name}
+                  </p>
                   
                   <div className="space-y-3 bg-surface/40 backdrop-blur-sm p-4 rounded-2xl border border-white/5">
-                    {activePlan.sessions[currentSessionIndex % activePlan.sessions.length]?.exercises.slice(0, 3).map((ex, i) => (
+                    {suggestedSession?.exercises.slice(0, 3).map((ex, i) => (
                       <div key={i} className="flex justify-between items-center text-sm border-b border-white/5 last:border-0 pb-2 last:pb-0">
                         <span className="text-foreground/90 font-medium truncate pr-4">{ex.name}</span>
                         <span className="text-primary font-mono bg-primary/10 px-2 py-0.5 rounded text-xs">{ex.sets}x{ex.reps}</span>
