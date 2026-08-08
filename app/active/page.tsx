@@ -723,70 +723,40 @@ export default function ActiveWorkout() {
                       );
                     }
 
-                    const motivationalMessages: Record<number, string> = {
-                      2: 'Prepare-se para subir a carga 🔥',
-                      3: 'Sua força vai explodir! 💪',
-                      4: 'Último ciclo! Prepare o Deload 🏆',
-                    };
-
                     const currentWeekData = parsedWeeks.find(w => w.weekNum === currentWeek);
+                    const futureCount = parsedWeeks.filter(w => w.weekNum > currentWeek).length;
 
                     return (
-                      <div className="mt-3 rounded-xl border border-blue-500/20 bg-[#0a0a0f] overflow-hidden">
-                        {/* Barra de progresso horizontal compacta */}
-                        <div className="px-3 pt-3 pb-2">
-                          <div className="flex items-center gap-1">
-                            {parsedWeeks.map((week, i) => {
-                              const isActive = week.weekNum === currentWeek;
-                              const isDone = week.weekNum < currentWeek;
-                              return (
-                                <div key={week.label} className="flex items-center flex-1">
-                                  <div className={`flex flex-col items-center flex-1`}>
-                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all ${
-                                      isActive ? 'bg-blue-500 border-blue-400 text-white shadow-[0_0_10px_rgba(59,130,246,0.6)]'
-                                      : isDone ? 'bg-green-500/20 border-green-500/50 text-green-400'
-                                      : 'bg-white/5 border-white/10 text-gray-600'
-                                    }`}>
-                                      {isDone ? '✓' : week.weekNum}
-                                    </div>
-                                    <span className={`text-[8px] mt-0.5 font-semibold uppercase tracking-wider ${isActive ? 'text-blue-400' : isDone ? 'text-green-500/60' : 'text-gray-700'}`}>
-                                      {isActive ? 'AGORA' : isDone ? 'OK' : '🔒'}
-                                    </span>
-                                  </div>
-                                  {i < parsedWeeks.length - 1 && (
-                                    <div className={`h-[2px] flex-1 mx-1 rounded-full ${isDone ? 'bg-green-500/40' : 'bg-white/5'}`} />
-                                  )}
-                                </div>
-                              );
-                            })}
+                      <div className="mt-2 p-3 bg-white/[0.03] border border-white/8 rounded-xl">
+                        {/* Barra de progresso fina */}
+                        <div className="flex items-center gap-1.5 mb-2.5">
+                          <span className="text-[10px] text-gray-500 font-semibold shrink-0">📅 S{currentWeek}/4</span>
+                          <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500 rounded-full transition-all"
+                              style={{ width: `${(currentWeek / 4) * 100}%` }}
+                            />
                           </div>
+                          <span className="text-[10px] text-blue-400 font-bold shrink-0">Semana {currentWeek}</span>
                         </div>
 
-                        {/* Semana atual — expandida */}
+                        {/* Conteúdo da semana atual */}
                         {currentWeekData && (
-                          <div className="mx-3 mb-3 bg-gradient-to-r from-blue-500/10 to-purple-500/5 border border-blue-500/30 rounded-xl p-3">
-                            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-1">
-                              ▶ {currentWeekData.label} — Seu treino agora
-                            </p>
-                            <p className="text-sm text-white font-medium leading-relaxed">
-                              {currentWeekData.content}
-                            </p>
-                          </div>
+                          <p className="text-xs text-gray-300 leading-relaxed">
+                            {currentWeekData.content}
+                          </p>
                         )}
 
-                        {/* Semanas futuras — badges de 1 linha */}
-                        <div className="px-3 pb-3 space-y-1.5">
-                          {parsedWeeks.filter(w => w.weekNum > currentWeek).map(week => (
-                            <div key={week.label} className="flex items-center gap-2 bg-white/[0.02] border border-white/5 rounded-lg px-3 py-1.5">
-                              <span className="text-xs">🔒</span>
-                              <span className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">{week.label}:</span>
-                              <span className="text-[10px] text-gray-600 truncate">{motivationalMessages[week.weekNum]}</span>
-                            </div>
-                          ))}
-                        </div>
+                        {/* Teaser das próximas semanas */}
+                        {futureCount > 0 && (
+                          <p className="text-[10px] text-gray-600 mt-1.5 flex items-center gap-1">
+                            🔒 <span>{futureCount} {futureCount === 1 ? 'semana bloqueada' : 'semanas bloqueadas'} — continue treinando para desbloquear</span>
+                          </p>
+                        )}
                       </div>
                     );
                   })()}
+
 
 
                 </div>
