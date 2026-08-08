@@ -678,9 +678,19 @@ export default function ActiveWorkout() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <div>
                   <h2 className="text-2xl font-outfit font-bold text-white mb-2">{ex.name}</h2>
-                  <p className="text-sm text-primary flex items-center gap-2">
+                  <p className="text-sm text-primary flex items-center gap-2 mb-2">
                      <Zap className="w-4 h-4 shrink-0" /> {currentSession.exercises[exIndex].tips}
                   </p>
+                  {currentSession.exercises[exIndex].method && (
+                    <div className="bg-[#0a0a0f] border border-blue-500/30 p-3 rounded-xl mt-2">
+                      <p className="text-[11px] text-blue-400 font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                        <span>📅</span> Periodização (4 Semanas)
+                      </p>
+                      <p className="text-sm text-gray-300 leading-relaxed">
+                        {currentSession.exercises[exIndex].method}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-3 items-center">
                   {/* Swap and Ban Buttons */}
