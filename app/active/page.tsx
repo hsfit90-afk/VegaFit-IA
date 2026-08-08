@@ -686,16 +686,117 @@ export default function ActiveWorkout() {
                   <p className="text-sm text-primary flex items-center gap-2 mb-2">
                      <Zap className="w-4 h-4 shrink-0" /> {currentSession.exercises[exIndex].tips}
                   </p>
-                  {currentSession.exercises[exIndex].method && (
-                    <div className="bg-[#0a0a0f] border border-blue-500/30 p-3 rounded-xl mt-2">
-                      <p className="text-[11px] text-blue-400 font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                        <span>📅</span> Periodização (4 Semanas)
-                      </p>
-                      <p className="text-sm text-gray-300 leading-relaxed">
-                        {currentSession.exercises[exIndex].method}
-                      </p>
-                    </div>
-                  )}
+                  {currentSession.exercises[exIndex].method && (() => {
+                    // Detecta semana atual baseado na criação do plano (createdAt)
+                    const planCreatedAt = currentPlan?.createdAt || Date.now();
+                    const daysSinceStart = Math.floor((Date.now() - planCreatedAt) / (1000 * 60 * 60 * 24));
+                    const currentWeek = Math.min(Math.floor(daysSinceStart / 7) + 1, 4);
+
+                    // Parseia o texto da IA em semanas (separa por "Semana X")
+                    const methodText = currentSession.exercises[exIndex].method || '';
+                    const weekRegex = /semana\s+(\d+(?:[–\-–]\d+)?)[:\s]+([^Ss]*?)(?=semana\s+\d|$)/gi;
+                    const parsedWeeks: { label: string; content: string; weekNum: number }[] = [];
+                    let match;
+                    while ((match = weekRegex.exec(methodText)) !== null) {
+                      const weekNumStr = match[1].split(/[-–]/)[0];
+                      parsedWeeks.push({
+                        label: `Semana ${match[1]}`,
+                        content: match[2].trim().replace(/\.$/, ''),
+                        weekNum: parseInt(weekNumStr),
+                      });
+                    }
+
+                    // Fallback: se o texto não for parseável, mostra como antes mas formatado
+                    if (parsedWeeks.length === 0) {
+                      return (
+                        <div className="bg-[#0a0a0f] border border-blue-500/30 p-3 rounded-xl mt-2">
+                          <p className="text-[11px] text-blue-400 font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                            <span>📅</span> Periodização (4 Semanas)
+                          </p>
+                          <p className="text-sm text-gray-300 leading-relaxed">{methodText}</p>
+                        </div>
+                      );
+                    }
+
+                    const motivationalMessages: Record<number, string> = {
+                      2: 'Semana 2 está chegando! Prepare-se para subir a carga 🔥',
+                      3: 'Semana 3 chegando: sua força vai explodir! 💪',
+                      4: 'Última semana do ciclo! Prepare o Deload e celebre sua evolução 🏆',
+                    };
+
+                    return (
+                      <div className="mt-3 rounded-xl overflow-hidden border border-blue-500/20 bg-[#0a0a0f]">
+                        {/* Header */}
+                        <div className="px-4 py-2.5 border-b border-blue-500/20 flex items-center gap-2">
+                          <span className="text-base">📅</span>
+                          <span className="text-[11px] text-blue-400 font-bold uppercase tracking-widest">Plano de Periodização — 4 Semanas</span>
+                        </div>
+
+                        <div className="p-3 space-y-2">
+                          {parsedWeeks.map((week) => {
+                            const isCurrentWeek = week.weekNum === currentWeek;
+                            const isFuture = week.weekNum > currentWeek;
+                            const isPast = week.weekNum < currentWeek;
+
+                            return (
+                              <div key={week.label} className={`relative rounded-xl p-3 border transition-all ${
+                                isCurrentWeek
+                                  ? 'bg-gradient-to-r from-blue-500/15 to-purple-500/10 border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.15)]'
+                                  : isPast
+                                  ? 'bg-white/[0.03] border-white/5 opacity-60'
+                                  : 'bg-white/[0.02] border-white/5'
+                              }`}>
+                                {/* Badge da semana */}
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                                    isCurrentWeek
+                                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40'
+                                      : isPast
+                                      ? 'bg-green-500/10 text-green-500/70 border border-green-500/20'
+                                      : 'bg-white/5 text-gray-500 border border-white/10'
+                                  }`}>
+                                    {isPast ? '✓ ' : isCurrentWeek ? '▶ ' : '🔒 '}{week.label}
+                                  </span>
+                                  {isCurrentWeek && (
+                                    <span className="text-[9px] bg-blue-500 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                                      AGORA
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Conteúdo — bloqueado ou visível */}
+                                {isFuture ? (
+                                  <div className="relative">
+                                    <p className="text-sm text-gray-400 blur-[4px] select-none pointer-events-none leading-relaxed">
+                                      {week.content || 'Conteúdo desbloqueado em breve...'}
+                                    </p>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                                      <span className="text-lg">🔒</span>
+                                      <p className="text-[10px] text-gray-400 font-semibold text-center">
+                                        {motivationalMessages[week.weekNum] || 'Continue treinando para desbloquear!'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className={`text-sm leading-relaxed ${isCurrentWeek ? 'text-white font-medium' : 'text-gray-500'}`}>
+                                    {week.content}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Footer motivacional */}
+                        <div className="px-4 py-2 border-t border-blue-500/10 bg-blue-500/5">
+                          <p className="text-[10px] text-blue-400/70 text-center font-medium">
+                            🚀 Ciclo Semana {currentWeek}/4 — Complete cada semana para evoluir o plano
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                 </div>
                 <div className="flex flex-wrap gap-3 items-center">
                   {/* Swap and Ban Buttons */}
