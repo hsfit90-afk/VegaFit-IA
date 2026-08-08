@@ -692,19 +692,24 @@ export default function ActiveWorkout() {
                     const daysSinceStart = Math.floor((Date.now() - planCreatedAt) / (1000 * 60 * 60 * 24));
                     const currentWeek = Math.min(Math.floor(daysSinceStart / 7) + 1, 4);
 
-                    // Parseia o texto da IA em semanas (separa por "Semana X")
+                    // Parseia o texto da IA em semanas — suporta separadores: "|", "." e quebra de linha
                     const methodText = currentSession.exercises[exIndex].method || '';
-                    const weekRegex = /semana\s+(\d+(?:[–\-–]\d+)?)[:\s]+([^Ss]*?)(?=semana\s+\d|$)/gi;
                     const parsedWeeks: { label: string; content: string; weekNum: number }[] = [];
-                    let match;
-                    while ((match = weekRegex.exec(methodText)) !== null) {
-                      const weekNumStr = match[1].split(/[-–]/)[0];
-                      parsedWeeks.push({
-                        label: `Semana ${match[1]}`,
-                        content: match[2].trim().replace(/\.$/, ''),
-                        weekNum: parseInt(weekNumStr),
-                      });
-                    }
+                    
+                    // Divide pelo separador que a IA usou: "|" ou por "Semana" quando inicia novo bloco
+                    const chunks = methodText.split(/\s*\|\s*|\.\s+(?=Semana)/i).filter(c => c.trim());
+                    chunks.forEach(chunk => {
+                      // Cada chunk deve começar com "Semana X:" ou "Semana X-Y:"
+                      const headerMatch = chunk.match(/^semana\s+(\d+(?:[-–]\d+)?)[:\s]+(.*)/i);
+                      if (headerMatch) {
+                        const weekNumStr = headerMatch[1].split(/[-–]/)[0];
+                        parsedWeeks.push({
+                          label: `Semana ${headerMatch[1]}`,
+                          content: headerMatch[2].trim().replace(/\.$/, ''),
+                          weekNum: parseInt(weekNumStr),
+                        });
+                      }
+                    });
 
                     // Fallback: se o texto não for parseável, mostra como antes mas formatado
                     if (parsedWeeks.length === 0) {
