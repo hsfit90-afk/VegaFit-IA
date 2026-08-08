@@ -25,12 +25,29 @@ export async function POST(req: NextRequest) {
       availableExercises = availableExercises.filter((ex: any) => !profile.bannedExercises.includes(ex.id));
     }
 
-    if (availableExercises.length === 0) {
+    // BUG FIX: Limit exercises per muscle group to avoid exceeding Groq TPM token limits (413 Payload Too Large)
+    const MAX_EXERCISES_PER_MUSCLE = 15;
+    const exercisesByMuscle: Record<string, any[]> = {};
+    
+    // Sort randomly so users don't always get the exact same 15 exercises for the prompt
+    const shuffledExercises = availableExercises.sort(() => 0.5 - Math.random());
+    
+    shuffledExercises.forEach((ex: any) => {
+      const muscle = ex.muscle_group || 'Outros';
+      if (!exercisesByMuscle[muscle]) exercisesByMuscle[muscle] = [];
+      if (exercisesByMuscle[muscle].length < MAX_EXERCISES_PER_MUSCLE) {
+        exercisesByMuscle[muscle].push(ex);
+      }
+    });
+    
+    const limitedExercises = Object.values(exercisesByMuscle).flat();
+
+    if (limitedExercises.length === 0) {
       return NextResponse.json({ error: "Sua biblioteca de exercícios está vazia ou todos os exercícios foram ocultados. Adicione mais exercícios!" }, { status: 400 });
     }
 
     // Create a compact string of available exercises to save tokens
-    const exerciseListStr = availableExercises.map((e: any) => `${e.name} (${e.muscle_group})`).join(', ');
+    const exerciseListStr = limitedExercises.map((e: any) => `${e.name} (${e.muscle_group})`).join(', ');
 
     const methodDescriptions: Record<string, string> = {
       tradicional: 'Séries e repetições tradicionais com descanso entre cada série',
