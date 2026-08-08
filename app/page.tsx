@@ -103,6 +103,23 @@ export default function Dashboard() {
   const originalSession = activePlan?.sessions[currentSessionIndex % (activePlan?.sessions.length || 1)];
   const wasRedirectedDueToFatigue = smartSessionIndex !== currentSessionIndex;
 
+  // Próximo treino com músculos recuperados (pula o smartSessionIndex atual)
+  const nextSmartSessionIndex = useMemo(() => {
+    if (!activePlan) return (smartSessionIndex + 1) % (activePlan?.sessions.length || 1);
+    const total = activePlan.sessions.length;
+    for (let i = 1; i <= total; i++) {
+      const idx = (smartSessionIndex + i) % total;
+      const session = activePlan.sessions[idx];
+      const sessionMuscles = session.exercises.map(ex => (ex.muscleGroup || '').toLowerCase());
+      const hasFatigue = sessionMuscles.some(m => fatigueMuscleSets.has(m));
+      if (!hasFatigue) return idx;
+    }
+    // Todos têm fadiga — retorna o próximo do ciclo mesmo assim
+    return (smartSessionIndex + 1) % total;
+  }, [activePlan, smartSessionIndex, fatigueMuscleSets]);
+
+  const nextSuggestedSession = activePlan?.sessions[nextSmartSessionIndex % (activePlan?.sessions.length || 1)];
+
   // --- Streak Logic ---
   const streak = useMemo(() => {
     if (history.length === 0) return 0;
@@ -352,15 +369,27 @@ export default function Dashboard() {
 
             <div className="relative z-10">
               {activePlan ? (
-                <button
-                  onClick={() => router.push(`/active?sessionIndex=${smartSessionIndex}`)}
-                  className="block w-full"
-                >
-                  <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
-                    INICIAR TREINO
-                    <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => router.push(`/active?sessionIndex=${smartSessionIndex}`)}
+                    className="block w-full"
+                  >
+                    <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
+                      INICIAR TREINO
+                      <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </button>
+                  <button
+                    onClick={() => router.push(`/active?sessionIndex=${nextSmartSessionIndex}`)}
+                    className="block w-full"
+                    title={`Pular para: ${nextSuggestedSession?.name}`}
+                  >
+                    <Button size="sm" variant="outline" fullWidth className="text-xs border-white/20 text-gray-400 hover:border-primary/40 hover:text-primary">
+                      Próximo Treino: {nextSuggestedSession?.name}
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </button>
+                </div>
               ) : (
                 <div className="flex flex-col gap-3">
                   {!profile?.trainerId ? (
