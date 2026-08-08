@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame } from 'lucide-react';
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import confetti from 'canvas-confetti';
@@ -13,13 +13,18 @@ import { getExercises, deleteExercise } from '@/lib/db/exercises';
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, history, activePlanId } = useAppContext();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const currentPlan = activePlanId 
     ? workoutPlans.find(p => p.id === activePlanId) || (workoutPlans.length > 0 ? workoutPlans[0] : null)
     : (workoutPlans.length > 0 ? workoutPlans[0] : null);
-    
+
+  // Usa sessionIndex da URL (quando houve fadiga e home redirecionou) ou o índice normal do contexto
+  const urlSessionIndex = searchParams.get('sessionIndex');
+  const effectiveIndex = urlSessionIndex !== null ? parseInt(urlSessionIndex) : currentSessionIndex;
+
   // Usa o índice da sessão atual (A, B, C...) em vez de sempre a sessão 0
-  const safeIndex = currentPlan ? currentSessionIndex % currentPlan.sessions.length : 0;
+  const safeIndex = currentPlan ? effectiveIndex % currentPlan.sessions.length : 0;
   const currentSession = currentPlan ? currentPlan.sessions[safeIndex] : null;
 
   const [activeExercises, setActiveExercises] = useState<ActiveExercise[]>([]);

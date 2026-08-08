@@ -5,6 +5,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { Dumbbell, Flame, Trophy, Calendar, Lightbulb, ChevronRight, Activity, Zap, Star, LayoutList, Trash2, CheckCircle2, PlayCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { motion } from 'motion/react';
@@ -12,6 +13,7 @@ import { WorkoutPlan } from '@/lib/types';
 
 export default function Dashboard() {
   const { profile, history, workoutPlans, activePlanId, setActivePlan, deleteWorkoutPlan, currentSessionIndex } = useAppContext();
+  const router = useRouter();
   const [chartPeriod, setChartPeriod] = useState<'week' | 'month' | 'total'>('week');
   const [dailyTip, setDailyTip] = useState<string>('Carregando dica do dia...');
 
@@ -350,12 +352,15 @@ export default function Dashboard() {
 
             <div className="relative z-10">
               {activePlan ? (
-                <Link href="/active" className="block">
+                <button
+                  onClick={() => router.push(`/active?sessionIndex=${smartSessionIndex}`)}
+                  className="block w-full"
+                >
                   <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
                     INICIAR TREINO
                     <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Button>
-                </Link>
+                </button>
               ) : (
                 <div className="flex flex-col gap-3">
                   {!profile?.trainerId ? (
