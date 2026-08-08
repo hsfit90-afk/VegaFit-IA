@@ -724,83 +724,70 @@ export default function ActiveWorkout() {
                     }
 
                     const motivationalMessages: Record<number, string> = {
-                      2: 'Semana 2 está chegando! Prepare-se para subir a carga 🔥',
-                      3: 'Semana 3 chegando: sua força vai explodir! 💪',
-                      4: 'Última semana do ciclo! Prepare o Deload e celebre sua evolução 🏆',
+                      2: 'Prepare-se para subir a carga 🔥',
+                      3: 'Sua força vai explodir! 💪',
+                      4: 'Último ciclo! Prepare o Deload 🏆',
                     };
 
+                    const currentWeekData = parsedWeeks.find(w => w.weekNum === currentWeek);
+
                     return (
-                      <div className="mt-3 rounded-xl overflow-hidden border border-blue-500/20 bg-[#0a0a0f]">
-                        {/* Header */}
-                        <div className="px-4 py-2.5 border-b border-blue-500/20 flex items-center gap-2">
-                          <span className="text-base">📅</span>
-                          <span className="text-[11px] text-blue-400 font-bold uppercase tracking-widest">Plano de Periodização — 4 Semanas</span>
-                        </div>
-
-                        <div className="p-3 space-y-2">
-                          {parsedWeeks.map((week) => {
-                            const isCurrentWeek = week.weekNum === currentWeek;
-                            const isFuture = week.weekNum > currentWeek;
-                            const isPast = week.weekNum < currentWeek;
-
-                            return (
-                              <div key={week.label} className={`relative rounded-xl p-3 border transition-all ${
-                                isCurrentWeek
-                                  ? 'bg-gradient-to-r from-blue-500/15 to-purple-500/10 border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.15)]'
-                                  : isPast
-                                  ? 'bg-white/[0.03] border-white/5 opacity-60'
-                                  : 'bg-white/[0.02] border-white/5'
-                              }`}>
-                                {/* Badge da semana */}
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                                    isCurrentWeek
-                                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40'
-                                      : isPast
-                                      ? 'bg-green-500/10 text-green-500/70 border border-green-500/20'
-                                      : 'bg-white/5 text-gray-500 border border-white/10'
-                                  }`}>
-                                    {isPast ? '✓ ' : isCurrentWeek ? '▶ ' : '🔒 '}{week.label}
-                                  </span>
-                                  {isCurrentWeek && (
-                                    <span className="text-[9px] bg-blue-500 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
-                                      AGORA
+                      <div className="mt-3 rounded-xl border border-blue-500/20 bg-[#0a0a0f] overflow-hidden">
+                        {/* Barra de progresso horizontal compacta */}
+                        <div className="px-3 pt-3 pb-2">
+                          <div className="flex items-center gap-1">
+                            {parsedWeeks.map((week, i) => {
+                              const isActive = week.weekNum === currentWeek;
+                              const isDone = week.weekNum < currentWeek;
+                              return (
+                                <div key={week.label} className="flex items-center flex-1">
+                                  <div className={`flex flex-col items-center flex-1`}>
+                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all ${
+                                      isActive ? 'bg-blue-500 border-blue-400 text-white shadow-[0_0_10px_rgba(59,130,246,0.6)]'
+                                      : isDone ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                                      : 'bg-white/5 border-white/10 text-gray-600'
+                                    }`}>
+                                      {isDone ? '✓' : week.weekNum}
+                                    </div>
+                                    <span className={`text-[8px] mt-0.5 font-semibold uppercase tracking-wider ${isActive ? 'text-blue-400' : isDone ? 'text-green-500/60' : 'text-gray-700'}`}>
+                                      {isActive ? 'AGORA' : isDone ? 'OK' : '🔒'}
                                     </span>
+                                  </div>
+                                  {i < parsedWeeks.length - 1 && (
+                                    <div className={`h-[2px] flex-1 mx-1 rounded-full ${isDone ? 'bg-green-500/40' : 'bg-white/5'}`} />
                                   )}
                                 </div>
-
-                                {/* Conteúdo — bloqueado ou visível */}
-                                {isFuture ? (
-                                  <div className="relative">
-                                    <p className="text-sm text-gray-400 blur-[4px] select-none pointer-events-none leading-relaxed">
-                                      {week.content || 'Conteúdo desbloqueado em breve...'}
-                                    </p>
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                                      <span className="text-lg">🔒</span>
-                                      <p className="text-[10px] text-gray-400 font-semibold text-center">
-                                        {motivationalMessages[week.weekNum] || 'Continue treinando para desbloquear!'}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <p className={`text-sm leading-relaxed ${isCurrentWeek ? 'text-white font-medium' : 'text-gray-500'}`}>
-                                    {week.content}
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
 
-                        {/* Footer motivacional */}
-                        <div className="px-4 py-2 border-t border-blue-500/10 bg-blue-500/5">
-                          <p className="text-[10px] text-blue-400/70 text-center font-medium">
-                            🚀 Ciclo Semana {currentWeek}/4 — Complete cada semana para evoluir o plano
-                          </p>
+                        {/* Semana atual — expandida */}
+                        {currentWeekData && (
+                          <div className="mx-3 mb-3 bg-gradient-to-r from-blue-500/10 to-purple-500/5 border border-blue-500/30 rounded-xl p-3">
+                            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-1">
+                              ▶ {currentWeekData.label} — Seu treino agora
+                            </p>
+                            <p className="text-sm text-white font-medium leading-relaxed">
+                              {currentWeekData.content}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Semanas futuras — badges de 1 linha */}
+                        <div className="px-3 pb-3 space-y-1.5">
+                          {parsedWeeks.filter(w => w.weekNum > currentWeek).map(week => (
+                            <div key={week.label} className="flex items-center gap-2 bg-white/[0.02] border border-white/5 rounded-lg px-3 py-1.5">
+                              <span className="text-xs">🔒</span>
+                              <span className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">{week.label}:</span>
+                              <span className="text-[10px] text-gray-600 truncate">{motivationalMessages[week.weekNum]}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     );
                   })()}
+
 
                 </div>
                 <div className="flex flex-wrap gap-3 items-center">
