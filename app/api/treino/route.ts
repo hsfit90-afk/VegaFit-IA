@@ -14,9 +14,17 @@ export async function POST(req: NextRequest) {
 
     const groq = new Groq({ apiKey: key });
     
-    // Fetch user exercises from Supabase
-    const supabase = await createClient();
-    const { data: dbExercises } = await supabase.from('exercises').select('id, name, muscle_group');
+    // Fetch exercises using service_role to bypass RLS — garante acesso a todos os exercícios globais
+    // para qualquer usuário, incluindo novos cadastros.
+    const { createClient: createServiceClient } = await import('@supabase/supabase-js');
+    const serviceSupabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data: dbExercises } = await serviceSupabase
+      .from('exercises')
+      .select('id, name, muscle_group')
+      .is('user_id', null); // Apenas exercícios globais (criados pelo admin)
     
     let availableExercises = dbExercises || [];
 

@@ -22,7 +22,7 @@ export default function Register() {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -34,7 +34,15 @@ export default function Register() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push(`/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`);
+      // Aguarda a sessão ser estabelecida antes de redirecionar
+      // Isso evita que o usuário precise recarregar a página para acessar o onboarding
+      if (data?.session) {
+        router.push(`/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`);
+      } else {
+        // Sem confirmação de email: aguarda um momento e redireciona
+        await new Promise(resolve => setTimeout(resolve, 800));
+        router.push(`/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`);
+      }
     }
   };
 
