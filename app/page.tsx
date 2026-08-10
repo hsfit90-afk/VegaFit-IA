@@ -17,6 +17,13 @@ export default function Dashboard() {
   const [chartPeriod, setChartPeriod] = useState<'week' | 'month' | 'total'>('week');
   const [dailyTip, setDailyTip] = useState<string>('Carregando dica do dia...');
 
+  // Redirect trainers/masters to their dashboard
+  useEffect(() => {
+    if (profile && (profile.role === 'trainer' || profile.role === 'master')) {
+      router.push('/trainer');
+    }
+  }, [profile, router]);
+
   useEffect(() => {
     const fetchTip = async () => {
       const today = new Date().toDateString();

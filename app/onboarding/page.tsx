@@ -28,6 +28,7 @@ export default function Onboarding() {
 
   const searchParams = useSearchParams();
   const trainerId = searchParams.get('trainer');
+  const selectedRole = searchParams.get('role'); // 'trainer' or null (defaults to 'client')
 
   const totalSteps = 6;
 
@@ -63,7 +64,7 @@ export default function Onboarding() {
       geminiApiKey: '',
       soundEnabled: true,
       defaultRestTimer: 60,
-      role: existingProfile?.role || 'client',
+      role: existingProfile?.role || selectedRole || 'client',
       trainerId: existingProfile?.trainer_id || trainerId || null,
     };
 
@@ -124,7 +125,13 @@ export default function Onboarding() {
     } catch (e) {
       console.error("Error generating initial plan:", e);
     }
-    router.push('/');
+    // Redirect based on role
+    const finalRole = existingProfile?.role || selectedRole || 'client';
+    if (finalRole === 'trainer' || finalRole === 'master') {
+      router.push('/trainer');
+    } else {
+      router.push('/');
+    }
   };
 
   const nextStep = () => setStep(prev => Math.min(prev + 1, totalSteps));

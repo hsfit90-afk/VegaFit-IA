@@ -32,7 +32,7 @@ export function Navigation() {
   const pathname = usePathname();
   const { profile, clearData } = useAppContext();
 
-  const hideNavigation = ['/login', '/register', '/onboarding'].includes(pathname);
+  const hideNavigation = ['/login', '/register', '/onboarding', '/role-select'].includes(pathname);
   if (hideNavigation) return null;
 
   // Filtrar menu baseado no perfil

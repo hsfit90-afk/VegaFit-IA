@@ -35,13 +35,12 @@ export default function Register() {
       setLoading(false);
     } else {
       // Aguarda a sessão ser estabelecida antes de redirecionar
-      // Isso evita que o usuário precise recarregar a página para acessar o onboarding
       if (data?.session) {
-        router.push(`/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`);
+        router.push(`/role-select${trainerId ? `?trainer=${trainerId}` : ''}`);
       } else {
         // Sem confirmação de email: aguarda um momento e redireciona
         await new Promise(resolve => setTimeout(resolve, 800));
-        router.push(`/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`);
+        router.push(`/role-select${trainerId ? `?trainer=${trainerId}` : ''}`);
       }
     }
   };

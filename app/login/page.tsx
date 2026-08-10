@@ -28,7 +28,24 @@ export default function Login() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push('/');
+      // Check if user already has a profile
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('id, role').eq('id', user.id).single();
+        if (profile) {
+          // Existing user — redirect based on role
+          if (profile.role === 'trainer' || profile.role === 'master') {
+            router.push('/trainer');
+          } else {
+            router.push('/');
+          }
+        } else {
+          // New user without profile — go to role selection
+          router.push('/role-select');
+        }
+      } else {
+        router.push('/');
+      }
     }
   };
 
