@@ -17,13 +17,8 @@ export default function Dashboard() {
   const [chartPeriod, setChartPeriod] = useState<'week' | 'month' | 'total'>('week');
   const [dailyTip, setDailyTip] = useState<string>('Carregando dica do dia...');
 
-  // Redirect trainers/masters to their dashboard
-  useEffect(() => {
-    if (profile && (profile.role === 'trainer' || profile.role === 'master')) {
-      router.push('/trainer');
-    }
-  }, [profile, router]);
-
+  // Removed strict redirect so trainers can also use their own dashboard for working out.
+  // Trainers have "Meus Alunos" in the navigation if they want to manage clients.
   useEffect(() => {
     const fetchTip = async () => {
       const today = new Date().toDateString();
@@ -399,7 +394,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {!profile?.trainerId ? (
+                  {(!profile?.trainerId || profile?.role === 'master' || profile?.role === 'trainer') ? (
                     <>
                       <Link href="/generator" className="block">
                         <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
@@ -462,7 +457,7 @@ export default function Dashboard() {
             <LayoutList className="w-5 h-5 text-primary" /> Meus Planos de Treino
           </h4>
           <div className="flex gap-2">
-            {!profile?.trainerId ? (
+            {(!profile?.trainerId || profile?.role === 'master' || profile?.role === 'trainer') ? (
               <>
                 <Link href="/manual-workout">
                   <Button size="sm" variant="outline" className="text-xs border-primary/30 hover:bg-primary/10">
@@ -531,7 +526,7 @@ export default function Dashboard() {
             <CardContent className="p-8 text-center flex flex-col items-center">
               <LayoutList className="w-10 h-10 text-foreground-muted opacity-30 mb-3" />
               <p className="text-white font-medium mb-1">Nenhum plano salvo.</p>
-              {!profile?.trainerId ? (
+              {(!profile?.trainerId || profile?.role === 'master' || profile?.role === 'trainer') ? (
                 <>
                   <p className="text-sm text-foreground-muted mb-4">Gere um treino com IA ou crie o seu próprio plano.</p>
                   <div className="flex gap-3 justify-center">

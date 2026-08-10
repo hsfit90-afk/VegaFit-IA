@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { User, Key, Bell, Download, Trash2, CheckCircle2, Sliders, Volume2 } from 'lucide-react';
+import { User, Key, Bell, Download, Trash2, CheckCircle2, Sliders, Volume2, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -184,6 +184,9 @@ export default function Settings() {
               <CardTitle className="text-lg">Dados</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 mt-2">
+              <Button onClick={() => { clearData(); router.push('/'); }} variant="outline" fullWidth className="text-sm justify-center text-destructive font-semibold h-12 border-destructive/30 hover:bg-destructive/10">
+                <LogOut className="w-4 h-4 mr-2" /> Sair da Conta
+              </Button>
               <Button onClick={exportData} variant="outline" fullWidth className="text-sm justify-center text-foreground font-semibold h-12 border-border">
                 <Download className="w-4 h-4 mr-2" /> Exportar Backup
               </Button>

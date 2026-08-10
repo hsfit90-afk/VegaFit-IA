@@ -39,25 +39,23 @@ export function Navigation() {
   const role = profile?.role || 'client';
   
   let desktopItems = [...DESKTOP_NAV_ITEMS];
+  let mobileItems = [...MOBILE_NAV_ITEMS];
   
   // Adicionar painéis específicos baseados na role
   if (role === 'master') {
     desktopItems.unshift({ href: '/admin', label: 'Admin (Master)', icon: Settings });
     desktopItems.unshift({ href: '/trainer', label: 'Meus Alunos', icon: Zap });
+    mobileItems.unshift({ href: '/trainer', label: 'Alunos', icon: Zap });
   } else if (role === 'trainer') {
     desktopItems.unshift({ href: '/trainer', label: 'Meus Alunos', icon: Zap });
+    mobileItems.unshift({ href: '/trainer', label: 'Alunos', icon: Zap });
   }
 
   const filteredDesktopNav = desktopItems.filter(item => {
-    // Alunos com personal não devem gerar próprios treinos
-    if (profile?.trainerId) {
-      if (item.href === '/generator' || item.href === '/manual-workout' || item.href === '/library') return false;
-    }
     return true;
   });
 
-  const filteredMobileNav = MOBILE_NAV_ITEMS.filter(item => {
-    // Same filtering logic for mobile if needed, though MOBILE_NAV_ITEMS doesn't have generator
+  const filteredMobileNav = mobileItems.filter(item => {
     return true;
   });
 
