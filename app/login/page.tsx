@@ -40,8 +40,8 @@ export default function Login() {
             router.push('/');
           }
         } else {
-          // New user without profile — go to role selection
-          router.push('/role-select');
+          // New user without profile — go directly to onboarding (B2C default)
+          router.push('/onboarding');
         }
       } else {
         router.push('/');

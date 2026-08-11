@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame } from 'lucide-react';
+import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff } from 'lucide-react';
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import confetti from 'canvas-confetti';
 import { Card } from '@/components/ui/Card';
@@ -662,19 +662,14 @@ export default function ActiveWorkout() {
                   </div>
                 </div>
               ) : (
-                <div className="w-full bg-surface-light border-b border-border/50">
-                  <iframe
-                    src={`https://www.youtube.com/embed?listType=search&list=${searchQuery}&autoplay=0`}
-                    title={`Como fazer ${ex.name}`}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="w-full h-56 md:h-72 lg:h-80"
-                  />
-                  <div className="px-4 py-2 bg-black/40 flex items-center gap-2 border-t border-white/5">
-                    <Play className="w-3 h-3 text-red-400" />
-                    <span className="text-xs text-gray-400">Pesquisa YouTube: <span className="text-white font-medium">{exercise.youtubeSearchTerm || ex.name}</span></span>
+                <div className="w-full bg-surface-light border-b border-border/50 h-56 md:h-72 lg:h-80 flex flex-col items-center justify-center p-6 text-center">
+                  <div className="w-16 h-16 rounded-full bg-black/30 flex items-center justify-center mb-4 border border-white/5">
+                    <ImageOff className="w-8 h-8 text-foreground-muted/50" />
                   </div>
+                  <h3 className="text-white font-bold mb-2">GIF Indisponível</h3>
+                  <p className="text-sm text-foreground-muted mb-4 max-w-[250px]">
+                    Nenhum GIF demonstrativo cadastrado no sistema para este exercício ainda.
+                  </p>
                 </div>
               )}
             </div>

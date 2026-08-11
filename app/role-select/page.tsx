@@ -103,36 +103,25 @@ export default function RoleSelect() {
 
           {/* Sou Personal Trainer */}
           <motion.button
-            onClick={() => handleSelect('trainer')}
-            disabled={selected !== null}
-            className={`w-full group relative overflow-hidden rounded-2xl border transition-all duration-300 ${
-              selected === 'trainer'
-                ? 'border-secondary bg-secondary/20 scale-[0.98]'
-                : selected === 'client'
-                ? 'border-border opacity-40 pointer-events-none'
-                : 'border-border hover:border-secondary/50 bg-surface hover:bg-surface-hover'
-            }`}
+            disabled={true}
+            className={`w-full group relative overflow-hidden rounded-2xl border transition-all duration-300 border-border opacity-50 cursor-not-allowed bg-surface`}
             variants={{
               hidden: { opacity: 0, y: 20 },
               show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 200, damping: 20 } }
             }}
-            whileHover={selected === null ? { scale: 1.02 } : {}}
-            whileTap={selected === null ? { scale: 0.98 } : {}}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative flex items-center gap-4 p-5 md:p-6">
-              <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors ${
-                selected === 'trainer' ? 'bg-secondary text-white' : 'bg-secondary/10 text-secondary group-hover:bg-secondary/20'
-              }`}>
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center transition-colors bg-secondary/10 text-secondary">
                 <Users className="w-7 h-7" />
               </div>
               <div className="flex-1 text-left">
-                <h2 className="text-lg md:text-xl font-bold text-white">Sou personal trainer</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg md:text-xl font-bold text-white">Sou personal trainer</h2>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-secondary/20 text-secondary rounded-md">Em construção</span>
+                </div>
                 <p className="text-sm text-foreground-muted mt-0.5">Gerencie alunos e crie treinos</p>
               </div>
-              <ChevronRight className={`w-5 h-5 transition-all ${
-                selected === 'trainer' ? 'text-secondary translate-x-1' : 'text-foreground-muted group-hover:text-secondary group-hover:translate-x-1'
-              }`} />
+              <ChevronRight className="w-5 h-5 transition-all text-foreground-muted" />
             </div>
           </motion.button>
         </motion.div>

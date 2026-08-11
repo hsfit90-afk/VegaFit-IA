@@ -23,8 +23,7 @@ export async function POST(req: NextRequest) {
     );
     const { data: dbExercises } = await serviceSupabase
       .from('exercises')
-      .select('id, name, muscle_group')
-      .is('user_id', null); // Apenas exercícios globais (criados pelo admin)
+      .select('id, name, muscle_group'); // Buscar todos os exercícios, ignorando user_id por enquanto (B2C)
     
     let availableExercises = dbExercises || [];
 

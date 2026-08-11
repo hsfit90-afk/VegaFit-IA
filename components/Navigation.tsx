@@ -52,10 +52,16 @@ export function Navigation() {
   }
 
   const filteredDesktopNav = desktopItems.filter(item => {
+    if (item.href === '/manual-workout') {
+      return role === 'trainer' || role === 'master';
+    }
     return true;
   });
 
   const filteredMobileNav = mobileItems.filter(item => {
+    if (item.href === '/manual-workout') {
+      return role === 'trainer' || role === 'master';
+    }
     return true;
   });
 

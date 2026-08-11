@@ -32,8 +32,21 @@ export default function TrainerDashboard() {
         .select('*')
         .eq('trainer_id', userId);
         
-      if (data) {
+      if (data && data.length > 0) {
         setClients(data);
+      } else {
+        // ── DEMO: Aluno fictício para preview ──
+        setClients([{
+          id: 'demo-client-001',
+          name: 'Seliane Bezerra da Silva',
+          age: 28,
+          weight: 65,
+          height: 165,
+          goal: 'Hipertrofia',
+          level: 'Intermediário',
+          phone: '11999999999',
+          trainer_notes: '',
+        }]);
       }
       setLoading(false);
     }
