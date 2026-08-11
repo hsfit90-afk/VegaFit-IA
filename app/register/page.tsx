@@ -36,7 +36,7 @@ export default function Register() {
     } else {
       // Aguarda a sessão ser estabelecida antes de redirecionar
       if (data?.session) {
-        router.push(`/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`);
+        window.location.href = `/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`;
       } else {
         // Sem confirmação de email: aguarda um momento e redireciona
         await new Promise(resolve => setTimeout(resolve, 800));

@@ -35,16 +35,16 @@ export default function Login() {
         if (profile) {
           // Existing user — redirect based on role
           if (profile.role === 'trainer' || profile.role === 'master') {
-            router.push('/trainer');
+            window.location.href = '/trainer';
           } else {
-            router.push('/');
+            window.location.href = '/';
           }
         } else {
           // New user without profile — go directly to onboarding (B2C default)
-          router.push('/onboarding');
+          window.location.href = '/onboarding';
         }
       } else {
-        router.push('/');
+        window.location.href = '/';
       }
     }
   };

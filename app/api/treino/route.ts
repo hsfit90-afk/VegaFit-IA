@@ -89,6 +89,16 @@ export async function POST(req: NextRequest) {
       ? "Baseie-se ESTRITAMENTE no consenso EASO (Bellicha et al., 2021) e ACSM para emagrecimento: priorize a manutenção de massa magra com musculação (tensão mecânica) associada a alto gasto calórico no volume total."
       : "Baseie-se ESTRITAMENTE no consenso científico atual sobre hipertrofia (Schoenfeld et al., 2021 - IUSCA).";
 
+    // Dynamic rules based on goal
+    const isWeightLoss = userGoal.toLowerCase().includes('emagrec') || userGoal.toLowerCase().includes('perder peso');
+    const ruleTitle = isWeightLoss 
+      ? "REGRA CRÍTICA SOBRE VOLUME E INTENSIDADE (EASO / ACSM - EMAGRECIMENTO):" 
+      : "REGRA CRÍTICA SOBRE QUANTIDADE DE EXERCÍCIOS E VOLUME (SCHOENFELD, 2021 - HIPERTROFIA):";
+    
+    const goalSpecificInstructions = isWeightLoss
+      ? "1. Cada sessão DEVE conter EXATAMENTE " + exercisesPerSession + " exercícios.\n2. Repetições e Descanso: Para maximizar o gasto calórico, use faixas de repetições mais altas (ex: 12-15 ou 15-20) e descansos mais curtos (ex: 30 a 45 segundos).\n3. Periodização de 4 Semanas: O plano DEVE ser um Mesociclo de 4 semanas. O campo 'method' deve conter a progressão focada em emagrecimento (ex: 'Foco Emagrecimento | Sem 1: 3 séries | Sem 2: 4 séries | Sem 3: + repetições | Sem 4: Deload')."
+      : "1. Cada sessão DEVE conter EXATAMENTE " + exercisesPerSession + " exercícios.\n2. Volume Semanal: Busque entre 10 a 20 séries semanais por grupo muscular. Use repetições clássicas (ex: 8-12) e descansos de 60-90s.\n3. Periodização de 4 Semanas: O plano DEVE ser um Mesociclo de 4 semanas com progressão de volume (Progressive Overload). O campo 'method' deve conter (ex: 'Foco Hipertrofia | Sem 1: 3 séries | Sem 2: 4 séries | Sem 3: 5 séries | Sem 4 (Deload): 2 séries').";
+
     const prompt = `Você é um personal trainer especialista em musculação, hipertrofia e periodização esportiva.
 ${scientificBasis}
 Crie um plano de treino estruturado em JSON para um aluno com o seguinte perfil:
@@ -106,10 +116,8 @@ Você DEVE escolher os exercícios APENAS desta lista aprovada:
 [${exerciseListStr}]
 NÃO invente exercícios fora dessa lista. Use o NOME EXATO que está na lista. Se precisar de um substituto, escolha o mais próximo dentro desta lista, copiando o nome perfeitamente.
 
-REGRA CRÍTICA SOBRE QUANTIDADE DE EXERCÍCIOS E VOLUME (SCHOENFELD, 2021):
-1. Cada sessão DEVE conter EXATAMENTE ${exercisesPerSession} exercícios para preencher a duração de ${config.duration} minutos.
-2. Volume Semanal: Busque entre 10 a 20 séries semanais por grupo muscular.
-3. Periodização de 4 Semanas: O plano DEVE ser um Mesociclo de 4 semanas com progressão de volume (Progressive Overload). O campo "sets" e "reps" deve refletir a Semana 1. O campo "method" OBRIGATORIAMENTE deve conter como o aluno vai progredir nas próximas semanas (ex: "Semana 1: 3 séries | Semana 2: 4 séries | Semana 3: 5 séries | Semana 4 (Deload): 2 séries").
+${ruleTitle}
+${goalSpecificInstructions}
 
 RETORNE APENAS O JSON, SEM MARCAÇÃO MARKDOWN.
 Formato OBRIGATÓRIO do JSON:
@@ -125,10 +133,10 @@ Formato OBRIGATÓRIO do JSON:
           "name": "Nome do Exercício",
           "muscleGroup": "Grupo muscular principal",
           "sets": 3,
-          "reps": "10-12",
-          "restSeconds": 60,
-          "tips": "Dica curta de execução focada na tensão mecânica.",
-          "method": "DESCRIÇÃO DA PROGRESSÃO DE 4 SEMANAS + Método Aplicado (ex: Semana 1-2: 3 séries. Semana 3: 4 séries. Sem 4: Deload. Use pirâmide de cargas).",
+          "reps": "${isWeightLoss ? '12-15' : '10-12'}",
+          "restSeconds": ${isWeightLoss ? 45 : 60},
+          "tips": "Dica curta de execução focada no objetivo.",
+          "method": "DESCRIÇÃO DA PROGRESSÃO DE 4 SEMANAS (Siga o exemplo das Regras Críticas).",
           "youtubeSearchTerm": "nome do exercício como executar corretamente"
         }
       ]
