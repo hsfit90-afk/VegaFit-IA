@@ -50,19 +50,42 @@ export default function ActiveWorkout() {
     });
     
     if (currentSession && activeExercises.length === 0) {
-      const initialized = currentSession.exercises.map(ex => ({
-        workoutExerciseId: ex.id,
-        exerciseId: ex.exerciseId,
-        name: ex.name,
-        muscleGroup: ex.muscleGroup,
-        targetSets: ex.sets,
-        sets: Array.from({length: ex.sets}).map((_, i) => ({ 
-          label: ex.targetLabels?.[i] || `S${i + 1}`,
-          reps: ex.targetReps?.[i] ?? (parseInt(ex.reps.split('-')[0]) || 10), 
-          weight: ex.targetWeights?.[i] || 0, 
-          completed: false 
-        }))
-      }));
+      // Calcula a semana atual baseada na criação do plano
+      const planCreatedAt = currentPlan?.createdAt || Date.now();
+      const daysSinceStart = Math.floor((Date.now() - planCreatedAt) / (1000 * 60 * 60 * 24));
+      const currentWeek = Math.min(Math.floor(daysSinceStart / 7) + 1, 4);
+
+      const initialized = currentSession.exercises.map(ex => {
+        let finalSetCount = ex.sets;
+        
+        // Magicamente busca se a IA mandou mudar o número de séries para a semana atual
+        const chunks = (ex.method || '').split(/\s*\|\s*|\.\s+(?=(?:Semana|Sem)\b)/i).filter(Boolean);
+        chunks.forEach(chunk => {
+          const headerMatch = chunk.match(/^(?:.*?\b(?:Foco|Fase)[^|]*\|\s*)?(?:Semana|Sem)\s+(\d+(?:[-–]\d+)?)[:\s]+(.*)/i);
+          if (headerMatch) {
+            const weekNum = parseInt(headerMatch[1].split(/[-–]/)[0]);
+            if (weekNum === currentWeek) {
+              const setMatch = headerMatch[2].match(/(\d+)\s+s[ée]ries?/i);
+              if (setMatch) finalSetCount = parseInt(setMatch[1]);
+            }
+          }
+        });
+
+        return {
+          workoutExerciseId: ex.id,
+          exerciseId: ex.exerciseId,
+          name: ex.name,
+          muscleGroup: ex.muscleGroup,
+          targetSets: finalSetCount,
+          sets: Array.from({length: finalSetCount}).map((_, i) => ({ 
+            label: ex.targetLabels?.[i] || `S${i + 1}`,
+            reps: ex.targetReps?.[i] ?? (parseInt(ex.reps.split('-')[0]) || 10), 
+            weight: ex.targetWeights?.[i] || 0, 
+            completed: false 
+          }))
+        };
+      });
+      
       setActiveExercises(initialized);
       setStartTime(Date.now());
     }
