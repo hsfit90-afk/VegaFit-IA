@@ -116,6 +116,9 @@ Você DEVE escolher os exercícios APENAS desta lista aprovada:
 [${exerciseListStr}]
 NÃO invente exercícios fora dessa lista. Use o NOME EXATO que está na lista. Se precisar de um substituto, escolha o mais próximo dentro desta lista, copiando o nome perfeitamente.
 
+REGRA CRÍTICA SOBRE A DIVISÃO MUSCULAR (SPLIT):
+Os exercícios escolhidos para cada sessão DEVEM OBRIGATORIAMENTE focar nos músculos declarados no "name" da sessão. Jamais insira exercícios de costas ou ombros em um dia focado apenas em peito e tríceps, a menos que seja um treino Full Body.
+
 ${ruleTitle}
 ${goalSpecificInstructions}
 
