@@ -140,7 +140,7 @@ Formato OBRIGATÓRIO do JSON:
           "sets": 3,
           "reps": "${isWeightLoss ? '12-15' : '10-12'}",
           "restSeconds": ${isWeightLoss ? 45 : 60},
-          "tips": "Dica curta de execução focada no objetivo.",
+          "tips": "EXPLICAÇÃO DE COMO EXECUTAR O MÉTODO (ex: Como fazer o Drop Set) + Dica de execução do exercício.",
           "method": "DESCRIÇÃO DA PROGRESSÃO DE 4 SEMANAS (Siga o exemplo das Regras Críticas).",
           "targetLabels": ["S1", "S2", "Drop Set"],
           "youtubeSearchTerm": "nome do exercício como executar corretamente"
@@ -154,7 +154,9 @@ Certifique-se de que a quantidade de sessões (sessions) corresponde a "Dias por
 OBRIGATÓRIO: Cada sessão deve ter EXATAMENTE ${exercisesPerSession} exercícios — nem a mais, nem a menos.
 Gere exercícios compatíveis com os "Equipamentos disponíveis" (${config.equipment}).
 Aplique o método ${methodLabel.toUpperCase()} de forma coerente em todos os exercícios.
-REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause ou Pirâmide, use o array "targetLabels" para nomear as séries adequadamente (ex: ["S1", "S2", "Drop Set"] ou ["S1", "Rest-Pause", "Rest-Pause"]). O tamanho do array deve ser IGUAL ao número de "sets". Para método tradicional, pode usar ["S1", "S2", "S3"].`;
+REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause, Pirâmide, etc: 
+1. Use o array "targetLabels" para nomear as séries (ex: ["S1", "S2", "Drop Set"]). O tamanho DEVE ser igual ao número de "sets". Para o método tradicional, use ["S1", "S2", "S3"].
+2. Você DEVE explicar brevemente como executar o método no campo "tips" de CADA exercício (ex: "No Drop Set, ao falhar, reduza 20% da carga e continue sem descanso").`;
 
     const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
