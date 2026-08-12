@@ -21,7 +21,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background overflow-x-hidden">
       {!hideNavigation && <Navigation />}
       <main className={`flex-1 min-h-screen w-full ${!hideNavigation ? 'md:ml-[260px] pb-20 md:pb-0' : ''}`}>
         <AnimatePresence mode="wait">
