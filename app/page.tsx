@@ -576,7 +576,7 @@ export default function Dashboard() {
             const displayMuscle = muscle.replace(' (quadríceps)', '');
 
             return (
-              <Card key={muscle} className="bg-surface/50 border-white/5 hover:bg-surface transition-colors">
+              <Card key={muscle} variant="neon-hover" className="bg-surface/50 cursor-pointer">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-surface-light flex items-center justify-center">
                     <div className={`w-3.5 h-3.5 rounded-full ${statusColor} shadow-[0_0_12px] ${glowColor}`}></div>
@@ -597,7 +597,7 @@ export default function Dashboard() {
 
 function DashboardCard({ title, value, icon: Icon, color, bg }: { title: string, value: string, icon: any, color: string, bg: string }) {
   return (
-    <Card className="hover:border-primary/20 transition-colors group">
+    <Card variant="neon-hover" className="group cursor-pointer">
       <CardContent className="p-4 md:p-5">
         <div className="flex items-start justify-between mb-3">
           <div className={`p-2 rounded-xl ${bg}`}>

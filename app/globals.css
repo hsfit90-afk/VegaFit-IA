@@ -50,6 +50,11 @@ body {
   }
   
   .glass-panel {
-    @apply bg-surface/80 backdrop-blur-xl border border-white/5 shadow-lg;
+    @apply bg-surface/40 backdrop-blur-2xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] relative overflow-hidden;
+  }
+  
+  .glass-panel::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent pointer-events-none;
   }
 }

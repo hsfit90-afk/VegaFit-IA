@@ -4,13 +4,20 @@ import { motion, HTMLMotionProps } from 'motion/react';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   glass?: boolean;
+  variant?: 'default' | 'glass' | 'neon-hover';
   animated?: boolean;
 }
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, glass, animated, children, ...props }, ref) => {
-    const baseStyles = "rounded-2xl border bg-surface text-foreground shadow-sm overflow-hidden";
-    const glassStyles = glass ? "glass-panel bg-surface/60 border-white/5" : "border-border";
+  ({ className, glass, variant = 'default', animated, children, ...props }, ref) => {
+    const baseStyles = "rounded-2xl border bg-surface text-foreground shadow-sm overflow-hidden transition-all duration-300";
+    
+    let variantStyles = "border-border";
+    if (glass || variant === 'glass') {
+      variantStyles = "glass-panel bg-surface/60 border-white/5";
+    } else if (variant === 'neon-hover') {
+      variantStyles = "border-border hover:border-primary/50 hover:shadow-[0_0_20px_rgba(0,255,136,0.15)] hover:-translate-y-1";
+    }
     
     const Component = animated ? motion.div : 'div';
     const animationProps = animated ? {
@@ -22,7 +29,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     return (
       <Component
         ref={ref as any}
-        className={cn(baseStyles, glassStyles, className)}
+        className={cn(baseStyles, variantStyles, className)}
         {...animationProps}
         {...props as any}
       >

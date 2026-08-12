@@ -112,6 +112,9 @@ export default function ActiveWorkout() {
             if (profile?.soundEnabled && audioRef.current) {
               audioRef.current.play().catch(e => console.log('Audio play failed', e));
             }
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              navigator.vibrate([100, 50, 100]);
+            }
             return 0;
           }
           return prev - 1;
@@ -188,6 +191,9 @@ export default function ActiveWorkout() {
       // Start rest timer if completed (outside state updater!)
       if (!isCurrentlyCompleted) {
          setRestTimer(profile?.defaultRestTimer || currentSession?.exercises[exerciseIndex]?.restSeconds || 60);
+         if (typeof navigator !== 'undefined' && navigator.vibrate) {
+           navigator.vibrate(50);
+         }
       } else {
          setRestTimer(0);
       }
@@ -543,54 +549,70 @@ export default function ActiveWorkout() {
     const completedSetsCount = finishedExercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
 
     return (
-      <div className="p-6 md:p-10 max-w-2xl mx-auto text-center pt-12 animate-fade-in pb-32">
-        {/* Trophy Icon */}
-        <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_60px_rgba(0,255,136,0.4)]">
-          <Trophy className="w-12 h-12 text-[#0a0a0f]" />
-        </div>
-        <h1 className="text-4xl font-outfit font-bold mb-2 text-primary">Treino Concluído!</h1>
-        <p className="text-foreground-muted mb-8 text-base">Excelente trabalho, {profile?.name || 'Atleta'}! 🔥</p>
+      <div className="min-h-screen bg-[#0a0a0f] flex flex-col items-center justify-center p-4 py-12 animate-fade-in relative overflow-hidden">
+        {/* Glow Effects */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[120%] h-[500px] bg-primary/20 rounded-[100%] blur-[120px] pointer-events-none"></div>
+        
+        <div id="share-card" className="w-full max-w-md bg-surface/40 backdrop-blur-3xl border border-white/10 rounded-[40px] p-8 shadow-[0_0_80px_rgba(0,255,136,0.15)] relative z-10 flex flex-col items-center">
+          {/* Trophy Icon */}
+          <div className="w-28 h-28 bg-gradient-to-br from-primary via-primary to-accent rounded-[32px] flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(0,255,136,0.5)] transform -rotate-6">
+            <Trophy className="w-14 h-14 text-[#0a0a0f]" />
+          </div>
+          
+          <h1 className="text-4xl font-outfit font-black mb-1 text-white uppercase tracking-tight text-center">Treino Concluído</h1>
+          <p className="text-primary font-bold mb-10 text-lg">Excelente trabalho, {profile?.name || 'Atleta'}! 🔥</p>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-surface border border-border rounded-2xl p-4 flex flex-col items-center gap-2">
-            <Timer className="w-5 h-5 text-blue-400" />
-            <span className="text-2xl font-mono font-bold text-white">{durationMin}</span>
-            <span className="text-[10px] text-foreground-muted uppercase tracking-widest font-semibold">min</span>
+          {/* Stats Cards - Story Style */}
+          <div className="grid grid-cols-3 gap-4 w-full mb-8">
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col items-center gap-3">
+              <Timer className="w-6 h-6 text-blue-400" />
+              <div className="flex flex-col items-center">
+                <span className="text-3xl font-black text-white">{durationMin}</span>
+                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1">min</span>
+              </div>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col items-center gap-3 relative overflow-hidden">
+              <div className="absolute inset-0 bg-primary/10 blur-xl"></div>
+              <Zap className="w-6 h-6 text-primary relative z-10" />
+              <div className="flex flex-col items-center relative z-10">
+                <span className="text-3xl font-black text-white">{finishedVolume}</span>
+                <span className="text-[10px] text-primary/70 uppercase tracking-widest font-bold mt-1">kg vol</span>
+              </div>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col items-center gap-3">
+              <Flame className="w-6 h-6 text-orange-400" />
+              <div className="flex flex-col items-center">
+                <span className="text-3xl font-black text-white">{completedSetsCount}</span>
+                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1">séries</span>
+              </div>
+            </div>
           </div>
-          <div className="bg-surface border border-border rounded-2xl p-4 flex flex-col items-center gap-2">
-            <Zap className="w-5 h-5 text-primary" />
-            <span className="text-2xl font-mono font-bold text-white">{finishedVolume}</span>
-            <span className="text-[10px] text-foreground-muted uppercase tracking-widest font-semibold">kg vol.</span>
-          </div>
-          <div className="bg-surface border border-border rounded-2xl p-4 flex flex-col items-center gap-2">
-            <Flame className="w-5 h-5 text-orange-400" />
-            <span className="text-2xl font-mono font-bold text-white">{completedSetsCount}</span>
-            <span className="text-[10px] text-foreground-muted uppercase tracking-widest font-semibold">séries</span>
-          </div>
-        </div>
 
-        {/* PR destaque */}
-        {recentPRs.length > 0 && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-[#ffd700]/10 to-transparent border border-[#ffd700]/30 rounded-2xl text-left">
-            <p className="text-[11px] text-[#ffd700]/70 uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
-              <Trophy className="w-4 h-4" /> Novos Recordes Pessoais!
-            </p>
-            {recentPRs.map((pr, i) => (
-              <p key={i} className="text-[#ffd700] font-bold font-outfit text-base">{pr}</p>
-            ))}
-          </div>
-        )}
+          {/* PR destaque */}
+          {recentPRs.length > 0 && (
+            <div className="w-full mb-8 p-5 bg-gradient-to-br from-[#ffd700]/15 to-[#ffd700]/5 border border-[#ffd700]/40 rounded-3xl text-left relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#ffd700]/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
+              <p className="text-xs text-[#ffd700] uppercase tracking-widest font-black mb-3 flex items-center gap-2 relative z-10">
+                <Trophy className="w-4 h-4" /> Novos Recordes!
+              </p>
+              <div className="space-y-1.5 relative z-10">
+                {recentPRs.map((pr, i) => (
+                  <p key={i} className="text-white font-bold font-outfit text-lg">{pr}</p>
+                ))}
+              </div>
+            </div>
+          )}
 
-        {/* Botões de ação */}
-        <div className="flex flex-col gap-3">
-          <Button onClick={handleShare} variant="outline" size="lg" className="border-primary/40 text-primary hover:bg-primary/10 gap-2">
-            <Share2 className="w-5 h-5" />
-            Compartilhar Treino
-          </Button>
-          <Button onClick={() => router.push('/')} size="lg">
-            Voltar ao Início
-          </Button>
+          {/* Botões de ação */}
+          <div className="flex flex-col gap-3 w-full mt-4">
+            <Button onClick={handleShare} size="lg" className="h-16 text-lg rounded-2xl bg-white text-black hover:bg-gray-200 shadow-xl font-bold">
+              <Share2 className="w-5 h-5 mr-2" />
+              Compartilhar Resumo
+            </Button>
+            <Button onClick={() => router.push('/')} variant="outline" size="lg" className="h-16 text-lg rounded-2xl border-white/20 text-white hover:bg-white/10">
+              Voltar ao Início
+            </Button>
+          </div>
         </div>
 
         {/* Toast de volume (fica embaixo da tela) */}
@@ -641,11 +663,22 @@ export default function ActiveWorkout() {
         </div>
       </header>
 
-      {/* Floating Rest Timer */}
+      {/* Immersive Rest Timer Modal */}
       {restTimer > 0 && (
-        <div className="fixed bottom-24 right-6 bg-background/80 backdrop-blur-xl border border-primary/50 p-4 rounded-[20px] shadow-[0_0_20px_rgba(0,255,136,0.1)] z-50 flex items-center justify-center animate-pulse">
-          <Clock className="w-5 h-5 text-primary mr-2" />
-          <span className="font-mono text-primary font-bold text-lg">{formatTime(restTimer)}</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-surface/90 border border-primary/30 p-8 rounded-[32px] shadow-[0_0_50px_rgba(0,255,136,0.2)] flex flex-col items-center max-w-sm w-full animate-in zoom-in-95 duration-300">
+            <div className="w-24 h-24 rounded-full border-4 border-primary/20 flex items-center justify-center relative mb-6">
+              <div className="absolute inset-0 border-4 border-primary rounded-full animate-[spin_4s_linear_infinite] border-t-transparent"></div>
+              <Clock className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-white font-bold text-xl mb-2">Tempo de Descanso</h3>
+            <div className="font-mono text-primary font-black text-6xl tracking-tight mb-8">
+              {formatTime(restTimer)}
+            </div>
+            <Button onClick={() => setRestTimer(0)} variant="outline" className="w-full border-primary/50 text-primary hover:bg-primary/10 rounded-xl">
+              PULAR DESCANSO
+            </Button>
+          </div>
         </div>
       )}
 
