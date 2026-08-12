@@ -116,8 +116,10 @@ Você DEVE escolher os exercícios APENAS desta lista aprovada:
 [${exerciseListStr}]
 NÃO invente exercícios fora dessa lista. Use o NOME EXATO que está na lista. Se precisar de um substituto, escolha o mais próximo dentro desta lista, copiando o nome perfeitamente.
 
-REGRA CRÍTICA SOBRE A DIVISÃO MUSCULAR (SPLIT):
-Os exercícios escolhidos para cada sessão DEVEM OBRIGATORIAMENTE focar nos músculos declarados no "name" da sessão. Jamais insira exercícios de costas ou ombros em um dia focado apenas em peito e tríceps, a menos que seja um treino Full Body.
+REGRA CRÍTICA SOBRE A DIVISÃO MUSCULAR (SPLIT E COERÊNCIA):
+1. Os exercícios escolhidos DEVEM OBRIGATORIAMENTE focar EXCLUSIVAMENTE nos músculos declarados no "name" da sessão. NUNCA insira exercícios de outros grupos musculares (incluindo Cardio ou Pernas) em um dia de Peito e Tríceps, por exemplo.
+2. A dica (tips) DEVE fazer sentido para o exercício. Jamais gere dicas sobre "alongar o peito" para um exercício de Cardio ou Perna.
+3. Se o método for Superset (Biset), certifique-se de parear exercícios coerentes com a sessão atual.
 
 ${ruleTitle}
 ${goalSpecificInstructions}
