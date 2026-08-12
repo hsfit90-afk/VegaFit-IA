@@ -271,9 +271,6 @@ export default function Onboarding() {
                       onClick={() => setLevel(l.id)} 
                       className={`w-full text-left p-5 rounded-2xl border transition-all relative overflow-hidden ${level === l.id ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(0,255,136,0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
                     >
-                      {level === l.id && (
-                        <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">Recomendado</div>
-                      )}
                       <div className="text-lg font-semibold text-foreground mb-1">{l.label}</div>
                       <div className="text-sm text-foreground-muted pr-8">{l.desc}</div>
                     </button>

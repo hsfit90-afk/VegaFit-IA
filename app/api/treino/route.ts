@@ -140,6 +140,7 @@ Formato OBRIGATÓRIO do JSON:
           "restSeconds": ${isWeightLoss ? 45 : 60},
           "tips": "Dica curta de execução focada no objetivo.",
           "method": "DESCRIÇÃO DA PROGRESSÃO DE 4 SEMANAS (Siga o exemplo das Regras Críticas).",
+          "targetLabels": ["S1", "S2", "Drop Set"],
           "youtubeSearchTerm": "nome do exercício como executar corretamente"
         }
       ]
@@ -150,7 +151,8 @@ Formato OBRIGATÓRIO do JSON:
 Certifique-se de que a quantidade de sessões (sessions) corresponde a "Dias por semana" informados (${config.daysPerWeek}).
 OBRIGATÓRIO: Cada sessão deve ter EXATAMENTE ${exercisesPerSession} exercícios — nem a mais, nem a menos.
 Gere exercícios compatíveis com os "Equipamentos disponíveis" (${config.equipment}).
-Aplique o método ${methodLabel.toUpperCase()} de forma coerente em todos os exercícios.`;
+Aplique o método ${methodLabel.toUpperCase()} de forma coerente em todos os exercícios.
+REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause ou Pirâmide, use o array "targetLabels" para nomear as séries adequadamente (ex: ["S1", "S2", "Drop Set"] ou ["S1", "Rest-Pause", "Rest-Pause"]). O tamanho do array deve ser IGUAL ao número de "sets". Para método tradicional, pode usar ["S1", "S2", "S3"].`;
 
     const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
