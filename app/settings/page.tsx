@@ -6,7 +6,6 @@ import { User, Key, Bell, Download, Trash2, CheckCircle2, Sliders, Volume2, LogO
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { LogOut } from 'lucide-react';
 
 export default function Settings() {
   const { profile, setProfile, clearData } = useAppContext();
