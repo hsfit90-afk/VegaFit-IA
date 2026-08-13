@@ -6,6 +6,7 @@ import { User, Key, Bell, Download, Trash2, CheckCircle2, Sliders, Volume2, LogO
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { LogOut } from 'lucide-react';
 
 export default function Settings() {
   const { profile, setProfile, clearData } = useAppContext();
@@ -76,18 +77,27 @@ export default function Settings() {
 
   return (
     <div className="p-6 md:p-10 max-w-4xl mx-auto animate-fade-in pb-32">
-      <header className="mb-10 flex justify-between items-end">
+      <header className="mb-10 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-outfit font-bold mb-2">Perfil e Configurações</h1>
           <p className="text-foreground-muted">Gerencie seus dados e preferências</p>
         </div>
-        <Button 
-          onClick={handleSave}
-          size="lg"
-        >
-          {saved ? <CheckCircle2 className="w-5 h-5 mr-2" /> : null}
-          {saved ? 'Salvo!' : 'Salvar'}
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            onClick={() => { clearData(); router.push('/'); }} 
+            variant="outline"
+            className="border-red-500/30 text-red-500 hover:bg-red-500/10"
+          >
+            <LogOut className="w-5 h-5 mr-2" />
+            Sair da Conta
+          </Button>
+          <Button 
+            onClick={handleSave}
+          >
+            {saved ? <CheckCircle2 className="w-5 h-5 mr-2" /> : null}
+            {saved ? 'Salvo!' : 'Salvar'}
+          </Button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -181,17 +191,14 @@ export default function Settings() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Dados</CardTitle>
+              <CardTitle className="text-lg text-red-400">Zona de Perigo</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 mt-2">
-              <Button onClick={() => { clearData(); router.push('/'); }} variant="outline" fullWidth className="text-sm justify-center text-destructive font-semibold h-12 border-destructive/30 hover:bg-destructive/10">
-                <LogOut className="w-4 h-4 mr-2" /> Sair da Conta
-              </Button>
               <Button onClick={exportData} variant="outline" fullWidth className="text-sm justify-center text-foreground font-semibold h-12 border-border">
-                <Download className="w-4 h-4 mr-2" /> Exportar Backup
+                <Download className="w-4 h-4 mr-2" /> Exportar Backup (Dados)
               </Button>
-              <Button onClick={handleClear} variant="danger" fullWidth className="text-sm justify-center h-12">
-                <Trash2 className="w-4 h-4 mr-2" /> Apagar Tudo
+              <Button onClick={handleClear} variant="danger" fullWidth className="text-sm justify-center h-12 mt-4">
+                <Trash2 className="w-4 h-4 mr-2" /> Apagar Todos os Meus Dados
               </Button>
             </CardContent>
           </Card>

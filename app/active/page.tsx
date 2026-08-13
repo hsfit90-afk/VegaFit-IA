@@ -9,6 +9,7 @@ import confetti from 'canvas-confetti';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { getExercises, deleteExercise } from '@/lib/db/exercises';
+import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, history, activePlanId } = useAppContext();
@@ -58,6 +59,8 @@ export default function ActiveWorkout() {
       const initialized = currentSession.exercises.map(ex => {
         let finalSetCount = ex.sets;
         
+        let isDeload = false;
+        
         // Magicamente busca se a IA mandou mudar o número de séries para a semana atual
         const chunks = (ex.method || '').split(/\s*\|\s*|\.\s+(?=(?:Semana|Sem)\b)/i).filter(Boolean);
         chunks.forEach(chunk => {
@@ -65,11 +68,16 @@ export default function ActiveWorkout() {
           if (headerMatch) {
             const weekNum = parseInt(headerMatch[1].split(/[-–]/)[0]);
             if (weekNum === currentWeek) {
+              const content = headerMatch[2].toLowerCase();
+              if (content.includes('deload')) isDeload = true;
               const setMatch = headerMatch[2].match(/(\d+)\s+s[ée]ries?/i);
               if (setMatch) finalSetCount = parseInt(setMatch[1]);
             }
           }
         });
+
+        // Recalcular o peso alvo dinamicamente para o dia de hoje, garantindo o deload!
+        const oneRM = getHistorical1RM(history || [], ex.name);
 
         return {
           workoutExerciseId: ex.id,
@@ -77,12 +85,22 @@ export default function ActiveWorkout() {
           name: ex.name,
           muscleGroup: ex.muscleGroup,
           targetSets: finalSetCount,
-          sets: Array.from({length: finalSetCount}).map((_, i) => ({ 
-            label: ex.targetLabels?.[i] || `S${i + 1}`,
-            reps: ex.targetReps?.[i] ?? (parseInt(ex.reps.split('-')[0]) || 10), 
-            weight: ex.targetWeights?.[i] || 0, 
-            completed: false 
-          }))
+          sets: Array.from({length: finalSetCount}).map((_, i) => {
+            const targetReps = ex.targetReps?.[i] ?? (parseInt(ex.reps.split('-')[0]) || 10);
+            
+            // Tenta pegar o peso pré-calculado do gerador, mas se tiver histórico, recalcula fresco para hoje!
+            let finalWeight = ex.targetWeights?.[i] || 0;
+            if (oneRM > 0) {
+              finalWeight = calculateTargetWeight(oneRM, profile?.goal || 'Hipertrofia', targetReps, isDeload);
+            }
+
+            return { 
+              label: ex.targetLabels?.[i] || `S${i + 1}`,
+              reps: targetReps, 
+              weight: finalWeight, 
+              completed: false 
+            };
+          })
         };
       });
       
@@ -326,11 +344,27 @@ export default function ActiveWorkout() {
     // 1. Atualizar a UI ativa imediatamente
     setActiveExercises(prev => {
       const updated = [...prev];
+      
+      const newName = randomAlternative.name;
+      const oneRM = getHistorical1RM(history || [], newName);
+      let newWeight = 0;
+      
+      if (oneRM > 0) {
+        // Tentamos deduzir o objetivo (goal) do usuário para o swap
+        const maxReps = Math.max(...updated[exIndex].sets.map(s => s.reps));
+        newWeight = calculateTargetWeight(oneRM, profile?.goal || 'Hipertrofia', maxReps);
+      }
+
       updated[exIndex] = {
         ...updated[exIndex],
         exerciseId: randomAlternative.id,
-        name: randomAlternative.name,
-        muscleGroup: randomAlternative.muscleGroup
+        name: newName,
+        muscleGroup: randomAlternative.muscleGroup,
+        sets: updated[exIndex].sets.map(set => ({
+          ...set,
+          weight: newWeight, // Aplica o novo peso ou zera
+          completed: false
+        }))
       };
       return updated;
     });

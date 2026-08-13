@@ -14,8 +14,17 @@ import { WorkoutPlan } from '@/lib/types';
 export default function Dashboard() {
   const { profile, history, workoutPlans, activePlanId, setActivePlan, deleteWorkoutPlan, currentSessionIndex } = useAppContext();
   const router = useRouter();
-  const [chartPeriod, setChartPeriod] = useState<'week' | 'month' | 'total'>('week');
   const [dailyTip, setDailyTip] = useState<string>('Carregando dica do dia...');
+
+  // Métricas
+  const currentWeekWorkouts = history.filter(h => {
+    const today = new Date();
+    const workoutDate = new Date(h.date);
+    const diffDays = Math.ceil(Math.abs(today.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24)); 
+    return diffDays <= 7;
+  });
+
+  const totalVolume = currentWeekWorkouts.reduce((sum, h) => sum + h.totalVolume, 0);
 
   // Removed strict redirect so trainers can also use their own dashboard for working out.
   // Trainers have "Meus Alunos" in the navigation if they want to manage clients.
@@ -166,39 +175,7 @@ export default function Dashboard() {
     return list.slice(0, 3); // Mostra os 3 mais relevantes (primeiros da fila)
   }, [history, streak]);
 
-  // --- Chart Logic ---
-  const currentWeekWorkouts = history.filter(h => {
-    const today = new Date();
-    const workoutDate = new Date(h.date);
-    const diffDays = Math.ceil(Math.abs(today.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24)); 
-    return diffDays <= 7;
-  });
 
-  const totalVolume = currentWeekWorkouts.reduce((sum, h) => sum + h.totalVolume, 0);
-
-  const filteredWorkoutsForChart = history.filter(h => {
-    if (chartPeriod === 'total') return true;
-    const today = new Date();
-    const workoutDate = new Date(h.date);
-    const diffDays = Math.ceil(Math.abs(today.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24)); 
-    if (chartPeriod === 'week') return diffDays <= 7;
-    if (chartPeriod === 'month') return diffDays <= 30;
-    return true;
-  });
-
-  const muscleVolumeMap: Record<string, number> = {};
-  filteredWorkoutsForChart.forEach(workout => {
-    workout.exercises.forEach(ex => {
-      ex.sets.forEach(set => {
-        if (set.completed) {
-          const vol = set.reps * set.weight;
-          muscleVolumeMap[ex.muscleGroup] = (muscleVolumeMap[ex.muscleGroup] || 0) + vol;
-        }
-      });
-    });
-  });
-
-  const chartData = Object.entries(muscleVolumeMap).map(([name, volume]) => ({ name, volume }));
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -271,58 +248,9 @@ export default function Dashboard() {
         />
       </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-8">
-        {/* Gráfico de Volume */}
-        <motion.div variants={itemVariants} className="lg:col-span-2">
-          <Card className="h-full flex flex-col">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-primary" />
-                <CardTitle>Carga Total por Músculo</CardTitle>
-              </div>
-              <div className="flex bg-surface-light rounded-lg p-1">
-                {(['week', 'month', 'total'] as const).map(period => (
-                  <button 
-                    key={period}
-                    onClick={() => setChartPeriod(period)}
-                    className={`px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-md transition-all ${chartPeriod === period ? 'bg-surface text-primary shadow-sm' : 'text-foreground-muted hover:text-foreground'}`}
-                  >
-                    {period === 'week' ? 'Sem' : period === 'month' ? 'Mês' : 'Tudo'}
-                  </button>
-                ))}
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 pt-4">
-              {chartData.length > 0 ? (
-                <div className="h-[250px] md:h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <XAxis dataKey="name" stroke="#8e8e93" fontSize={11} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#8e8e93" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${val/1000}k`} />
-                      <Tooltip 
-                        cursor={{fill: 'var(--color-surface-light)'}}
-                        contentStyle={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
-                        itemStyle={{ color: 'var(--color-primary)' }}
-                      />
-                      <Bar dataKey="volume" radius={[4, 4, 0, 0]}>
-                        {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? 'var(--color-primary)' : 'var(--color-secondary)'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-[250px] md:h-[300px] flex items-center justify-center text-foreground-muted flex-col gap-3">
-                  <Dumbbell className="w-10 h-10 opacity-20" />
-                  <p className="text-sm">Nenhum treino registrado.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* CTA Treino de Hoje e Conquistas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-8">
+        
+        {/* CTA Treino de Hoje */}
         <motion.div variants={itemVariants} className="space-y-6">
           
           {/* Box de Treino */}
@@ -420,7 +348,11 @@ export default function Dashboard() {
           </div>
 
           {/* Box de Conquistas (Gamification) */}
-          <Card>
+        </motion.div>
+        
+        {/* Conquistas (Gamification) */}
+        <motion.div variants={itemVariants} className="space-y-6">
+          <Card className="h-full">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Star className="w-4 h-4 text-yellow-400" /> Suas Conquistas
@@ -446,7 +378,6 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
-
         </motion.div>
       </div>
 

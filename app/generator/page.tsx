@@ -8,9 +8,10 @@ import { useRouter } from 'next/navigation';
 import { getExercises } from '@/lib/db/exercises';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
 
 export default function Generator() {
-  const { addWorkoutPlan, profile } = useAppContext();
+  const { addWorkoutPlan, profile, history } = useAppContext();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -132,6 +133,29 @@ export default function Generator() {
               exerciseId: 'custom-' + crypto.randomUUID(),
               muscleGroup: ex.muscleGroup || 'Desconhecido'
             };
+          }).map((ex: any) => {
+            // BUG FIX / FEATURE: Calcular a carga exata baseada nos protocolos científicos
+            // Pega o nome do exercício (pode ter vindo da IA ou do fallback)
+            const resolvedName = ex.name;
+            
+            // Procura o 1RM histórico
+            const oneRM = getHistorical1RM(history || [], resolvedName);
+            
+            if (oneRM > 0) {
+              const setsCount = typeof ex.sets === 'number' ? ex.sets : 3;
+              // A IA retorna a string `reps` (ex: "10-12"). Pegamos o maior número
+              const maxRepsStr = ex.reps?.toString().split('-').pop();
+              const targetReps = parseInt(maxRepsStr) || 10;
+              
+              const calculatedWeight = calculateTargetWeight(oneRM, form.goal, targetReps);
+              
+              // Preenche targetWeights se já houver um RM calculado
+              if (calculatedWeight > 0) {
+                ex.targetWeights = Array(setsCount).fill(calculatedWeight);
+              }
+            }
+
+            return ex;
           })
         }))
       };
