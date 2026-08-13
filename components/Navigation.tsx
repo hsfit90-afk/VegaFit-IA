@@ -109,7 +109,7 @@ export function Navigation() {
       </aside>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 w-full glass-panel border-t-white/10 px-1 pt-2 pb-[env(safe-area-inset-bottom,16px)] z-50 flex flex-row items-center justify-around rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 w-full bg-surface/80 backdrop-blur-2xl border-t border-white/10 px-1 pt-2 pb-[env(safe-area-inset-bottom,16px)] z-50 flex flex-row items-center justify-around rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
         {filteredMobileNav.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
