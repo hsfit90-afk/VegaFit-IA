@@ -21,9 +21,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden w-full relative">
       {!hideNavigation && <Navigation />}
-      <main className={`flex-1 min-h-screen w-full ${!hideNavigation ? 'md:ml-[260px] pb-20 md:pb-0' : ''}`}>
+      <main className={`min-h-screen w-full block ${!hideNavigation ? 'pt-safe pb-[90px] md:pb-0 md:pt-0 md:pl-[260px]' : ''}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={pathname}

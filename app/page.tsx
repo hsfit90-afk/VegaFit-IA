@@ -299,14 +299,14 @@ export default function Dashboard() {
 
             <div className="relative z-10">
               {activePlan ? (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-3">
                   <button
                     onClick={() => router.push(`/active?sessionIndex=${smartSessionIndex}`)}
                     className="block w-full"
                   >
-                    <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
+                    <Button size="lg" className="w-full text-sm md:text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)] group">
                       INICIAR TREINO
-                      <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                      <ChevronRight className="w-4 h-4 md:w-5 md:h-5 ml-1 md:ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </button>
                   <button
@@ -314,9 +314,9 @@ export default function Dashboard() {
                     className="block w-full"
                     title={`Pular para: ${nextSuggestedSession?.name}`}
                   >
-                    <Button size="sm" variant="outline" fullWidth className="text-xs border-white/20 text-gray-400 hover:border-primary/40 hover:text-primary">
-                      Próximo Treino: {nextSuggestedSession?.name}
-                      <ChevronRight className="w-4 h-4 ml-1" />
+                    <Button size="sm" variant="outline" className="w-full text-xs md:text-sm border-white/20 text-gray-400 hover:border-primary/40 hover:text-primary h-auto py-2">
+                      <span className="truncate">Próximo: {nextSuggestedSession?.name}</span>
+                      <ChevronRight className="w-3 h-3 md:w-4 md:h-4 ml-1 flex-shrink-0" />
                     </Button>
                   </button>
                 </div>
