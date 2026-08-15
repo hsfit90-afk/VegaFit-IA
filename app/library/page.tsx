@@ -169,6 +169,15 @@ export default function Library() {
     );
   }
 
+  if (profile && profile.role !== 'master' && profile.role !== 'trainer') {
+    return (
+      <div className="flex flex-col h-full items-center justify-center min-h-[50vh] text-center px-4">
+        <h2 className="text-2xl font-outfit font-bold mb-2 text-white">Acesso Restrito</h2>
+        <p className="text-foreground-muted">Apenas o Master e os Treinadores podem gerenciar a biblioteca de exercícios.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto animate-fade-in relative pb-32">
       <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">

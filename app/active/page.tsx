@@ -30,7 +30,8 @@ export default function ActiveWorkout() {
 
   const [activeExercises, setActiveExercises] = useState<ActiveExercise[]>([]);
   const [startTime, setStartTime] = useState<number>(0);
-  const [restTimer, setRestTimer] = useState<number>(0);
+  const [restEndTime, setRestEndTime] = useState<number>(0);
+  const [restRemaining, setRestRemaining] = useState<number>(0);
   const [isFinished, setIsFinished] = useState(false);
   const [finishedVolume, setFinishedVolume] = useState(0);
   const [finishedDuration, setFinishedDuration] = useState(0);
@@ -43,6 +44,7 @@ export default function ActiveWorkout() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showVideoFor, setShowVideoFor] = useState<string | null>(null);
   const [libraryExercises, setLibraryExercises] = useState<any[]>([]); // To store DB exercises for mediaUrl
+  const [swappingIndex, setSwappingIndex] = useState<number | null>(null);
 
   useEffect(() => {
     // Load library exercises to map mediaUrl
@@ -112,35 +114,63 @@ export default function ActiveWorkout() {
     audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
   }, [currentSession, activeExercises.length]);
 
-  // FEATURE: Cronômetro ao vivo — atualiza a cada segundo
+  // FEATURE: Cronômetro ao vivo — atualiza a cada segundo de forma consistente (não pausa quando a tela desliga)
   useEffect(() => {
     if (startTime === 0 || isFinished) return;
-    const interval = setInterval(() => {
+    
+    const updateElapsed = () => {
       setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
-    }, 1000);
-    return () => clearInterval(interval);
+    };
+
+    const interval = setInterval(updateElapsed, 1000);
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') updateElapsed();
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [startTime, isFinished]);
 
+  // FEATURE: Cronômetro de Descanso baseado em Timestamp absoluto (não pausa com tela desligada)
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (restTimer > 0) {
-      interval = setInterval(() => {
-        setRestTimer(prev => {
-          if (prev <= 1) {
-            if (profile?.soundEnabled && audioRef.current) {
-              audioRef.current.play().catch(e => console.log('Audio play failed', e));
-            }
-            if (typeof navigator !== 'undefined' && navigator.vibrate) {
-              navigator.vibrate([100, 50, 100]);
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (restEndTime === 0) {
+      setRestRemaining(0);
+      return;
     }
-    return () => clearInterval(interval);
-  }, [restTimer, profile?.soundEnabled]);
+
+    const updateRest = () => {
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((restEndTime - now) / 1000));
+      setRestRemaining(remaining);
+      
+      if (remaining === 0) {
+        setRestEndTime(0);
+        if (profile?.soundEnabled && audioRef.current) {
+          audioRef.current.play().catch(e => console.log('Audio play failed', e));
+        }
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate([100, 50, 100]);
+        }
+      }
+    };
+
+    updateRest(); // update immediately
+    const interval = setInterval(updateRest, 1000);
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') updateRest();
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [restEndTime, profile?.soundEnabled]);
 
   if (!currentSession) {
     return (
@@ -208,12 +238,13 @@ export default function ActiveWorkout() {
 
       // Start rest timer if completed (outside state updater!)
       if (!isCurrentlyCompleted) {
-         setRestTimer(profile?.defaultRestTimer || currentSession?.exercises[exerciseIndex]?.restSeconds || 60);
+         const restSeconds = profile?.defaultRestTimer || currentSession?.exercises[exerciseIndex]?.restSeconds || 60;
+         setRestEndTime(Date.now() + restSeconds * 1000);
          if (typeof navigator !== 'undefined' && navigator.vibrate) {
            navigator.vibrate(50);
          }
       } else {
-         setRestTimer(0);
+         setRestEndTime(0);
       }
     } catch (e: any) {
       alert("Erro ao ticar: " + e.message);
@@ -306,90 +337,110 @@ export default function ActiveWorkout() {
     });
   };
 
-  const handleAutoSwap = (exIndex: number) => {
+  const handleAutoSwap = async (exIndex: number) => {
     const currentActiveEx = activeExercises[exIndex];
-    
-    // Pegar alternativas da biblioteca
     const banned = profile?.bannedExercises || [];
     
-    // BUG FIX: Normalização sem includes() bidirecional — evita falsos positivos
-    // Ex: "Peito".includes("") === true (string vazia bate com tudo!)
-    const normalize = (s: string) => s ? s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
-    const currentMuscle = normalize(currentActiveEx.muscleGroup);
+    // Pegar alternativas gerais que não sejam banidas e não seja o atual
+    const availableAlternatives = libraryExercises.filter(ex => 
+      ex.id !== currentActiveEx.exerciseId && !banned.includes(ex.id)
+    );
 
-    // Se o muscleGroup estiver vazio ou 'geral', não permite swap (exercício inválido da IA)
-    if (!currentMuscle || currentMuscle === 'geral' || currentMuscle === 'desconhecido') {
-      alert(`O exercício "${currentActiveEx.name}" não tem um grupo muscular válido definido. Não é possível buscar alternativas.`);
+    if (availableAlternatives.length === 0) {
+      alert("Não há outros exercícios na sua biblioteca para fazer a troca.");
       return;
     }
 
-    const alternatives = libraryExercises.filter(ex => {
-      const exMuscle = normalize(ex.muscleGroup);
-      // BUG FIX: Comparação ESTRITA por igualdade — sem includes() que causava falsos positivos
-      const isSameMuscle = exMuscle === currentMuscle;
-      
-      return isSameMuscle && 
-             ex.id !== currentActiveEx.exerciseId &&
-             !banned.includes(ex.id);
-    });
-    
-    if (alternatives.length === 0) {
-      alert(`Você não tem outras opções de "${currentActiveEx.muscleGroup || 'mesmo grupo muscular'}" cadastradas na sua biblioteca para fazer a troca.`);
-      return;
-    }
+    setSwappingIndex(exIndex);
 
-    // Escolher um aleatoriamente da lista filtrada
-    const randomAlternative = alternatives[Math.floor(Math.random() * alternatives.length)];
+    try {
+      // 1. Tenta usar a IA para uma troca inteligente
+      const response = await fetch('/api/swap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey: profile?.geminiApiKey || '',
+          currentExerciseName: currentActiveEx.name,
+          libraryExercises: availableAlternatives.map(e => ({
+            id: e.id,
+            name: e.name,
+            muscleGroup: e.muscleGroup
+          }))
+        })
+      });
 
-    // 1. Atualizar a UI ativa imediatamente
-    setActiveExercises(prev => {
-      const updated = [...prev];
-      
-      const newName = randomAlternative.name;
-      const oneRM = getHistorical1RM(history || [], newName);
-      let newWeight = 0;
-      
-      if (oneRM > 0) {
-        // Tentamos deduzir o objetivo (goal) do usuário para o swap
-        const maxReps = Math.max(...updated[exIndex].sets.map(s => s.reps));
-        newWeight = calculateTargetWeight(oneRM, profile?.goal || 'Hipertrofia', maxReps);
+      let bestAlternative = null;
+
+      if (response.ok) {
+        const data = await response.json();
+        bestAlternative = availableAlternatives.find(e => e.id === data.id);
       }
 
-      updated[exIndex] = {
-        ...updated[exIndex],
-        exerciseId: randomAlternative.id,
-        name: newName,
-        muscleGroup: randomAlternative.muscleGroup,
-        sets: updated[exIndex].sets.map(set => ({
-          ...set,
-          weight: newWeight, // Aplica o novo peso ou zera
-          completed: false
-        }))
-      };
-      return updated;
-    });
+      // 2. Fallback: se a IA falhar ou retornar algo inválido, usa logica local original
+      if (!bestAlternative) {
+        const normalize = (s: string) => s ? s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
+        const currentMuscle = normalize(currentActiveEx.muscleGroup);
+        const locals = availableAlternatives.filter(ex => normalize(ex.muscleGroup) === currentMuscle);
+        if (locals.length > 0) {
+          bestAlternative = locals[Math.floor(Math.random() * locals.length)];
+        } else {
+          bestAlternative = availableAlternatives[Math.floor(Math.random() * availableAlternatives.length)];
+        }
+      }
 
-    // 2. Atualizar o plano master no Supabase (persiste a troca)
-    if (currentPlan) {
-      const updatedPlan = {
-        ...currentPlan,
-        sessions: currentPlan.sessions.map((s, i) => {
-          if (i !== safeIndex) return s;
-          return {
-            ...s,
-            exercises: s.exercises.map((e, j) => {
-              if (j !== exIndex) return e;
-              return {
-                ...e,
-                exerciseId: randomAlternative.id,
-                name: randomAlternative.name,
-                muscleGroup: randomAlternative.muscleGroup
-              };
-            })
-          };
-        })
-      };
-      updateWorkoutPlan(updatedPlan);
+      // 3. Atualizar a UI ativa imediatamente
+      setActiveExercises(prev => {
+        const updated = [...prev];
+        const newName = bestAlternative!.name;
+        const oneRM = getHistorical1RM(history || [], newName);
+        let newWeight = 0;
+        
+        if (oneRM > 0) {
+          const maxReps = Math.max(...updated[exIndex].sets.map(s => s.reps));
+          newWeight = calculateTargetWeight(oneRM, profile?.goal || 'Hipertrofia', maxReps);
+        }
+
+        updated[exIndex] = {
+          ...updated[exIndex],
+          exerciseId: bestAlternative!.id,
+          name: newName,
+          muscleGroup: bestAlternative!.muscleGroup,
+          sets: updated[exIndex].sets.map(set => ({
+            ...set,
+            weight: newWeight,
+            completed: false
+          }))
+        };
+        return updated;
+      });
+
+      // 4. Atualizar o plano master no Supabase (persiste a troca)
+      if (currentPlan) {
+        const updatedPlan = {
+          ...currentPlan,
+          sessions: currentPlan.sessions.map((s, i) => {
+            if (i !== safeIndex) return s;
+            return {
+              ...s,
+              exercises: s.exercises.map((e, j) => {
+                if (j !== exIndex) return e;
+                return {
+                  ...e,
+                  exerciseId: bestAlternative!.id,
+                  name: bestAlternative!.name,
+                  muscleGroup: bestAlternative!.muscleGroup
+                };
+              })
+            };
+          })
+        };
+        updateWorkoutPlan(updatedPlan);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Erro de conexão ao tentar trocar exercício via IA.");
+    } finally {
+      setSwappingIndex(null);
     }
   };
 
@@ -698,7 +749,7 @@ export default function ActiveWorkout() {
       </header>
 
       {/* Immersive Rest Timer Modal */}
-      {restTimer > 0 && (
+      {restRemaining > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-surface/90 border border-primary/30 p-8 rounded-[32px] shadow-[0_0_50px_rgba(0,255,136,0.2)] flex flex-col items-center max-w-sm w-full animate-in zoom-in-95 duration-300">
             <div className="w-24 h-24 rounded-full border-4 border-primary/20 flex items-center justify-center relative mb-6">
@@ -707,9 +758,9 @@ export default function ActiveWorkout() {
             </div>
             <h3 className="text-white font-bold text-xl mb-2">Tempo de Descanso</h3>
             <div className="font-mono text-primary font-black text-6xl tracking-tight mb-8">
-              {formatTime(restTimer)}
+              {formatTime(restRemaining)}
             </div>
-            <Button onClick={() => setRestTimer(0)} variant="outline" className="w-full border-primary/50 text-primary hover:bg-primary/10 rounded-xl">
+            <Button onClick={() => setRestEndTime(0)} variant="outline" className="w-full border-primary/50 text-primary hover:bg-primary/10 rounded-xl">
               PULAR DESCANSO
             </Button>
           </div>
@@ -850,10 +901,11 @@ export default function ActiveWorkout() {
                   <div className="flex gap-1 mr-2">
                     <button 
                       onClick={() => handleAutoSwap(exIndex)}
-                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:text-primary transition-all text-gray-400 flex items-center justify-center shadow-lg"
-                      title="Substituir por outro do mesmo músculo"
+                      disabled={swappingIndex === exIndex}
+                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:text-primary transition-all text-gray-400 flex items-center justify-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Substituir por outro com IA inteligente"
                     >
-                      <RefreshCw className="w-5 h-5" />
+                      <RefreshCw className={`w-5 h-5 ${swappingIndex === exIndex ? 'animate-spin text-primary' : ''}`} />
                     </button>
                     <button 
                       onClick={() => handleBanExercise(exIndex)}

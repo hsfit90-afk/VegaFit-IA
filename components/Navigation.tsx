@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2, PlusCircle } from 'lucide-react';
+import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2, PlusCircle, ClipboardList } from 'lucide-react';
 import { useAppContext } from '@/app/context/AppContext';
 
 // Full list for Desktop Sidebar
 const DESKTOP_NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/anamnese', label: 'Anamnese', icon: ClipboardList },
   { href: '/progress', label: 'Progresso', icon: BarChart2 },
   { href: '/generator', label: 'Gerador IA', icon: Zap },
   { href: '/manual-workout', label: 'Criar Treino', icon: PlusCircle },
@@ -23,6 +24,7 @@ const DESKTOP_NAV_ITEMS = [
 // Core list for Mobile Bottom Nav
 const MOBILE_NAV_ITEMS = [
   { href: '/', label: 'Início', icon: Home },
+  { href: '/anamnese', label: 'Anamnese', icon: ClipboardList },
   { href: '/active', label: 'Treinar', icon: PlayCircle },
   { href: '/progress', label: 'Progresso', icon: BarChart2 },
   { href: '/settings', label: 'Perfil', icon: Settings },
@@ -45,14 +47,14 @@ export function Navigation() {
   if (role === 'master') {
     desktopItems.unshift({ href: '/admin', label: 'Admin (Master)', icon: Settings });
     desktopItems.unshift({ href: '/trainer', label: 'Meus Alunos', icon: Zap });
-    mobileItems.unshift({ href: '/trainer', label: 'Alunos', icon: Zap });
+    // mobileItems.unshift({ href: '/trainer', label: 'Alunos', icon: Zap });
   } else if (role === 'trainer') {
     desktopItems.unshift({ href: '/trainer', label: 'Meus Alunos', icon: Zap });
-    mobileItems.unshift({ href: '/trainer', label: 'Alunos', icon: Zap });
+    // mobileItems.unshift({ href: '/trainer', label: 'Alunos', icon: Zap });
   }
 
   const filteredDesktopNav = desktopItems.filter(item => {
-    if (item.href === '/manual-workout') {
+    if (item.href === '/manual-workout' || item.href === '/library') {
       return role === 'trainer' || role === 'master';
     }
     return true;

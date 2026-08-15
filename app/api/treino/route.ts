@@ -53,8 +53,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Sua biblioteca de exercícios está vazia ou todos os exercícios foram ocultados. Adicione mais exercícios!" }, { status: 400 });
     }
 
-    // Create a compact string of available exercises to save tokens
-    const exerciseListStr = limitedExercises.map((e: any) => `${e.name} (${e.muscle_group})`).join(', ');
+    // Create a grouped string of available exercises to make it EXTREMELY clear to the LLM
+    const groupedListStr = Object.entries(exercisesByMuscle).map(([muscle, exercises]) => {
+      return `[MÚSCULO: ${muscle.toUpperCase()}]\n${exercises.map((e: any) => `- ${e.name}`).join('\n')}`;
+    }).join('\n\n');
 
     const methodDescriptions: Record<string, string> = {
       tradicional: 'Séries e repetições tradicionais com descanso entre cada série',
@@ -108,18 +110,26 @@ Crie um plano de treino estruturado em JSON para um aluno com o seguinte perfil:
 - Duração por sessão: ${config.duration} minutos
 - Equipamentos disponíveis: ${config.equipment}
 - Grupos musculares prioritários: ${config.priorities.join(', ')}
-- Limitações: ${config.limitations || 'Nenhuma'}
+- Preferências e Limitações do Aluno: ${profile?.intent || config.limitations || 'Nenhuma'}
 - Método de treino: ${methodLabel.toUpperCase()} — ${methodDesc}
 
+REGRA CRÍTICA SOBRE AS PREFERÊNCIAS DO ALUNO:
+O aluno forneceu as seguintes preferências: "${profile?.intent || config.limitations || 'Nenhuma'}". 
+Você DEVE adaptar a seleção de exercícios e o foco do treino para atender rigorosamente a esses pedidos do aluno (ex: evitar exercícios que causem dor, focar nos músculos que ele pediu). NO ENTANTO, você NÃO PODE ignorar as regras de método, quantidade de exercícios e periodização estabelecidas abaixo. O pedido do aluno deve ser encaixado dentro do protocolo do treinador.
+
 REGRA CRÍTICA DE EXERCÍCIOS DISPONÍVEIS:
-Você DEVE escolher os exercícios APENAS desta lista aprovada:
-[${exerciseListStr}]
+Abaixo está o catálogo oficial de exercícios agrupados por MÚSCULO. Você DEVE escolher os exercícios APENAS desta lista aprovada:
+
+${groupedListStr}
+
 NÃO invente exercícios fora dessa lista. Use o NOME EXATO que está na lista. Se precisar de um substituto, escolha o mais próximo dentro desta lista, copiando o nome perfeitamente.
 
 REGRA CRÍTICA SOBRE A DIVISÃO MUSCULAR (SPLIT E COERÊNCIA):
-1. Os exercícios escolhidos DEVEM OBRIGATORIAMENTE focar EXCLUSIVAMENTE nos músculos declarados no "name" da sessão. NUNCA insira exercícios de outros grupos musculares (incluindo Cardio ou Pernas) em um dia de Peito e Tríceps, por exemplo.
-2. A dica (tips) DEVE fazer sentido para o exercício. Jamais gere dicas sobre "alongar o peito" para um exercício de Cardio ou Perna.
-3. Se o método for Superset (Biset), certifique-se de parear exercícios coerentes com a sessão atual.
+1. A seleção de exercícios DEVE SER 100% COERENTE COM O NOME DA SESSÃO.
+2. Quando criar uma sessão (ex: "Treino A - Peito, Ombro, Tríceps"), vá até a lista acima, procure o bloco "[MÚSCULO: PEITO]" e escolha os exercícios dali. Depois vá no bloco "[MÚSCULO: OMBRO]" etc.
+3. É ESTRITAMENTE PROIBIDO colocar um exercício do bloco "[MÚSCULO: BÍCEPS]" ou "[MÚSCULO: COSTAS]" em um dia de "Peito/Tríceps". ISSO É UM ERRO GRAVE.
+4. A dica (tips) DEVE fazer sentido para o exercício escolhido. Jamais gere dicas sobre "alongar o peito" para um exercício de perna.
+5. Se o método for Superset (Biset), certifique-se de parear exercícios coerentes com a sessão atual.
 
 ${ruleTitle}
 ${goalSpecificInstructions}

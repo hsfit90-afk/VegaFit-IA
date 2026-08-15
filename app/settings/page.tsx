@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { User, Key, Bell, Download, Trash2, CheckCircle2, Sliders, Volume2, LogOut } from 'lucide-react';
+import { User, Key, Bell, Download, Trash2, CheckCircle2, Sliders, Volume2, LogOut, Info, X, ClipboardList, Dumbbell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import Link from 'next/link';
 
 export default function Settings() {
   const { profile, setProfile, clearData } = useAppContext();
@@ -22,9 +23,13 @@ export default function Settings() {
     geminiApiKey: '',
     soundEnabled: true,
     defaultRestTimer: 60,
+    gender: 'M' as 'M' | 'F',
+    waist: 0,
+    hip: 0
   });
 
   const [saved, setSaved] = useState(false);
+  const [showMeasureInfo, setShowMeasureInfo] = useState(false);
 
   useEffect(() => {
     if (profile) setForm(profile);
@@ -36,28 +41,7 @@ export default function Settings() {
     setTimeout(() => setSaved(false), 3000);
   };
 
-  const handleClear = () => {
-    if (window.confirm("Tem certeza que deseja apagar TODOS os seus dados, histórico e treinos? Essa ação não pode ser desfeita.")) {
-      clearData();
-      router.push('/');
-    }
-  };
 
-  const exportData = () => {
-    const data = {
-      profile: localStorage.getItem('fitforge_profile'),
-      plans: localStorage.getItem('fitforge_plans'),
-      history: localStorage.getItem('fitforge_history'),
-      chat: localStorage.getItem('fitforge_coach_history')
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `fitforge_backup_${new Date().getTime()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   // Cálculos
   const imc = form.weight && form.height ? (form.weight / Math.pow(form.height / 100, 2)).toFixed(1) : '0';
@@ -74,134 +58,120 @@ export default function Settings() {
     ? Math.round(10 * form.weight + 6.25 * form.height - 5 * form.age + 5) 
     : 0;
 
+  // RCQ (Relação Cintura-Quadril)
+  const rcq = form.waist && form.hip ? (form.waist / form.hip).toFixed(2) : '0';
+  let rcqRisk = '';
+  let rcqColor = 'text-foreground-muted';
+  if (Number(rcq) > 0) {
+    const limit = form.gender === 'F' ? 0.85 : 0.90;
+    if (Number(rcq) > limit) {
+      rcqRisk = 'Risco Aumentado';
+      rcqColor = 'text-red-500';
+    } else {
+      rcqRisk = 'Risco Baixo';
+      rcqColor = 'text-green-500';
+    }
+  }
+
   return (
-    <div className="p-6 md:p-10 max-w-4xl mx-auto animate-fade-in pb-32">
+    <div className="p-6 md:p-10 max-w-2xl mx-auto animate-fade-in pb-32">
       <header className="mb-10 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-outfit font-bold mb-2">Perfil e Configurações</h1>
-          <p className="text-foreground-muted">Gerencie seus dados e preferências</p>
+          <p className="text-foreground-muted">Gerencie sua conta e histórico físico</p>
         </div>
         <div className="flex gap-3">
           <Button 
-            onClick={() => { clearData(); router.push('/'); }} 
-            variant="outline"
-            className="border-red-500/30 text-red-500 hover:bg-red-500/10"
-          >
-            <LogOut className="w-5 h-5 mr-2" />
-            Sair da Conta
-          </Button>
-          <Button 
             onClick={handleSave}
+            className="w-full md:w-auto"
           >
             {saved ? <CheckCircle2 className="w-5 h-5 mr-2" /> : null}
-            {saved ? 'Salvo!' : 'Salvar'}
+            {saved ? 'Salvo!' : 'Salvar Nome'}
           </Button>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="space-y-6">
         
-        <div className="lg:col-span-2 space-y-8">
-          <Card>
-            <CardHeader className="border-b border-border pb-4 mb-6">
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" /> Dados Pessoais
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm text-foreground-muted block mb-2">Nome</label>
-                  <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary outline-none transition-colors" />
-                </div>
-                <div>
-                  <label className="text-sm text-foreground-muted block mb-2">Idade</label>
-                  <input type="number" value={form.age || ''} onChange={e => setForm({...form, age: Number(e.target.value)})} className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary outline-none transition-colors" />
-                </div>
-                <div>
-                  <label className="text-sm text-foreground-muted block mb-2">Peso (kg)</label>
-                  <input type="number" value={form.weight || ''} onChange={e => setForm({...form, weight: Number(e.target.value)})} className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary outline-none transition-colors" />
-                </div>
-                <div>
-                  <label className="text-sm text-foreground-muted block mb-2">Altura (cm)</label>
-                  <input type="number" value={form.height || ''} onChange={e => setForm({...form, height: Number(e.target.value)})} className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary outline-none transition-colors" />
-                </div>
-                <div>
-                  <label className="text-sm text-foreground-muted block mb-2">Objetivo Principal</label>
-                  <select value={form.goal || ''} onChange={e => setForm({...form, goal: e.target.value})} className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary outline-none transition-colors">
-                    <option value="">Selecione...</option>
-                    <option value="Hipertrofia">Hipertrofia</option>
-                    <option value="Força">Força</option>
-                    <option value="Emagrecimento">Emagrecimento</option>
-                    <option value="Condicionamento">Condicionamento</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm text-foreground-muted block mb-2">Nível de Experiência</label>
-                  <select value={form.level || ''} onChange={e => setForm({...form, level: e.target.value})} className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary outline-none transition-colors">
-                    <option value="">Selecione...</option>
-                    <option value="Iniciante">Iniciante</option>
-                    <option value="Intermediário">Intermediário</option>
-                    <option value="Avançado">Avançado</option>
-                  </select>
-                </div>
+        {/* Atalho para Anamnese */}
+        <Card className="bg-primary/5 border-primary/20 overflow-hidden relative">
+          <div className="absolute -right-10 -top-10 text-primary/10">
+            <ClipboardList className="w-40 h-40" />
+          </div>
+          <CardContent className="p-6 relative z-10 flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-1">
+              <h3 className="font-outfit text-xl font-bold text-white mb-2">Atualizar Anamnese</h3>
+              <p className="text-sm text-foreground-muted mb-4">Mudou seu objetivo? Sentiu alguma dor nova? Refaça sua anamnese para que a Inteligência Artificial ajuste seus treinos.</p>
+              <Link href="/anamnese">
+                <Button className="w-full md:w-auto">
+                  Refazer Anamnese
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Atalho para Biblioteca de Exercícios (Apenas Master/Trainer) */}
+        {(profile?.role === 'master' || profile?.role === 'trainer') && (
+          <Card className="bg-surface border-border overflow-hidden relative">
+            <div className="absolute -right-4 -top-4 text-foreground/5">
+              <Dumbbell className="w-32 h-32" />
+            </div>
+            <CardContent className="p-6 relative z-10 flex flex-col md:flex-row items-center gap-6">
+              <div className="flex-1">
+                <h3 className="font-outfit text-xl font-bold text-white mb-2">Biblioteca de Exercícios</h3>
+                <p className="text-sm text-foreground-muted mb-4">Adicione novos exercícios com vídeos/gifs um a um, ou importe uma pasta inteira de uma vez só no modo massa.</p>
+                <Link href="/library">
+                  <Button variant="outline" className="w-full md:w-auto border-primary/30 text-primary hover:bg-primary/10">
+                    Gerenciar Exercícios
+                  </Button>
+                </Link>
               </div>
-              
-              <div className="mt-6">
-                <label className="text-sm text-foreground-muted block mb-2">Limitações, Foco ou Intenção</label>
-                <textarea 
-                  value={form.intent || ''} 
-                  onChange={e => setForm({...form, intent: e.target.value})} 
-                  placeholder="Ex: Tenho dor no joelho, quero focar muito em costas..."
-                  className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary outline-none min-h-[100px] resize-y transition-colors" 
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Dados Básicos da Conta */}
+        <Card>
+          <CardHeader className="border-b border-border pb-4 mb-6">
+            <CardTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" /> Conta
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-foreground-muted block mb-2">Nome de Exibição</label>
+                <input 
+                  type="text" 
+                  value={form.name} 
+                  onChange={e => setForm({...form, name: e.target.value})} 
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary outline-none transition-colors" 
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
+        {/* Zona de Perigo */}
+        <Card className="border-destructive/20 mt-12">
+          <CardHeader className="border-b border-border pb-4 mb-6">
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <LogOut className="w-5 h-5" /> Zona de Perigo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-foreground-muted mb-4">Encerre sua sessão no dispositivo atual.</p>
+            <Button 
+              onClick={() => { clearData(); router.push('/'); }} 
+              variant="outline"
+              className="border-destructive/30 text-destructive hover:bg-destructive/10 w-full md:w-auto"
+            >
+              Sair da Conta
+            </Button>
+          </CardContent>
+        </Card>
 
-        </div>
-
-        <div className="space-y-6">
-          <Card className="bg-gradient-to-br from-primary/20 to-transparent border-primary/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-primary text-lg">Métricas Calculadas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4 mt-2">
-                <div>
-                  <p className="text-sm text-foreground-muted mb-1">IMC</p>
-                  <div className="flex items-end gap-2">
-                    <span className="text-2xl font-mono font-bold text-white">{imc}</span>
-                    <span className="text-sm text-primary pb-1">{imcClass}</span>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm text-foreground-muted mb-1">TMB (Basal)</p>
-                  <p className="text-2xl font-mono font-bold text-white">{tmb} <span className="text-sm text-foreground-muted font-sans">kcal/dia</span></p>
-                </div>
-                <div>
-                  <p className="text-sm text-foreground-muted mb-1">Gasto Est. (Treino)</p>
-                  <p className="text-2xl font-mono font-bold text-white">{Math.round(tmb * 1.55)} <span className="text-sm text-foreground-muted font-sans">kcal/dia</span></p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-red-400">Zona de Perigo</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 mt-2">
-              <Button onClick={exportData} variant="outline" fullWidth className="text-sm justify-center text-foreground font-semibold h-12 border-border">
-                <Download className="w-4 h-4 mr-2" /> Exportar Backup (Dados)
-              </Button>
-              <Button onClick={handleClear} variant="danger" fullWidth className="text-sm justify-center h-12 mt-4">
-                <Trash2 className="w-4 h-4 mr-2" /> Apagar Todos os Meus Dados
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );

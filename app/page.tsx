@@ -15,10 +15,28 @@ export default function Dashboard() {
   const { profile, history, workoutPlans, activePlanId, setActivePlan, deleteWorkoutPlan, currentSessionIndex } = useAppContext();
   const router = useRouter();
   const [dailyTip, setDailyTip] = useState<string>('Carregando dica do dia...');
+  const [manualSessionIndex, setManualSessionIndex] = useState<number | null>(null);
+  
+  // Resolve o bug do "tempo congelado" quando o app fica aberto em background
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setNow(Date.now());
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    const interval = setInterval(() => setNow(Date.now()), 60000); // Atualiza a cada 1 minuto
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Métricas
   const currentWeekWorkouts = history.filter(h => {
-    const today = new Date();
+    const today = new Date(now);
     const workoutDate = new Date(h.date);
     const diffDays = Math.ceil(Math.abs(today.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24)); 
     return diffDays <= 7;
@@ -63,7 +81,7 @@ export default function Dashboard() {
   }, [profile]);
 
   const greeting = () => {
-    const hour = new Date().getHours();
+    const hour = new Date(now).getHours();
     if (hour < 12) return 'Bom dia';
     if (hour < 18) return 'Boa tarde';
     return 'Boa noite';
@@ -85,7 +103,7 @@ export default function Dashboard() {
     const fatigued = new Set<string>();
     const recentHistory = [...history].sort((a, b) => b.date - a.date);
     recentHistory.forEach(h => {
-      const diffHours = (Date.now() - h.date) / (1000 * 60 * 60);
+      const diffHours = (now - h.date) / (1000 * 60 * 60);
       if (diffHours < 24) {
         h.exercises.forEach(ex => {
           if (ex.muscleGroup) fatigued.add(ex.muscleGroup.toLowerCase());
@@ -93,7 +111,7 @@ export default function Dashboard() {
       }
     });
     return fatigued;
-  }, [history]);
+  }, [history, now]);
 
   // Encontra a próxima sessão cujos músculos estejam recuperados
   const smartSessionIndex = useMemo(() => {
@@ -110,9 +128,17 @@ export default function Dashboard() {
     return currentSessionIndex;
   }, [activePlan, currentSessionIndex, fatigueMuscleSets]);
 
-  const suggestedSession = activePlan?.sessions[smartSessionIndex % (activePlan?.sessions.length || 1)];
+  const displaySessionIndex = manualSessionIndex !== null ? manualSessionIndex : smartSessionIndex;
+
+  const suggestedSession = activePlan?.sessions[displaySessionIndex % (activePlan?.sessions.length || 1)];
   const originalSession = activePlan?.sessions[currentSessionIndex % (activePlan?.sessions.length || 1)];
-  const wasRedirectedDueToFatigue = smartSessionIndex !== currentSessionIndex;
+  const wasRedirectedDueToFatigue = manualSessionIndex === null && smartSessionIndex !== currentSessionIndex;
+
+  const cycleNextSession = () => {
+    if (!activePlan) return;
+    const nextIdx = (displaySessionIndex + 1) % activePlan.sessions.length;
+    setManualSessionIndex(nextIdx);
+  };
 
   // Próximo treino com músculos recuperados (pula o smartSessionIndex atual)
   const nextSmartSessionIndex = useMemo(() => {
@@ -141,7 +167,7 @@ export default function Dashboard() {
     )).sort((a, b) => b - a); // Decrescente
 
     let currentStreak = 0;
-    const today = new Date().setHours(0,0,0,0);
+    const today = new Date(now).setHours(0,0,0,0);
     const yesterday = today - 86400000;
 
     // Se o último treino não foi hoje nem ontem, streak zerou
@@ -279,17 +305,21 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  <p className="text-xs text-foreground-muted mb-4 uppercase tracking-wider font-semibold">
-                    {wasRedirectedDueToFatigue ? '💪 Treino Alternativo:' : 'Próximo Treino:'} {suggestedSession?.name}
-                  </p>
-                  
-                  <div className="space-y-3 bg-surface/40 backdrop-blur-sm p-4 rounded-2xl border border-white/5">
-                    {suggestedSession?.exercises.slice(0, 3).map((ex, i) => (
-                      <div key={i} className="flex justify-between items-center text-sm border-b border-white/5 last:border-0 pb-2 last:pb-0">
-                        <span className="text-foreground/90 font-medium truncate pr-4">{ex.name}</span>
-                        <span className="text-primary font-mono bg-primary/10 px-2 py-0.5 rounded text-xs">{ex.sets}x{ex.reps}</span>
+                  <div className="mb-4">
+                    <p className="text-xs text-foreground-muted mb-1 uppercase tracking-wider font-semibold">
+                      {wasRedirectedDueToFatigue ? '💪 Treino Alternativo' : 'Próximo Treino'}
+                    </p>
+                    <p className="text-lg font-bold text-white mb-3">
+                      {suggestedSession?.name}
+                    </p>
+                    <div className="flex gap-3">
+                      <div className="flex items-center gap-1.5 text-xs text-foreground-muted bg-surface/60 px-3 py-1.5 rounded-lg border border-white/5">
+                        <span className="text-primary">⚡</span> {suggestedSession?.exercises?.length || 0} exercícios
                       </div>
-                    ))}
+                      <div className="flex items-center gap-1.5 text-xs text-foreground-muted bg-surface/60 px-3 py-1.5 rounded-lg border border-white/5">
+                        <span className="text-primary">⏱️</span> ~{(suggestedSession?.exercises?.length || 0) * 5} min
+                      </div>
+                    </div>
                   </div>
                 </>
               ) : (
@@ -301,7 +331,7 @@ export default function Dashboard() {
               {activePlan ? (
                 <div className="flex flex-col gap-3">
                   <button
-                    onClick={() => router.push(`/active?sessionIndex=${smartSessionIndex}`)}
+                    onClick={() => router.push(`/active?sessionIndex=${displaySessionIndex}`)}
                     className="block w-full"
                   >
                     <Button size="lg" className="w-full text-sm md:text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)] group">
@@ -309,16 +339,18 @@ export default function Dashboard() {
                       <ChevronRight className="w-4 h-4 md:w-5 md:h-5 ml-1 md:ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </button>
-                  <button
-                    onClick={() => router.push(`/active?sessionIndex=${nextSmartSessionIndex}`)}
-                    className="block w-full"
-                    title={`Pular para: ${nextSuggestedSession?.name}`}
-                  >
-                    <Button size="sm" variant="outline" className="w-full text-xs md:text-sm border-white/20 text-gray-400 hover:border-primary/40 hover:text-primary h-auto py-2">
-                      <span className="truncate">Próximo: {nextSuggestedSession?.name}</span>
-                      <ChevronRight className="w-3 h-3 md:w-4 md:h-4 ml-1 flex-shrink-0" />
-                    </Button>
-                  </button>
+                  {activePlan.sessions.length > 1 && (
+                    <button
+                      onClick={cycleNextSession}
+                      className="block w-full"
+                      title="Ver outro treino"
+                    >
+                      <Button size="sm" variant="outline" className="w-full text-xs md:text-sm border-white/20 text-gray-400 hover:border-primary/40 hover:text-primary h-auto py-2">
+                        <span className="truncate">Ver Próximo Treino</span>
+                        <ChevronRight className="w-3 h-3 md:w-4 md:h-4 ml-1 flex-shrink-0" />
+                      </Button>
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
@@ -429,22 +461,16 @@ export default function Dashboard() {
                     </div>
                   </div>
                   
-                  <div className="flex flex-col md:flex-row items-center gap-3 mt-8">
-                    <Link href="/active" className="w-full md:w-auto flex-1">
-                      <Button size="lg" className="w-full font-bold text-base h-14 shadow-[0_2px_15px_rgba(0,255,136,0.3)]">
-                        <PlayCircle className="w-6 h-6 mr-2" /> INICIAR TREINO DE HOJE
-                      </Button>
-                    </Link>
-                    
+                  <div className="flex flex-col md:flex-row items-center gap-3 mt-6">
                     <button 
                       onClick={() => {
                         if (confirm(`Deseja realmente excluir este plano?`)) {
                           deleteWorkoutPlan(activePlan.id);
                         }
                       }}
-                      className="w-full md:w-auto h-14 px-6 rounded-xl bg-surface border border-white/5 text-gray-400 hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 flex items-center justify-center gap-2 transition-all font-semibold"
+                      className="w-full md:w-auto h-12 px-6 rounded-xl bg-surface border border-white/5 text-gray-400 hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 flex items-center justify-center gap-2 transition-all font-semibold"
                     >
-                      <Trash2 className="w-4 h-4" /> Excluir
+                      <Trash2 className="w-4 h-4" /> Excluir Plano Atual
                     </button>
                   </div>
                 </CardContent>
@@ -492,7 +518,7 @@ export default function Dashboard() {
             let label = 'Recuperado';
             
             if (latestWorkout) {
-              const diffHours = (Date.now() - latestWorkout.date) / (1000 * 60 * 60);
+              const diffHours = (now - latestWorkout.date) / (1000 * 60 * 60);
               if (diffHours < 24) {
                 statusColor = 'bg-destructive';
                 glowColor = 'shadow-destructive/40';

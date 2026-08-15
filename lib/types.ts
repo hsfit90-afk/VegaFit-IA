@@ -91,4 +91,7 @@ export interface UserProfile {
   role?: 'client' | 'trainer' | 'master';
   trainerId?: string | null;
   maxClients?: number;
+  gender?: 'M' | 'F';
+  waist?: number;
+  hip?: number;
 }

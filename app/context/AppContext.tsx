@@ -79,6 +79,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           role: profileData.role || 'client',
           trainerId: profileData.trainer_id || null,
           maxClients: profileData.max_clients || 5,
+          gender: profileData.gender || 'M',
+          waist: profileData.waist || 0,
+          hip: profileData.hip || 0,
         });
 
         const path = window.location.pathname;
@@ -187,7 +190,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       banned_exercises: newProfile.bannedExercises || [],
       role: newProfile.role || 'client',
       trainer_id: newProfile.trainerId || null,
-      max_clients: newProfile.maxClients || 5
+      max_clients: newProfile.maxClients || 5,
+      gender: newProfile.gender || 'M',
+      waist: newProfile.waist || 0,
+      hip: newProfile.hip || 0
     });
   };
 

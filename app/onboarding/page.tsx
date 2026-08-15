@@ -79,7 +79,7 @@ export default function Onboarding() {
       height: height,
       goal,
       level,
-      intent: 'Geral',
+      intent: '',
       geminiApiKey: '',
       soundEnabled: true,
       defaultRestTimer: 60,
