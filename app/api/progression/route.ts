@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
+import { requireAuth } from '@/utils/supabase/auth-guard';
+import { checkRateLimit } from '@/utils/rate-limit';
 
 export async function POST(req: Request) {
   try {
+    const { user, error: authError } = await requireAuth();
+    if (authError) return authError;
+
+    const rateLimitError = await checkRateLimit(user.id, 'progression', { limit: 15, windowMinutes: 1440 });
+    if (rateLimitError) return rateLimitError;
+
     const { apiKey, profile, recentHistory, effectiveSets, currentPlan, feedback } = await req.json();
 
     if (!currentPlan || !profile) {

@@ -1,8 +1,16 @@
 import Groq from "groq-sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/utils/supabase/auth-guard";
+import { checkRateLimit } from "@/utils/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const { user, error: authError } = await requireAuth();
+    if (authError) return authError;
+
+    const rateLimitError = await checkRateLimit(user.id, "coach-chat", { limit: 40, windowMinutes: 60 });
+    if (rateLimitError) return rateLimitError;
+
     const { apiKey, profile, message, history } = await req.json();
 
     const key = apiKey || process.env.GROQ_API_KEY;
