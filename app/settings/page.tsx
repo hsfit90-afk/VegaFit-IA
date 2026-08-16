@@ -101,12 +101,23 @@ export default function Settings() {
           <CardContent className="p-6 relative z-10 flex flex-col md:flex-row items-center gap-6">
             <div className="flex-1">
               <h3 className="font-outfit text-xl font-bold text-white mb-2">Atualizar Anamnese</h3>
-              <p className="text-sm text-foreground-muted mb-4">Mudou seu objetivo? Sentiu alguma dor nova? Refaça sua anamnese para que a Inteligência Artificial ajuste seus treinos.</p>
-              <Link href="/anamnese">
-                <Button className="w-full md:w-auto">
-                  Refazer Anamnese
-                </Button>
-              </Link>
+              {form.intent ? (
+                <p className="text-sm text-foreground-muted mb-4 line-clamp-3 whitespace-pre-line">{form.intent}</p>
+              ) : (
+                <p className="text-sm text-foreground-muted mb-4">Mudou seu objetivo? Sentiu alguma dor nova? Refaça sua anamnese para que a Inteligência Artificial ajuste seus treinos.</p>
+              )}
+              <div className="flex flex-wrap gap-3">
+                <Link href="/anamnese">
+                  <Button className="w-full md:w-auto">
+                    Refazer Anamnese
+                  </Button>
+                </Link>
+                <Link href="/anamnese/history">
+                  <Button variant="outline" className="w-full md:w-auto border-primary/30 text-primary hover:bg-primary/10">
+                    Ver Histórico
+                  </Button>
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>
