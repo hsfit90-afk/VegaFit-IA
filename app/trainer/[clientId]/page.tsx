@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { 
   ArrowLeft, Dumbbell, Zap, Calendar, TrendingUp, 
   ChevronRight, MessageCircle, Edit3, UserX, Trash2,
@@ -119,14 +119,15 @@ export default function ClientDetailsPage() {
   }, [history]);
 
   // ── Engajamento ──
+  const now = Date.now();
   const engajamento = useMemo(() => {
     if (history.length === 0) return { status: 'Novo', color: 'text-blue-400', bg: 'bg-blue-400/10', borderColor: 'border-blue-400/20', lastDays: null, avgPerWeek: 0 };
 
     const sorted = [...history].sort((a, b) => b.date - a.date);
     const lastWorkout = sorted[0];
-    const daysSinceLast = Math.floor((Date.now() - lastWorkout.date) / 86400000);
+    const daysSinceLast = Math.floor((now - lastWorkout.date) / 86400000);
 
-    const thirtyDaysAgo = Date.now() - (30 * 86400000);
+    const thirtyDaysAgo = now - (30 * 86400000);
     const recentCount = history.filter(h => h.date >= thirtyDaysAgo).length;
     const avgPerWeek = Math.round((recentCount / 4) * 10) / 10;
 
@@ -194,12 +195,12 @@ export default function ClientDetailsPage() {
     router.push('/trainer');
   };
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.06 } }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 22 } }
   };

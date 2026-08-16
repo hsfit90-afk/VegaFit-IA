@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { motion } from 'motion/react';
+import { motion, type Variants } from 'motion/react';
 import { WorkoutPlan } from '@/lib/types';
 
 export default function Dashboard() {
@@ -142,7 +142,7 @@ export default function Dashboard() {
 
   // Próximo treino com músculos recuperados (pula o smartSessionIndex atual)
   const nextSmartSessionIndex = useMemo(() => {
-    if (!activePlan) return (smartSessionIndex + 1) % (activePlan?.sessions.length || 1);
+    if (!activePlan) return smartSessionIndex + 1;
     const total = activePlan.sessions.length;
     for (let i = 1; i <= total; i++) {
       const idx = (smartSessionIndex + i) % total;
@@ -203,12 +203,12 @@ export default function Dashboard() {
 
 
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.1 } }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
   };

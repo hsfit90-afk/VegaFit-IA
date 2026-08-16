@@ -21,6 +21,16 @@ export default function TrainerAIGenerator() {
   const [error, setError] = useState('');
   const [clientProfile, setClientProfile] = useState<any>(null);
   const [dbExercises, setDbExercises] = useState<DbExercise[]>([]);
+  const [form, setForm] = useState({
+    goal: 'Hipertrofia',
+    level: 'Intermediário',
+    daysPerWeek: 4,
+    duration: 60,
+    equipment: 'Academia completa',
+    priorities: [] as string[],
+    limitations: '',
+    trainingMethod: 'tradicional',
+  });
 
   useEffect(() => {
     async function loadClient() {
@@ -53,17 +63,6 @@ export default function TrainerAIGenerator() {
     { id: 'rest_pause', label: 'Rest-Pause', icon: '⏸️', desc: 'Microdescansos dentro da própria série' },
     { id: 'circuito', label: 'Circuito', icon: '🔄', desc: 'Exercícios em sequência com mínimo descanso' },
   ];
-
-  const [form, setForm] = useState({
-    goal: 'Hipertrofia',
-    level: 'Intermediário',
-    daysPerWeek: 4,
-    duration: 60,
-    equipment: 'Academia completa',
-    priorities: [] as string[],
-    limitations: '',
-    trainingMethod: 'tradicional',
-  });
 
   const handlePriorityToggle = (muscle: string) => {
     setForm(prev => {

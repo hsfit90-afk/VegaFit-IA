@@ -7,7 +7,30 @@ import { useAppContext } from '@/app/context/AppContext';
 import { Check } from 'lucide-react';
 
 // === CONFIGURAÇÃO DOS PASSOS ===
-const steps = [
+interface AnamneseField {
+  id: string;
+  type: 'text' | 'number' | 'textarea' | 'chips-single' | 'chips-multi' | 'slider' | 'rcq-result';
+  label: string;
+  placeholder?: string;
+  options?: string[];
+  optional?: boolean;
+  min?: number;
+  max?: number;
+  min_label?: string;
+  max_label?: string;
+  defaultValue?: number;
+  hint?: string;
+}
+
+interface AnamneseStep {
+  id: string;
+  title: string;
+  sub: string;
+  condition?: (answers: Record<string, any>) => boolean;
+  fields: AnamneseField[];
+}
+
+const steps: AnamneseStep[] = [
   {
     id: "gerais",
     title: "Dados gerais",
@@ -120,7 +143,7 @@ const steps = [
 export default function AnamnesePage() {
   const router = useRouter();
   const supabase = createClient();
-  const { profile } = useAppContext();
+  const { profile, userId } = useAppContext();
 
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -226,7 +249,7 @@ export default function AnamnesePage() {
   };
 
   const handleSave = async () => {
-    if (!profile?.id) {
+    if (!userId) {
       showToast("Você precisa estar logado para salvar.");
       return;
     }
@@ -264,10 +287,10 @@ export default function AnamnesePage() {
         .from('profiles')
         .update({ 
           intent: anamneseText, // Usando o campo intent para guardar a anamnese e alimentar a IA depois
-          goal: answers.objetivo?.[0] || profile.goal,
-          level: answers.nivel || profile.level
+          goal: answers.objetivo?.[0] || profile?.goal,
+          level: answers.nivel || profile?.level
         })
-        .eq('id', profile.id);
+        .eq('id', userId);
 
       if (error) throw error;
       

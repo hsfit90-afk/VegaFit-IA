@@ -36,16 +36,16 @@ export default function Library() {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    loadExercises();
-  }, []);
-
   const loadExercises = async () => {
     setLoading(true);
     let dbExercises = await getExercises();
     setExercises(dbExercises);
     setLoading(false);
   };
+
+  useEffect(() => {
+    loadExercises();
+  }, []);
 
   const handleAddExercise = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -5,7 +5,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/Card';
-import { motion } from 'motion/react';
+import { motion, type Variants } from 'motion/react';
 import { 
   UserPlus, Link2, Dumbbell, Zap, BookOpen, BarChart3, 
   ChevronRight, Settings, Bell, Search, MessageCircle
@@ -71,7 +71,7 @@ export default function TrainerDashboard() {
       alert("Você atingiu o limite máximo de alunos. Contate o administrador para aumentar o seu plano.");
       return;
     }
-    const link = `${window.location.origin}/register?trainer=${profile?.id}`;
+    const link = `${window.location.origin}/register?trainer=${userId}`;
     navigator.clipboard.writeText(link).then(() => {
       alert(`Link copiado!\n\nEnvie para o seu aluno se cadastrar:\n\n${link}`);
     }).catch(() => {
@@ -79,12 +79,12 @@ export default function TrainerDashboard() {
     });
   };
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.05 } }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 12 },
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 22 } }
   };
@@ -311,7 +311,7 @@ export default function TrainerDashboard() {
             ))}
             {clients.length > 0 && searchTerm && clients.filter(c => (c.name || '').toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
               <div className="text-center py-6 text-foreground-muted text-sm">
-                Nenhum aluno encontrado para "{searchTerm}"
+                Nenhum aluno encontrado para &quot;{searchTerm}&quot;
               </div>
             )}
           </div>

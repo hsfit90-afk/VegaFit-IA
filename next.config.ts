@@ -7,13 +7,6 @@ const withPWA = require("next-pwa")({
   skipWaiting: true,
 });
 
-const nextConfig: NextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-};
+const nextConfig: NextConfig = {};
 
 export default withPWA(nextConfig);

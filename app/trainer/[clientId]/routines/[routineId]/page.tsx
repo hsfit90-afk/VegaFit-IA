@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { 
   ArrowLeft, Plus, MoreVertical, Calendar, Dumbbell,
   Eye, EyeOff, BarChart3, MessageSquare, GripVertical,
@@ -192,12 +192,12 @@ export default function RoutineDetailPage() {
       .eq('id', routineId);
   };
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.06 } }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 22 } }
   };
@@ -350,7 +350,7 @@ export default function RoutineDetailPage() {
         <motion.div variants={itemVariants} className="text-center py-12 bg-surface rounded-2xl border border-border">
           <Dumbbell className="w-10 h-10 text-foreground-muted/30 mx-auto mb-3" />
           <p className="text-foreground-muted text-sm">Nenhum treino adicionado.</p>
-          <p className="text-foreground-muted/50 text-xs mt-1">Clique em "+ Adicionar treino" para começar.</p>
+          <p className="text-foreground-muted/50 text-xs mt-1">Clique em &quot;+ Adicionar treino&quot; para começar.</p>
         </motion.div>
       ) : (
         <div className="space-y-4">
