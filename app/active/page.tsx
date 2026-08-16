@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { getExercises, deleteExercise } from '@/lib/db/exercises';
 import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
+import { saveWorkoutState, loadWorkoutState, clearWorkoutState } from '@/utils/workoutCache';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, history, activePlanId } = useAppContext();
@@ -53,6 +54,15 @@ export default function ActiveWorkout() {
     });
     
     if (currentSession && activeExercises.length === 0) {
+      // Se havia um treino em andamento salvo localmente (app fechado/minimizado no meio do treino), restaura
+      const cached = userId && currentPlan ? loadWorkoutState(userId, currentPlan.id, safeIndex) : null;
+      if (cached) {
+        setActiveExercises(cached.activeExercises);
+        setStartTime(cached.startTime);
+        audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        return;
+      }
+
       // Calcula a semana atual baseada na criação do plano
       const planCreatedAt = currentPlan?.createdAt || Date.now();
       const daysSinceStart = Math.floor((Date.now() - planCreatedAt) / (1000 * 60 * 60 * 24));
@@ -113,6 +123,12 @@ export default function ActiveWorkout() {
     // Initialize audio
     audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
   }, [currentSession, activeExercises.length]);
+
+  // Cache local: salva o progresso do treino a cada mudança, para sobreviver a fechar o app no meio do treino
+  useEffect(() => {
+    if (!userId || !currentPlan || activeExercises.length === 0 || isFinished) return;
+    saveWorkoutState(userId, currentPlan.id, safeIndex, activeExercises, startTime);
+  }, [userId, currentPlan, safeIndex, activeExercises, startTime, isFinished]);
 
   // FEATURE: Cronômetro ao vivo — atualiza a cada segundo de forma consistente (não pausa quando a tela desliga)
   useEffect(() => {
@@ -587,6 +603,7 @@ export default function ActiveWorkout() {
     });
 
     addHistoryEntry(entry);
+    if (userId) clearWorkoutState(userId);
     // Avança automaticamente para a próxima sessão (A→B→C→A...)
     if (currentPlan) {
       advanceSession(currentPlan.sessions.length);
