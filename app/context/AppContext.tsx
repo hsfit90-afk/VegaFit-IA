@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, WorkoutPlan, WorkoutHistoryEntry } from '@/lib/types';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 export interface BodyWeightEntry {
   id: string;
@@ -343,8 +344,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="p-5 md:p-8 max-w-7xl mx-auto min-h-screen">
+        <div className="mb-8 mt-2 space-y-2">
+          <Skeleton className="h-9 w-56" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-8">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl" />
+          ))}
+        </div>
+        <Skeleton className="h-64 rounded-3xl mb-8" />
+        <Skeleton className="h-40 rounded-2xl" />
       </div>
     );
   }
