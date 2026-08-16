@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
+import { isPushSupported, getCurrentPushSubscription, subscribeToPush, unsubscribeFromPush } from '@/utils/push';
 
 export default function Settings() {
   const { profile, setProfile, clearData } = useAppContext();
@@ -30,10 +31,36 @@ export default function Settings() {
 
   const [saved, setSaved] = useState(false);
   const [showMeasureInfo, setShowMeasureInfo] = useState(false);
+  const [pushStatus, setPushStatus] = useState<'loading' | 'unsupported' | 'subscribed' | 'unsubscribed'>('loading');
+  const [pushBusy, setPushBusy] = useState(false);
 
   useEffect(() => {
     if (profile) setForm(profile);
   }, [profile]);
+
+  useEffect(() => {
+    if (!isPushSupported()) {
+      setPushStatus('unsupported');
+      return;
+    }
+    getCurrentPushSubscription().then(sub => setPushStatus(sub ? 'subscribed' : 'unsubscribed'));
+  }, []);
+
+  const handleTogglePush = async () => {
+    setPushBusy(true);
+    try {
+      if (pushStatus === 'subscribed') {
+        const ok = await unsubscribeFromPush();
+        if (ok) setPushStatus('unsubscribed');
+      } else {
+        const ok = await subscribeToPush();
+        setPushStatus(ok ? 'subscribed' : 'unsubscribed');
+        if (!ok) alert('Não foi possível ativar as notificações. Verifique se você permitiu notificações para este site.');
+      }
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   const handleSave = () => {
     setProfile(form);
@@ -163,6 +190,33 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Notificações */}
+        {pushStatus !== 'unsupported' && (
+          <Card>
+            <CardHeader className="border-b border-border pb-4 mb-6">
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-primary" /> Notificações
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm text-white font-medium mb-1">Lembretes de treino</p>
+                  <p className="text-xs text-foreground-muted">Receba um aviso se ainda não tiver treinado no fim do dia.</p>
+                </div>
+                <Button
+                  onClick={handleTogglePush}
+                  disabled={pushBusy || pushStatus === 'loading'}
+                  variant={pushStatus === 'subscribed' ? 'outline' : 'default'}
+                  className={pushStatus === 'subscribed' ? 'border-primary/30 text-primary hover:bg-primary/10' : ''}
+                >
+                  {pushStatus === 'subscribed' ? 'Ativado' : 'Ativar'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Zona de Perigo */}
         <Card className="border-destructive/20 mt-12">
