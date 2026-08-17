@@ -109,6 +109,11 @@ export async function POST(req: NextRequest) {
       ? "1. Cada sessão DEVE conter EXATAMENTE " + exercisesPerSession + " exercícios.\n2. Repetições e Descanso: Para maximizar o gasto calórico, use faixas de repetições mais altas (ex: 12-15 ou 15-20) e descansos mais curtos (ex: 30 a 45 segundos).\n3. Periodização de 4 Semanas: O plano DEVE ser um Mesociclo de 4 semanas. O campo 'method' deve OBRIGATORIAMENTE conter a progressão começando com 'Semana' (ex: 'Semana 1: 3 séries. Semana 2: 4 séries. Semana 3: + repetições. Semana 4: Deload (Emagrecimento)')."
       : "1. Cada sessão DEVE conter EXATAMENTE " + exercisesPerSession + " exercícios.\n2. Volume Semanal: Busque entre 10 a 20 séries semanais por grupo muscular. Use repetições clássicas (ex: 8-12) e descansos de 60-90s.\n3. Periodização de 4 Semanas: O plano DEVE ser um Mesociclo de 4 semanas com progressão de volume (Progressive Overload). O campo 'method' deve OBRIGATORIAMENTE conter a progressão começando com 'Semana' (ex: 'Semana 1: 3 séries. Semana 2: 4 séries. Semana 3: 5 séries. Semana 4: Deload (Hipertrofia)').";
 
+    // BUG FIX: config.limitations (o que o aluno escreveu AGORA na tela do gerador) tinha prioridade
+    // menor que profile?.intent (a anamnese salva), então editar o campo na hora de gerar não tinha
+    // efeito nenhum. Prioriza o que foi escrito agora; só cai pra anamnese se o campo ficar vazio.
+    const studentPreferences = config.limitations || profile?.intent || 'Nenhuma';
+
     const prompt = `Você é um personal trainer especialista em musculação, hipertrofia e periodização esportiva.
 ${scientificBasis}
 Crie um plano de treino estruturado em JSON para um aluno com o seguinte perfil:
@@ -118,12 +123,13 @@ Crie um plano de treino estruturado em JSON para um aluno com o seguinte perfil:
 - Duração por sessão: ${config.duration} minutos
 - Equipamentos disponíveis: ${config.equipment}
 - Grupos musculares prioritários: ${config.priorities.join(', ')}
-- Preferências e Limitações do Aluno: ${profile?.intent || config.limitations || 'Nenhuma'}
+- Preferências e Limitações do Aluno: ${studentPreferences}
 - Método de treino: ${methodLabel.toUpperCase()} — ${methodDesc}
 
-REGRA CRÍTICA SOBRE AS PREFERÊNCIAS DO ALUNO:
-O aluno forneceu as seguintes preferências: "${profile?.intent || config.limitations || 'Nenhuma'}". 
-Você DEVE adaptar a seleção de exercícios e o foco do treino para atender rigorosamente a esses pedidos do aluno (ex: evitar exercícios que causem dor, focar nos músculos que ele pediu). NO ENTANTO, você NÃO PODE ignorar as regras de método, quantidade de exercícios e periodização estabelecidas abaixo. O pedido do aluno deve ser encaixado dentro do protocolo do treinador.
+REGRA CRÍTICA SOBRE AS PREFERÊNCIAS DO ALUNO (RESPEITAR OS PROTOCOLOS CIENTÍFICOS):
+O aluno forneceu as seguintes preferências: "${studentPreferences}".
+Você DEVE adaptar a seleção de exercícios e o foco do treino para atender a esses pedidos do aluno (ex: evitar exercícios que causem dor, priorizar os músculos que ele pediu, respeitar o horário/local se mencionado).
+PORÉM, os pedidos do aluno NUNCA podem violar os dois protocolos científicos obrigatórios definidos abaixo (REGRA CRÍTICA SOBRE VOLUME/INTENSIDADE e REGRA CRÍTICA DE EXERCÍCIOS DISPONÍVEIS): a quantidade exata de exercícios por sessão, o volume/intensidade do objetivo (hipertrofia ou emagrecimento) e a periodização de 4 semanas são inegociáveis. Se o pedido do aluno conflitar com essas regras (ex: pedir muito menos exercícios do que o protocolo exige), encaixe a preferência dele DENTRO do protocolo em vez de quebrar o protocolo — nunca o contrário.
 
 REGRA CRÍTICA DE EXERCÍCIOS DISPONÍVEIS:
 Abaixo está o catálogo oficial de exercícios agrupados por MÚSCULO. Você DEVE escolher os exercícios APENAS desta lista aprovada:
