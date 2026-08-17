@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     if (!keyToUse) {
       return NextResponse.json({ error: 'API Key is missing. Configure nas configurações.' }, { status: 401 });
     }
-    const groq = new Groq({ apiKey: keyToUse, timeout: 15000, maxRetries: 1 });
+    const groq = new Groq({ apiKey: keyToUse, timeout: 25000, maxRetries: 1 });
 
     const systemPrompt = `Você é um Personal Trainer especialista em Periodização, Hipertrofia e Sobrecarga Progressiva.
 Seu objetivo é analisar o check-in semanal do aluno e ajustar seu plano de treino atual.
@@ -60,9 +60,10 @@ Exemplo do retorno:
 }`;
 
     const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [{ role: "user", content: systemPrompt }],
       response_format: { type: "json_object" },
+      reasoning_effort: "low",
       max_tokens: 3500,
     });
 

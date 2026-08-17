@@ -177,9 +177,10 @@ REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause, 
 2. Você DEVE explicar brevemente como executar o método no campo "tips" de CADA exercício (ex: "No Drop Set, ao falhar, reduza 20% da carga e continue sem descanso").`;
 
     const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
+      reasoning_effort: "low",
       // BUG FIX: 2500 tokens era insuficiente para planos de 5-6 dias com muitos exercícios
       // JSON truncado causava JSON.parse() falhar silenciosamente
       max_tokens: 4096,

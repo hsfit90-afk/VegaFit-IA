@@ -34,9 +34,10 @@ A dica deve ser motivadora, direta e mudar o foco (as vezes falar de água, outr
 Retorne apenas o texto da dica, sem aspas e sem formatação extra.`;
 
     const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 150,
+      reasoning_effort: "low",
+      max_tokens: 300,
     });
 
     const text = response.choices[0]?.message?.content;

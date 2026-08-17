@@ -43,8 +43,9 @@ Use formatação leve (negrito com **texto**) para destacar os pontos principais
     ];
 
     const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages,
+      reasoning_effort: "low",
       max_tokens: 512,
     });
 

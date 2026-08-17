@@ -39,10 +39,11 @@ Exemplo de retorno OBRIGATÓRIO:
 }`;
 
     const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      max_tokens: 100,
+      reasoning_effort: "low",
+      max_tokens: 300,
     });
 
     const text = response.choices[0]?.message?.content;

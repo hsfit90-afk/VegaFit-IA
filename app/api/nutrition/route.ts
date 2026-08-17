@@ -54,9 +54,10 @@ RETORNE APENAS UM JSON VÁLIDO no seguinte formato exato, sem NENHUM markdown:
 }`;
 
     const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [{ role: "user", content: systemPrompt }],
       response_format: { type: "json_object" },
+      reasoning_effort: "low",
       max_tokens: 2000,
     });
 
