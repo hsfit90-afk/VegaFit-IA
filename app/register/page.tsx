@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Dumbbell, Loader2 } from 'lucide-react';
+import { Dumbbell, Loader2, MailCheck } from 'lucide-react';
 
 export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
   const supabase = createClient();
 
   const searchParams = useSearchParams();
@@ -33,15 +33,14 @@ export default function Register() {
     if (error) {
       setError(error.message);
       setLoading(false);
+    } else if (data?.session) {
+      window.location.href = `/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`;
     } else {
-      // Aguarda a sessão ser estabelecida antes de redirecionar
-      if (data?.session) {
-        window.location.href = `/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`;
-      } else {
-        // Sem confirmação de email: aguarda um momento e redireciona
-        await new Promise(resolve => setTimeout(resolve, 800));
-        router.push(`/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`);
-      }
+      // BUG FIX: sem sessão significa que o Supabase exige confirmação de e-mail antes do
+      // login. Redirecionar para /onboarding aqui não funciona — o middleware barra o acesso
+      // (sem sessão) e manda de volta pro /login sem nenhuma explicação. Mostra o aviso certo.
+      setNeedsEmailConfirmation(true);
+      setLoading(false);
     }
   };
 
@@ -62,38 +61,45 @@ export default function Register() {
           </div>
         )}
 
-        <form onSubmit={handleRegister} className="space-y-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
-              placeholder="seu@email.com"
-            />
+        {needsEmailConfirmation ? (
+          <div className="bg-[#00ff88]/10 border border-[#00ff88]/20 text-[#00ff88] p-5 rounded-xl mb-6 text-sm text-center flex flex-col items-center gap-2">
+            <MailCheck className="w-8 h-8" />
+            <p>Enviamos um link de confirmação para {email}. Abra seu e-mail e clique no link para poder fazer login.</p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Senha</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
-              placeholder="••••••••"
-              minLength={6}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#00ff88] hover:bg-[#00cc6d] text-black font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Criar Conta'}
-          </button>
-        </form>
+        ) : (
+          <form onSubmit={handleRegister} className="space-y-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
+                placeholder="seu@email.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">Senha</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
+                placeholder="••••••••"
+                minLength={6}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#00ff88] hover:bg-[#00cc6d] text-black font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Criar Conta'}
+            </button>
+          </form>
+        )}
 
         <p className="text-center text-gray-400 text-sm">
           Já tem uma conta?{' '}
