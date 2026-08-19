@@ -100,9 +100,16 @@ export const addExercise = async (
 
 export const deleteExercise = async (id: string): Promise<boolean> => {
   const supabase = createClient();
-  const { error } = await supabase.from('exercises').delete().eq('id', id);
+  // .select() força o Supabase a retornar as linhas realmente apagadas — sem isso, um DELETE
+  // bloqueado pelo RLS "sucede" com 0 linhas afetadas e nenhum erro, fazendo a UI achar que
+  // apagou quando na verdade nada saiu do banco.
+  const { data, error } = await supabase.from('exercises').delete().eq('id', id).select('id');
   if (error) {
     console.error('Error deleting exercise:', error);
+    return false;
+  }
+  if (!data || data.length === 0) {
+    console.error('Exercise delete blocked (0 rows affected) — provavelmente falta de permissão (RLS).');
     return false;
   }
   return true;

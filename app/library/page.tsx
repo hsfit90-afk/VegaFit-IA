@@ -84,6 +84,8 @@ export default function Library() {
       const success = await deleteExercise(id);
       if (success) {
         setExercises(prev => prev.filter(ex => ex.id !== id));
+      } else {
+        alert("Não foi possível apagar o exercício. Verifique se a regra de permissão do Master (database/16_exercises_master_delete.sql) já foi aplicada no Supabase.");
       }
     }
   };
@@ -237,8 +239,8 @@ export default function Library() {
               <div className="flex justify-between items-start mb-4">
                 <span className="px-3 py-1 bg-primary/20 text-primary text-xs font-semibold rounded-full">{ex.muscleGroup}</span>
                 
-                {ex.userId && (
-                  <button 
+                {profile?.role === 'master' && (
+                  <button
                     onClick={(e) => handleDelete(e, ex.id)}
                     className="p-1.5 text-foreground-muted hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                   >
