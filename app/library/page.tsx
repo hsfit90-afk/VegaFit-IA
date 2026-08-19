@@ -23,6 +23,7 @@ export default function Library() {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [editingMuscleGroup, setEditingMuscleGroup] = useState(false);
   const [editMuscleGroupValue, setEditMuscleGroupValue] = useState('');
+  const [customEditMuscleGroup, setCustomEditMuscleGroup] = useState('');
   const [isSavingMuscleGroup, setIsSavingMuscleGroup] = useState(false);
 
   // Add Exercise Modal state
@@ -39,6 +40,7 @@ export default function Library() {
   // Form state
   const [newName, setNewName] = useState('');
   const [newMuscleGroup, setNewMuscleGroup] = useState('Peito');
+  const [customNewMuscleGroup, setCustomNewMuscleGroup] = useState('');
   const [mediaType, setMediaType] = useState<'url' | 'upload'>('upload');
   const [mediaUrl, setMediaUrl] = useState('');
   const [mediaFile, setMediaFile] = useState<File | null>(null);
@@ -54,17 +56,23 @@ export default function Library() {
   useEffect(() => {
     if (selectedExercise) {
       setEditMuscleGroupValue(selectedExercise.muscleGroup);
+      setCustomEditMuscleGroup('');
       setEditingMuscleGroup(false);
     }
   }, [selectedExercise]);
 
   const handleSaveMuscleGroup = async () => {
     if (!selectedExercise) return;
+    const finalMuscleGroup = editMuscleGroupValue === '__custom__' ? customEditMuscleGroup.trim() : editMuscleGroupValue;
+    if (!finalMuscleGroup) {
+      alert("Digite o nome da nova categoria.");
+      return;
+    }
     setIsSavingMuscleGroup(true);
-    const success = await updateExerciseMuscleGroup(selectedExercise.id, editMuscleGroupValue);
+    const success = await updateExerciseMuscleGroup(selectedExercise.id, finalMuscleGroup);
     if (success) {
-      setExercises(prev => prev.map(ex => ex.id === selectedExercise.id ? { ...ex, muscleGroup: editMuscleGroupValue } : ex));
-      setSelectedExercise(prev => prev ? { ...prev, muscleGroup: editMuscleGroupValue } : prev);
+      setExercises(prev => prev.map(ex => ex.id === selectedExercise.id ? { ...ex, muscleGroup: finalMuscleGroup } : ex));
+      setSelectedExercise(prev => prev ? { ...prev, muscleGroup: finalMuscleGroup } : prev);
       setEditingMuscleGroup(false);
     } else {
       alert("Não foi possível atualizar o grupo muscular. Verifique se a regra de permissão do Master (database/17_exercises_master_update.sql) já foi aplicada no Supabase.");
@@ -79,12 +87,18 @@ export default function Library() {
   const handleAddExercise = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName) return;
-    
+
+    const finalMuscleGroup = newMuscleGroup === '__custom__' ? customNewMuscleGroup.trim() : newMuscleGroup;
+    if (!finalMuscleGroup) {
+      alert("Digite o nome da nova categoria.");
+      return;
+    }
+
     setIsAdding(true);
-    
+
     const newEx = await addExercise({
       name: newName,
-      muscleGroup: newMuscleGroup,
+      muscleGroup: finalMuscleGroup,
       secondaryMuscles: [],
       equipment: 'Haltere',
       difficulty: 1,
@@ -98,6 +112,7 @@ export default function Library() {
       setIsAddModalOpen(false);
       // Reset form
       setNewName('');
+      setCustomNewMuscleGroup('');
       setMediaUrl('');
       setMediaFile(null);
     } else {
@@ -198,6 +213,9 @@ export default function Library() {
   });
 
   const muscleGroups = Array.from(new Set(exercises.map(ex => ex.muscleGroup)));
+  // Inclui categorias customizadas que já foram criadas (por "+ Nova categoria...") além das fixas,
+  // pra não obrigar redigitar o mesmo nome toda vez que for editar outro exercício.
+  const allMuscleGroupOptions = Array.from(new Set([...MUSCLE_GROUP_OPTIONS, ...muscleGroups])).sort();
 
   if (loading) {
     return (
@@ -417,7 +435,16 @@ export default function Library() {
                     <option value="Panturrilhas" className="bg-background text-white">Panturrilhas</option>
                     <option value="Cardio" className="bg-background text-white">Cardio</option>
                     <option value="Outros" className="bg-background text-white">Outros</option>
+                    <option value="__custom__" className="bg-background text-white">+ Nova categoria...</option>
                   </select>
+                  {newMuscleGroup === '__custom__' && (
+                    <input
+                      type="text" required autoFocus
+                      value={customNewMuscleGroup} onChange={e => setCustomNewMuscleGroup(e.target.value)}
+                      className="w-full bg-surface border border-border rounded-xl py-3 px-4 text-white focus:border-primary outline-none mt-2"
+                      placeholder="Nome da nova categoria (ex: Mobilidade)"
+                    />
+                  )}
                 </div>
   
                 <div className="pt-2">
@@ -491,24 +518,35 @@ export default function Library() {
                 <div>
                   <h2 className="text-2xl font-outfit font-bold text-white mb-2">{selectedExercise.name}</h2>
                   {profile?.role === 'master' && editingMuscleGroup ? (
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={editMuscleGroupValue}
-                        onChange={e => setEditMuscleGroupValue(e.target.value)}
-                        className="bg-surface border border-border rounded-lg py-1 px-2 text-xs text-white focus:border-primary outline-none"
-                      >
-                        {MUSCLE_GROUP_OPTIONS.map(m => <option key={m} value={m} className="bg-background text-white">{m}</option>)}
-                      </select>
-                      <button
-                        onClick={handleSaveMuscleGroup}
-                        disabled={isSavingMuscleGroup}
-                        className="text-xs font-semibold text-primary hover:underline disabled:opacity-50"
-                      >
-                        {isSavingMuscleGroup ? 'Salvando...' : 'Salvar'}
-                      </button>
-                      <button onClick={() => setEditingMuscleGroup(false)} className="text-xs text-foreground-muted hover:text-white">
-                        Cancelar
-                      </button>
+                    <div className="flex flex-col items-start gap-2">
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={editMuscleGroupValue}
+                          onChange={e => setEditMuscleGroupValue(e.target.value)}
+                          className="bg-surface border border-border rounded-lg py-1 px-2 text-xs text-white focus:border-primary outline-none"
+                        >
+                          {allMuscleGroupOptions.map(m => <option key={m} value={m} className="bg-background text-white">{m}</option>)}
+                          <option value="__custom__" className="bg-background text-white">+ Nova categoria...</option>
+                        </select>
+                        <button
+                          onClick={handleSaveMuscleGroup}
+                          disabled={isSavingMuscleGroup}
+                          className="text-xs font-semibold text-primary hover:underline disabled:opacity-50"
+                        >
+                          {isSavingMuscleGroup ? 'Salvando...' : 'Salvar'}
+                        </button>
+                        <button onClick={() => setEditingMuscleGroup(false)} className="text-xs text-foreground-muted hover:text-white">
+                          Cancelar
+                        </button>
+                      </div>
+                      {editMuscleGroupValue === '__custom__' && (
+                        <input
+                          type="text" autoFocus
+                          value={customEditMuscleGroup} onChange={e => setCustomEditMuscleGroup(e.target.value)}
+                          className="bg-surface border border-border rounded-lg py-1 px-2 text-xs text-white focus:border-primary outline-none"
+                          placeholder="Nome da nova categoria"
+                        />
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
