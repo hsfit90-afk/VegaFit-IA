@@ -70,9 +70,10 @@ export default function ActiveWorkout() {
 
       const initialized = currentSession.exercises.map(ex => {
         let finalSetCount = ex.sets;
-        
+
         let isDeload = false;
-        
+        let matchedCurrentWeek = false;
+
         // Magicamente busca se a IA mandou mudar o número de séries para a semana atual
         const chunks = (ex.method || '').split(/\s*\|\s*|\.\s+(?=(?:Semana|Sem)\b)/i).filter(Boolean);
         chunks.forEach(chunk => {
@@ -80,6 +81,7 @@ export default function ActiveWorkout() {
           if (headerMatch) {
             const weekNum = parseInt(headerMatch[1].split(/[-–]/)[0]);
             if (weekNum === currentWeek) {
+              matchedCurrentWeek = true;
               const content = headerMatch[2].toLowerCase();
               if (content.includes('deload')) isDeload = true;
               const setMatch = headerMatch[2].match(/(\d+)\s+s[ée]ries?/i);
@@ -87,6 +89,15 @@ export default function ActiveWorkout() {
             }
           }
         });
+
+        // Se a IA escreveu uma periodização (method preenchido) mas o regex não achou a semana
+        // atual dentro dela, a progressão "sumiu" silenciosamente e caiu no valor base de ex.sets.
+        // Loga pra facilitar identificar quando a IA fugiu do formato "Semana X: Y séries" pedido no prompt.
+        if (ex.method && !matchedCurrentWeek) {
+          console.warn(
+            `[Periodização] Não encontrei "Semana ${currentWeek}" no campo method de "${ex.name}". Usando fallback de ${finalSetCount} séries. Texto recebido: "${ex.method}"`
+          );
+        }
 
         // Recalcular o peso alvo dinamicamente para o dia de hoje, garantindo o deload!
         const oneRM = getHistorical1RM(history || [], ex.name);

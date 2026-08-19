@@ -29,10 +29,23 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
-    const { data: dbExercises } = await serviceSupabase
-      .from('exercises')
-      .select('id, name, muscle_group'); // Buscar todos os exercícios, ignorando user_id por enquanto (B2C)
-    
+
+    // profile?.id existe quando um trainer gera treino para um cliente (app/trainer/[clientId]/ai-builder);
+    // no fluxo do próprio aluno o profile do AppContext não carrega o id, então cai no user.id da sessão.
+    const targetUserId = profile?.id || user.id;
+
+    const [{ data: dbExercises }, { data: anamneseRows }] = await Promise.all([
+      serviceSupabase
+        .from('exercises')
+        .select('id, name, muscle_group'), // Buscar todos os exercícios, ignorando user_id por enquanto (B2C)
+      serviceSupabase
+        .from('anamnese_history')
+        .select('answers')
+        .eq('user_id', targetUserId)
+        .order('created_at', { ascending: false })
+        .limit(1),
+    ]);
+
     let availableExercises = dbExercises || [];
 
     // Filter out banned exercises if any exist in the profile
@@ -105,14 +118,39 @@ export async function POST(req: NextRequest) {
       ? "REGRA CRÍTICA SOBRE VOLUME E INTENSIDADE (EASO / ACSM - EMAGRECIMENTO):" 
       : "REGRA CRÍTICA SOBRE QUANTIDADE DE EXERCÍCIOS E VOLUME (SCHOENFELD, 2021 - HIPERTROFIA):";
     
+    // Faixas de reps E séries iniciais diferentes por tipo de exercício — sem isso a IA tende a
+    // copiar o mesmo número de exemplo do schema JSON pra todos os exercícios (agachamento e rosca
+    // direta saindo com a mesma faixa de reps/séries, o que não faz sentido fisiologicamente).
+    // A periodização de 4 semanas (progressão + deload) continua obrigatória — só o PONTO DE PARTIDA
+    // (semana 1) passa a variar por tipo de exercício; a progressão semana a semana é somada em cima dele.
+    const compoundReps = isWeightLoss ? '10-12' : '6-10';
+    const isolationReps = isWeightLoss ? '15-20' : '12-15';
+    const compoundSets = 3;
+    const isolationSets = 4;
+
     const goalSpecificInstructions = isWeightLoss
-      ? "1. Cada sessão DEVE conter EXATAMENTE " + exercisesPerSession + " exercícios.\n2. Repetições e Descanso: Para maximizar o gasto calórico, use faixas de repetições mais altas (ex: 12-15 ou 15-20) e descansos mais curtos (ex: 30 a 45 segundos).\n3. Periodização de 4 Semanas: O plano DEVE ser um Mesociclo de 4 semanas. O campo 'method' deve OBRIGATORIAMENTE conter a progressão começando com 'Semana' (ex: 'Semana 1: 3 séries. Semana 2: 4 séries. Semana 3: + repetições. Semana 4: Deload (Emagrecimento)')."
-      : "1. Cada sessão DEVE conter EXATAMENTE " + exercisesPerSession + " exercícios.\n2. Volume Semanal: Busque entre 10 a 20 séries semanais por grupo muscular. Use repetições clássicas (ex: 8-12) e descansos de 60-90s.\n3. Periodização de 4 Semanas: O plano DEVE ser um Mesociclo de 4 semanas com progressão de volume (Progressive Overload). O campo 'method' deve OBRIGATORIAMENTE conter a progressão começando com 'Semana' (ex: 'Semana 1: 3 séries. Semana 2: 4 séries. Semana 3: 5 séries. Semana 4: Deload (Hipertrofia)').";
+      ? "1. Cada sessão DEVE conter EXATAMENTE " + exercisesPerSession + " exercícios.\n2. Repetições e Séries por Tipo de Exercício: NÃO use a mesma faixa de repetições nem o mesmo número de séries em todos os exercícios da sessão. Para exercícios COMPOSTOS multiarticulares (ex: agachamento, supino, terra, remada, desenvolvimento, leg press), use " + compoundReps + " repetições e comece (Semana 1) com " + compoundSets + " séries. Para exercícios ISOLADOS/acessórios (ex: rosca, elevação lateral, cadeira extensora, tríceps, panturrilha), use " + isolationReps + " repetições e comece (Semana 1) com " + isolationSets + " séries. Descansos curtos (ex: 30 a 45 segundos) para maximizar o gasto calórico.\n3. Periodização de 4 Semanas (OBRIGATÓRIA, respeitando o número inicial de séries do item 2): O plano DEVE ser um Mesociclo de 4 semanas. O campo 'method' de CADA exercício deve OBRIGATORIAMENTE conter a progressão começando com 'Semana', incrementando 1 série na Semana 2 a partir do número inicial, aumentando repetições na Semana 3, e Deload na Semana 4. Exemplo COMPOSTO (parte de " + compoundSets + "): 'Semana 1: " + compoundSets + " séries. Semana 2: " + (compoundSets + 1) + " séries. Semana 3: + repetições. Semana 4: Deload (Emagrecimento)'. Exemplo ISOLADO (parte de " + isolationSets + "): 'Semana 1: " + isolationSets + " séries. Semana 2: " + (isolationSets + 1) + " séries. Semana 3: + repetições. Semana 4: Deload (Emagrecimento)'. O valor numérico do campo 'sets' de cada exercício DEVE ser IGUAL ao número escrito em 'Semana 1' no 'method' do mesmo exercício."
+      : "1. Cada sessão DEVE conter EXATAMENTE " + exercisesPerSession + " exercícios.\n2. Volume Semanal, Repetições e Séries por Tipo de Exercício: Busque entre 10 a 20 séries semanais por grupo muscular, com descansos de 60-90s. NÃO use a mesma faixa de repetições nem o mesmo número de séries em todos os exercícios da sessão: para exercícios COMPOSTOS multiarticulares (ex: agachamento, supino, terra, remada, desenvolvimento, leg press), use " + compoundReps + " repetições e comece (Semana 1) com " + compoundSets + " séries; para exercícios ISOLADOS/acessórios (ex: rosca, elevação lateral, cadeira extensora, tríceps, panturrilha, abdômen), use " + isolationReps + " repetições e comece (Semana 1) com " + isolationSets + " séries.\n3. Periodização de 4 Semanas (OBRIGATÓRIA, respeitando o número inicial de séries do item 2): O plano DEVE ser um Mesociclo de 4 semanas com progressão de volume (Progressive Overload), incrementando 1 série por semana a partir do número inicial até a Semana 3, com Deload na Semana 4. Exemplo COMPOSTO (parte de " + compoundSets + "): 'Semana 1: " + compoundSets + " séries. Semana 2: " + (compoundSets + 1) + " séries. Semana 3: " + (compoundSets + 2) + " séries. Semana 4: Deload (Hipertrofia)'. Exemplo ISOLADO (parte de " + isolationSets + "): 'Semana 1: " + isolationSets + " séries. Semana 2: " + (isolationSets + 1) + " séries. Semana 3: " + (isolationSets + 2) + " séries. Semana 4: Deload (Hipertrofia)'. O valor numérico do campo 'sets' de cada exercício DEVE ser IGUAL ao número escrito em 'Semana 1' no 'method' do mesmo exercício.";
 
     // BUG FIX: config.limitations (o que o aluno escreveu AGORA na tela do gerador) tinha prioridade
     // menor que profile?.intent (a anamnese salva), então editar o campo na hora de gerar não tinha
     // efeito nenhum. Prioriza o que foi escrito agora; só cai pra anamnese se o campo ficar vazio.
     const studentPreferences = config.limitations || profile?.intent || 'Nenhuma';
+
+    // Dados de saúde vêm SEMPRE da anamnese estruturada (anamnese_history), não do texto livre acima —
+    // se o aluno editar/apagar o campo de preferências, lesões e condições médicas não podem sumir do prompt.
+    const latestAnswers = anamneseRows?.[0]?.answers as Record<string, any> | undefined;
+    const healthBlock = latestAnswers
+      ? `
+
+INFORMAÇÕES DE SAÚDE DO ALUNO (extraídas da anamnese oficial, aplique SEMPRE — independem do texto de "Preferências e Limitações" acima):
+- Lesões atuais ou histórico: ${latestAnswers.lesoes?.trim() || 'Nenhuma relatada'}
+- Condições médicas relevantes: ${latestAnswers.condicoes?.trim() || 'Nenhuma relatada'}
+- Medicamentos contínuos: ${latestAnswers.medicamentos?.trim() || 'Nenhum relatado'}
+- Liberação médica para treinar: ${latestAnswers.liberacao || 'Não informado'}
+
+REGRA CRÍTICA DE SEGURANÇA (PRIORIDADE MÁXIMA, INEGOCIÁVEL): NUNCA selecione exercícios que agravem as lesões ou condições médicas listadas acima, mesmo que o aluno não as repita no campo de preferências. Se a liberação médica for "Não" ou "Não verifiquei", priorize exercícios de baixo impacto e adicione um aviso breve no campo "tips" do primeiro exercício da primeira sessão recomendando confirmar a liberação médica antes de treinar.`
+      : '';
 
     const prompt = `Você é um personal trainer especialista em musculação, hipertrofia e periodização esportiva.
 ${scientificBasis}
@@ -125,6 +163,7 @@ Crie um plano de treino estruturado em JSON para um aluno com o seguinte perfil:
 - Grupos musculares prioritários: ${config.priorities.join(', ')}
 - Preferências e Limitações do Aluno: ${studentPreferences}
 - Método de treino: ${methodLabel.toUpperCase()} — ${methodDesc}
+${healthBlock}
 
 REGRA CRÍTICA SOBRE AS PREFERÊNCIAS DO ALUNO (RESPEITAR OS PROTOCOLOS CIENTÍFICOS):
 O aluno forneceu as seguintes preferências: "${studentPreferences}".
@@ -161,8 +200,8 @@ Formato OBRIGATÓRIO do JSON:
         {
           "name": "Nome do Exercício",
           "muscleGroup": "Grupo muscular principal",
-          "sets": 3,
-          "reps": "${isWeightLoss ? '12-15' : '10-12'}",
+          "sets": ${compoundSets},
+          "reps": "${compoundReps} (composto) OU ${isolationReps} (isolado) — varia por exercício, ver regra abaixo",
           "restSeconds": ${isWeightLoss ? 45 : 60},
           "tips": "EXPLICAÇÃO DE COMO EXECUTAR O MÉTODO (ex: Como fazer o Drop Set) + Dica de execução do exercício.",
           "method": "DESCRIÇÃO DA PROGRESSÃO DE 4 SEMANAS (Siga o exemplo das Regras Críticas).",
@@ -177,6 +216,8 @@ Formato OBRIGATÓRIO do JSON:
 Certifique-se de que a quantidade de sessões (sessions) corresponde a "Dias por semana" informados (${config.daysPerWeek}).
 OBRIGATÓRIO: Cada sessão deve ter EXATAMENTE ${exercisesPerSession} exercícios — nem a mais, nem a menos.
 Gere exercícios compatíveis com os "Equipamentos disponíveis" (${config.equipment}).
+REGRA CRÍTICA SOBRE O CAMPO "reps": o valor no exemplo do JSON acima é ilustrativo, NÃO copie o mesmo número pra todos os exercícios. Classifique CADA exercício como composto ou isolado e defina "reps" com um valor numérico real dentro da faixa correspondente (${compoundReps} para composto, ${isolationReps} para isolado) — exercícios diferentes na mesma sessão DEVEM ter valores de "reps" diferentes quando forem de tipos diferentes.
+REGRA CRÍTICA SOBRE O CAMPO "sets": o valor ${compoundSets} no exemplo do JSON acima também é só o exemplo pra exercício COMPOSTO. Para exercício ISOLADO, "sets" DEVE ser ${isolationSets}. Em AMBOS os casos, esse número tem que ser EXATAMENTE IGUAL ao número escrito em "Semana 1" dentro do campo "method" do mesmo exercício — os dois campos nunca podem contradizer um ao outro. A progressão das semanas seguintes (Semana 2, 3, 4) parte desse número inicial, conforme a REGRA CRÍTICA de Periodização.
 Aplique o método ${methodLabel.toUpperCase()} de forma coerente em todos os exercícios.
 REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause, Pirâmide, etc: 
 1. Use o array "targetLabels" para nomear as séries (ex: ["S1", "S2", "Drop Set"]). O tamanho DEVE ser igual ao número de "sets". Para o método tradicional, use ["S1", "S2", "S3"].
