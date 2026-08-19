@@ -9,8 +9,8 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
 const MUSCLE_GROUP_OPTIONS = [
-  'Peito', 'Costas', 'Ombro', 'Bíceps', 'Tríceps', 'Pernas (quadríceps)',
-  'Posterior de coxa', 'Glúteos', 'Core/Abdômen', 'Panturrilhas', 'Cardio', 'Outros',
+  'Peito', 'Costas', 'Ombro', 'Bíceps', 'Tríceps', 'Antebraço', 'Pernas (quadríceps)',
+  'Posterior de coxa', 'Glúteos', 'Lombar', 'Core/Abdômen', 'Panturrilhas', 'Cardio', 'Outros',
 ];
 
 export default function Library() {
@@ -161,9 +161,11 @@ export default function Library() {
     if (normalized.includes('glut')) return 'Glúteos';
     if (normalized.includes('abdo') || normalized.includes('core')) return 'Core/Abdômen';
     if (normalized.includes('pantur')) return 'Panturrilhas';
+    if (normalized.includes('antebra') || normalized.includes('punho') || normalized.includes('grip') || normalized.includes('pulso')) return 'Antebraço';
+    if (normalized.includes('lombar') || normalized.includes('hiperextens')) return 'Lombar';
     if (normalized.includes('cardio') || normalized.includes('bike') || normalized.includes('bicicleta') ||
-        normalized.includes('esteira') || normalized.includes('corrida') || normalized.includes('eliptico') ||
-        normalized.includes('elíptico') || normalized.includes('remo') || normalized.includes('escada') ||
+        normalized.includes('esteira') || normalized.includes('corrida') || normalized.includes('eliptic') ||
+        normalized.includes('elíptic') || normalized.includes('remo') || normalized.includes('escada') ||
         normalized.includes('step') || normalized.includes('spinning') || normalized.includes('aerob')) return 'Cardio';
     // BUG FIX: o fallback era 'Peito', então qualquer pasta que não batesse com nenhuma palavra-chave
     // acima (ex: exercícios de cardio antes de existir a categoria) virava "Peito" silenciosamente.
@@ -428,9 +430,11 @@ export default function Library() {
                     <option value="Ombro" className="bg-background text-white">Ombro</option>
                     <option value="Bíceps" className="bg-background text-white">Bíceps</option>
                     <option value="Tríceps" className="bg-background text-white">Tríceps</option>
+                    <option value="Antebraço" className="bg-background text-white">Antebraço</option>
                     <option value="Pernas (quadríceps)" className="bg-background text-white">Pernas (quadríceps)</option>
                     <option value="Posterior de coxa" className="bg-background text-white">Posterior de coxa</option>
                     <option value="Glúteos" className="bg-background text-white">Glúteos</option>
+                    <option value="Lombar" className="bg-background text-white">Lombar</option>
                     <option value="Core/Abdômen" className="bg-background text-white">Core/Abdômen</option>
                     <option value="Panturrilhas" className="bg-background text-white">Panturrilhas</option>
                     <option value="Cardio" className="bg-background text-white">Cardio</option>
