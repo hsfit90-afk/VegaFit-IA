@@ -9,6 +9,7 @@
 -- COMO APLICAR: Execute este SQL no SQL Editor do Supabase Dashboard.
 
 DROP POLICY IF EXISTS "Users can delete own exercises" ON public.exercises;
+DROP POLICY IF EXISTS "Only master can delete exercises" ON public.exercises;
 
 CREATE POLICY "Only master can delete exercises"
 ON public.exercises FOR DELETE

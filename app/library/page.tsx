@@ -3,19 +3,27 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Info, Play, Plus, Trash2, Loader2, Upload, Link as LinkIcon, Image as ImageIcon, Check } from 'lucide-react';
 import { Exercise } from '@/lib/types';
-import { getExercises, addExercise, deleteExercise } from '@/lib/db/exercises';
+import { getExercises, addExercise, deleteExercise, updateExerciseMuscleGroup } from '@/lib/db/exercises';
 import { useAppContext } from '@/app/context/AppContext';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+
+const MUSCLE_GROUP_OPTIONS = [
+  'Peito', 'Costas', 'Ombro', 'Bíceps', 'Tríceps', 'Pernas (quadríceps)',
+  'Posterior de coxa', 'Glúteos', 'Core/Abdômen', 'Panturrilhas', 'Cardio', 'Outros',
+];
 
 export default function Library() {
   const { profile } = useAppContext();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMuscle, setSelectedMuscle] = useState('');
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [editingMuscleGroup, setEditingMuscleGroup] = useState(false);
+  const [editMuscleGroupValue, setEditMuscleGroupValue] = useState('');
+  const [isSavingMuscleGroup, setIsSavingMuscleGroup] = useState(false);
 
   // Add Exercise Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -41,6 +49,27 @@ export default function Library() {
     let dbExercises = await getExercises();
     setExercises(dbExercises);
     setLoading(false);
+  };
+
+  useEffect(() => {
+    if (selectedExercise) {
+      setEditMuscleGroupValue(selectedExercise.muscleGroup);
+      setEditingMuscleGroup(false);
+    }
+  }, [selectedExercise]);
+
+  const handleSaveMuscleGroup = async () => {
+    if (!selectedExercise) return;
+    setIsSavingMuscleGroup(true);
+    const success = await updateExerciseMuscleGroup(selectedExercise.id, editMuscleGroupValue);
+    if (success) {
+      setExercises(prev => prev.map(ex => ex.id === selectedExercise.id ? { ...ex, muscleGroup: editMuscleGroupValue } : ex));
+      setSelectedExercise(prev => prev ? { ...prev, muscleGroup: editMuscleGroupValue } : prev);
+      setEditingMuscleGroup(false);
+    } else {
+      alert("Não foi possível atualizar o grupo muscular. Verifique se a regra de permissão do Master (database/17_exercises_master_update.sql) já foi aplicada no Supabase.");
+    }
+    setIsSavingMuscleGroup(false);
   };
 
   useEffect(() => {
@@ -117,7 +146,14 @@ export default function Library() {
     if (normalized.includes('glut')) return 'Glúteos';
     if (normalized.includes('abdo') || normalized.includes('core')) return 'Core/Abdômen';
     if (normalized.includes('pantur')) return 'Panturrilhas';
-    return 'Peito'; // default fallback
+    if (normalized.includes('cardio') || normalized.includes('bike') || normalized.includes('bicicleta') ||
+        normalized.includes('esteira') || normalized.includes('corrida') || normalized.includes('eliptico') ||
+        normalized.includes('elíptico') || normalized.includes('remo') || normalized.includes('escada') ||
+        normalized.includes('step') || normalized.includes('spinning') || normalized.includes('aerob')) return 'Cardio';
+    // BUG FIX: o fallback era 'Peito', então qualquer pasta que não batesse com nenhuma palavra-chave
+    // acima (ex: exercícios de cardio antes de existir a categoria) virava "Peito" silenciosamente.
+    // 'Outros' deixa a classificação errada visível em vez de se misturar com um grupo muscular real.
+    return 'Outros';
   };
 
   const executeBulkImport = async () => {
@@ -379,6 +415,8 @@ export default function Library() {
                     <option value="Glúteos" className="bg-background text-white">Glúteos</option>
                     <option value="Core/Abdômen" className="bg-background text-white">Core/Abdômen</option>
                     <option value="Panturrilhas" className="bg-background text-white">Panturrilhas</option>
+                    <option value="Cardio" className="bg-background text-white">Cardio</option>
+                    <option value="Outros" className="bg-background text-white">Outros</option>
                   </select>
                 </div>
   
@@ -452,7 +490,36 @@ export default function Library() {
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-2xl font-outfit font-bold text-white mb-2">{selectedExercise.name}</h2>
-                  <span className="px-3 py-1 bg-primary/20 text-primary text-xs font-semibold rounded-full">{selectedExercise.muscleGroup}</span>
+                  {profile?.role === 'master' && editingMuscleGroup ? (
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={editMuscleGroupValue}
+                        onChange={e => setEditMuscleGroupValue(e.target.value)}
+                        className="bg-surface border border-border rounded-lg py-1 px-2 text-xs text-white focus:border-primary outline-none"
+                      >
+                        {MUSCLE_GROUP_OPTIONS.map(m => <option key={m} value={m} className="bg-background text-white">{m}</option>)}
+                      </select>
+                      <button
+                        onClick={handleSaveMuscleGroup}
+                        disabled={isSavingMuscleGroup}
+                        className="text-xs font-semibold text-primary hover:underline disabled:opacity-50"
+                      >
+                        {isSavingMuscleGroup ? 'Salvando...' : 'Salvar'}
+                      </button>
+                      <button onClick={() => setEditingMuscleGroup(false)} className="text-xs text-foreground-muted hover:text-white">
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 bg-primary/20 text-primary text-xs font-semibold rounded-full">{selectedExercise.muscleGroup}</span>
+                      {profile?.role === 'master' && (
+                        <button onClick={() => setEditingMuscleGroup(true)} className="text-xs text-foreground-muted hover:text-primary underline">
+                          Editar
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <button onClick={() => setSelectedExercise(null)} className="p-2 bg-surface rounded-full hover:bg-white/10 text-foreground-muted hover:text-white transition-all">
                   ✕

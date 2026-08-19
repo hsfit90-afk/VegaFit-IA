@@ -98,6 +98,27 @@ export const addExercise = async (
   };
 };
 
+export const updateExerciseMuscleGroup = async (id: string, muscleGroup: string): Promise<boolean> => {
+  const supabase = createClient();
+  // Mesmo cuidado do delete: .select() confirma que a linha foi realmente alterada — sem isso,
+  // um UPDATE bloqueado pelo RLS "sucede" com 0 linhas afetadas e nenhum erro.
+  const { data, error } = await supabase
+    .from('exercises')
+    .update({ muscle_group: muscleGroup })
+    .eq('id', id)
+    .select('id');
+
+  if (error) {
+    console.error('Error updating exercise:', error);
+    return false;
+  }
+  if (!data || data.length === 0) {
+    console.error('Exercise update blocked (0 rows affected) — provavelmente falta de permissão (RLS).');
+    return false;
+  }
+  return true;
+};
+
 export const deleteExercise = async (id: string): Promise<boolean> => {
   const supabase = createClient();
   // .select() força o Supabase a retornar as linhas realmente apagadas — sem isso, um DELETE
