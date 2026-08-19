@@ -362,12 +362,14 @@ export default function Dashboard() {
                           <Zap className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
                         </Button>
                       </Link>
-                      <Link href="/manual-workout" className="block">
-                        <Button size="lg" variant="outline" fullWidth className="group text-base border-primary/50 hover:bg-primary/10">
-                          CRIAR TREINO MANUALMENTE
-                          <Dumbbell className="w-5 h-5 ml-2 group-hover:rotate-12 transition-transform" />
-                        </Button>
-                      </Link>
+                      {profile?.role === 'master' && (
+                        <Link href="/manual-workout" className="block">
+                          <Button size="lg" variant="outline" fullWidth className="group text-base border-primary/50 hover:bg-primary/10">
+                            CRIAR TREINO MANUALMENTE
+                            <Dumbbell className="w-5 h-5 ml-2 group-hover:rotate-12 transition-transform" />
+                          </Button>
+                        </Link>
+                      )}
                     </>
                   ) : (
                     <div className="text-center p-4 bg-surface rounded-xl border border-white/5">
@@ -422,11 +424,13 @@ export default function Dashboard() {
           <div className="flex gap-2">
             {(!profile?.trainerId || profile?.role === 'master' || profile?.role === 'trainer') ? (
               <>
-                <Link href="/manual-workout">
-                  <Button size="sm" variant="outline" className="text-xs border-primary/30 hover:bg-primary/10">
-                    <Dumbbell className="w-3.5 h-3.5 mr-1.5" /> Criar Manual
-                  </Button>
-                </Link>
+                {profile?.role === 'master' && (
+                  <Link href="/manual-workout">
+                    <Button size="sm" variant="outline" className="text-xs border-primary/30 hover:bg-primary/10">
+                      <Dumbbell className="w-3.5 h-3.5 mr-1.5" /> Criar Manual
+                    </Button>
+                  </Link>
+                )}
                 <Link href="/generator">
                   <Button size="sm" className="text-xs shadow-[0_2px_10px_rgba(0,255,136,0.2)]">
                     <Zap className="w-3.5 h-3.5 mr-1.5" /> Gerar com IA
@@ -485,14 +489,16 @@ export default function Dashboard() {
               <p className="text-white font-medium mb-1">Nenhum plano salvo.</p>
               {(!profile?.trainerId || profile?.role === 'master' || profile?.role === 'trainer') ? (
                 <>
-                  <p className="text-sm text-foreground-muted mb-4">Gere um treino com IA ou crie o seu próprio plano.</p>
+                  <p className="text-sm text-foreground-muted mb-4">Gere um treino com IA{profile?.role === 'master' ? ' ou crie o seu próprio plano.' : '.'}</p>
                   <div className="flex gap-3 justify-center">
                     <Link href="/generator">
                       <Button size="sm">Com IA</Button>
                     </Link>
-                    <Link href="/manual-workout">
-                      <Button size="sm" variant="outline">Manual</Button>
-                    </Link>
+                    {profile?.role === 'master' && (
+                      <Link href="/manual-workout">
+                        <Button size="sm" variant="outline">Manual</Button>
+                      </Link>
+                    )}
                   </div>
                 </>
               ) : (

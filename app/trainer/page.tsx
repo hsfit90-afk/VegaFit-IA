@@ -326,11 +326,11 @@ export default function TrainerDashboard() {
 
         <div className="grid grid-cols-2 gap-3">
           {[
-            { 
-              icon: Zap, 
-              label: 'AI Builder', 
+            {
+              icon: Zap,
+              label: 'AI Builder',
               desc: 'Gerar treinos com IA',
-              color: 'text-primary', 
+              color: 'text-primary',
               bg: 'bg-primary/10',
               action: () => {
                 if (clients.length > 0) {
@@ -340,11 +340,11 @@ export default function TrainerDashboard() {
                 }
               }
             },
-            { 
-              icon: Dumbbell, 
-              label: 'Criar Manual', 
+            ...(profile?.role === 'master' ? [{
+              icon: Dumbbell,
+              label: 'Criar Manual',
               desc: 'Monte treino personalizado',
-              color: 'text-secondary', 
+              color: 'text-secondary',
               bg: 'bg-secondary/10',
               action: () => {
                 if (clients.length > 0) {
@@ -353,20 +353,20 @@ export default function TrainerDashboard() {
                   alert('Adicione um aluno primeiro para criar treinos.');
                 }
               }
-            },
-            { 
-              icon: BarChart3, 
-              label: 'Frequência', 
+            }] : []),
+            {
+              icon: BarChart3,
+              label: 'Frequência',
               desc: 'Acompanhe seus alunos',
-              color: 'text-blue-400', 
+              color: 'text-blue-400',
               bg: 'bg-blue-400/10',
               action: () => {}
             },
-            { 
-              icon: BookOpen, 
-              label: 'Exercícios', 
+            {
+              icon: BookOpen,
+              label: 'Exercícios',
               desc: 'Biblioteca completa',
-              color: 'text-orange-400', 
+              color: 'text-orange-400',
               bg: 'bg-orange-400/10',
               action: () => router.push('/library')
             },

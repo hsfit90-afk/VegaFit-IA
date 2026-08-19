@@ -13,8 +13,14 @@ import { v4 as uuidv4 } from 'uuid';
 
 export default function ManualWorkoutCreator() {
   const router = useRouter();
-  const { addWorkoutPlan } = useAppContext();
-  
+  const { addWorkoutPlan, profile } = useAppContext();
+
+  useEffect(() => {
+    if (profile && profile.role !== 'master') {
+      router.push('/');
+    }
+  }, [profile, router]);
+
   const [planName, setPlanName] = useState('Meu Novo Treino');
   const [split, setSplit] = useState('ABC');
   

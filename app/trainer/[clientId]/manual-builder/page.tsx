@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { WorkoutSession, Exercise, WorkoutExercise } from '@/lib/types';
 import { getExercises } from '@/lib/db/exercises';
 import { createClient } from '@/utils/supabase/client';
+import { useAppContext } from '@/app/context/AppContext';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function TrainerManualWorkoutCreator() {
@@ -16,7 +17,14 @@ export default function TrainerManualWorkoutCreator() {
   const params = useParams();
   const clientId = params.clientId as string;
   const supabase = createClient();
-  
+  const { profile } = useAppContext();
+
+  useEffect(() => {
+    if (profile && profile.role !== 'master') {
+      router.push(`/trainer/${clientId}`);
+    }
+  }, [profile, clientId, router]);
+
   const [clientProfile, setClientProfile] = useState<any>(null);
   const [planName, setPlanName] = useState('Novo Treino Personalizado');
   const [split, setSplit] = useState('ABC');

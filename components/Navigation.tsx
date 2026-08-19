@@ -54,7 +54,10 @@ export function Navigation() {
   }
 
   const filteredDesktopNav = desktopItems.filter(item => {
-    if (item.href === '/manual-workout' || item.href === '/library') {
+    if (item.href === '/manual-workout') {
+      return role === 'master';
+    }
+    if (item.href === '/library') {
       return role === 'trainer' || role === 'master';
     }
     return true;
@@ -62,7 +65,7 @@ export function Navigation() {
 
   const filteredMobileNav = mobileItems.filter(item => {
     if (item.href === '/manual-workout') {
-      return role === 'trainer' || role === 'master';
+      return role === 'master';
     }
     return true;
   });

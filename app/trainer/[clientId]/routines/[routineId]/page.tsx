@@ -10,6 +10,7 @@ import {
   Trash2, X, ArrowUpDown
 } from 'lucide-react';
 import { WorkoutSession } from '@/lib/types';
+import { useAppContext } from '@/app/context/AppContext';
 import { v4 as uuidv4 } from 'uuid';
 
 interface RoutineData {
@@ -34,6 +35,7 @@ export default function RoutineDetailPage() {
   const clientId = params.clientId as string;
   const routineId = params.routineId as string;
   const supabase = createClient();
+  const { profile: viewerProfile } = useAppContext();
 
   const [clientProfile, setClientProfile] = useState<any>(null);
   const [routine, setRoutine] = useState<RoutineData | null>(null);
@@ -407,14 +409,16 @@ export default function RoutineDetailPage() {
                         exit={{ opacity: 0, scale: 0.95 }}
                         className="absolute top-8 right-0 z-20 bg-surface-light border border-border rounded-xl shadow-xl overflow-hidden min-w-[150px]"
                       >
-                        <button
-                          onClick={() => {
-                            router.push(`/trainer/${clientId}/manual-builder?routineId=${routineId}&sessionId=${session.id}`);
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground-muted hover:bg-surface-hover hover:text-white transition-colors"
-                        >
-                          <Dumbbell className="w-4 h-4" /> Editar exercícios
-                        </button>
+                        {viewerProfile?.role === 'master' && (
+                          <button
+                            onClick={() => {
+                              router.push(`/trainer/${clientId}/manual-builder?routineId=${routineId}&sessionId=${session.id}`);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground-muted hover:bg-surface-hover hover:text-white transition-colors"
+                          >
+                            <Dumbbell className="w-4 h-4" /> Editar exercícios
+                          </button>
+                        )}
                         <button
                           onClick={() => handleRemoveTraining(session.id)}
                           className="w-full flex items-center gap-3 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors"
