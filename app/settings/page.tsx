@@ -218,6 +218,19 @@ export default function Settings() {
           </Card>
         )}
 
+        {/* Privacidade */}
+        <Card className="mt-8">
+          <CardContent className="flex items-center justify-between gap-4 py-5">
+            <div>
+              <p className="text-sm text-white font-medium mb-1">Privacidade e dados</p>
+              <p className="text-xs text-foreground-muted">Veja como seus dados, incluindo os de saúde da anamnese, são usados.</p>
+            </div>
+            <Link href="/privacy">
+              <Button variant="outline" size="sm">Ver política</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         {/* Zona de Perigo */}
         <Card className="border-destructive/20 mt-12">
           <CardHeader className="border-b border-border pb-4 mb-6">

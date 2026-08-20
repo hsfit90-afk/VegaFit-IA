@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/app/context/AppContext';
@@ -18,6 +19,7 @@ export default function AnamnesePage() {
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [toastMessage, setToastMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [consentAccepted, setConsentAccepted] = useState(false);
 
   // Filtra apenas os passos ativos (ex: ciclo feminino)
   const activeSteps = steps.filter(s => !s.condition || s.condition(answers));
@@ -90,7 +92,13 @@ export default function AnamnesePage() {
   };
 
   const handleNext = () => {
-    if (reviewMode) return handleSave();
+    if (reviewMode) {
+      if (!consentAccepted) {
+        showToast("Confirme o consentimento de uso dos dados de saúde para continuar.");
+        return;
+      }
+      return handleSave();
+    }
 
     if (!validateStep()) return;
 
@@ -120,7 +128,12 @@ export default function AnamnesePage() {
       showToast("Você precisa estar logado para salvar.");
       return;
     }
-    
+
+    if (!consentAccepted) {
+      showToast("Confirme o consentimento de uso dos dados de saúde para continuar.");
+      return;
+    }
+
     setIsSaving(true);
     
     // Convertendo a anamnese para uma string formatada
@@ -161,11 +174,14 @@ export default function AnamnesePage() {
 
       if (error) throw error;
 
-      // Guarda um snapshot no histórico (append-only) para permitir comparar anamneses futuras
+      // Guarda um snapshot no histórico (append-only) para permitir comparar anamneses futuras.
+      // consent_accepted_at registra quando o consentimento explícito (LGPD Art. 11, dado de
+      // saúde sensível) foi confirmado — serve de prova em caso de auditoria.
       await supabase.from('anamnese_history').insert({
         user_id: userId,
         answers,
         summary_text: anamneseText,
+        consent_accepted_at: new Date().toISOString(),
       });
 
       showToast("Respostas salvas e copiadas!");
@@ -260,6 +276,19 @@ export default function AnamnesePage() {
                 </div>
               );
             })}
+
+            <label className="flex items-start gap-3 bg-surface border border-border rounded-xl p-4 mt-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consentAccepted}
+                onChange={e => setConsentAccepted(e.target.checked)}
+                className="mt-0.5 w-5 h-5 flex-shrink-0 accent-primary"
+              />
+              <span className="text-sm text-foreground leading-[1.5]">
+                Autorizo o uso dos meus dados de saúde (lesões, condições médicas, medicamentos) informados acima para gerar e personalizar meu treino, incluindo por inteligência artificial, conforme a{' '}
+                <Link href="/privacy" target="_blank" className="text-primary underline">Política de Privacidade</Link>.
+              </span>
+            </label>
           </div>
         ) : (
           <div className="animate-fade-in">
@@ -389,7 +418,7 @@ export default function AnamnesePage() {
           )}
           <button
             onClick={handleNext}
-            disabled={isSaving}
+            disabled={isSaving || (reviewMode && !consentAccepted)}
             className="flex-1 p-4 rounded-xl font-inter text-[15px] font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-primary text-primary-foreground disabled:opacity-50 disabled:active:scale-100"
           >
             {isSaving ? 'Salvando...' : (reviewMode ? 'Salvar Perfil' : (currentStepIndex === activeSteps.length - 1 ? 'Revisar' : 'Próximo'))}
