@@ -200,6 +200,19 @@ INFORMAÇÕES DE SAÚDE DO ALUNO (extraídas da anamnese oficial, aplique SEMPRE
 REGRA CRÍTICA DE SEGURANÇA (PRIORIDADE MÁXIMA, INEGOCIÁVEL): NUNCA selecione exercícios que agravem as lesões ou condições médicas listadas acima, mesmo que o aluno não as repita no campo de preferências. Se a liberação médica for "Não" ou "Não verifiquei", priorize exercícios de baixo impacto e adicione um aviso breve no campo "tips" do primeiro exercício da primeira sessão recomendando confirmar a liberação médica antes de treinar.`
       : '';
 
+    // Antes disso, "Grupos musculares prioritários" era só uma linha informativa no prompt, sem
+    // nenhuma instrução do que fazer com ela — a IA não tinha motivo pra tratar esses grupos
+    // diferente dos outros. Agora vira uma regra com ação concreta (mais volume/frequência),
+    // com um limite explícito pra não zerar o resto do corpo.
+    const priorityBlock = (config.priorities && config.priorities.length > 0)
+      ? `
+
+REGRA CRÍTICA SOBRE MÚSCULOS PRIORITÁRIOS:
+O aluno marcou como prioritários: ${config.priorities.join(', ')}.
+1. Esses grupos DEVEM receber MAIS ênfase que os demais: mais séries semanais (dentro do limite de "Volume Semanal" já definido acima) e, se "Dias por semana" permitir, presença em pelo menos 2 sessões diferentes da semana.
+2. PROIBIDO remover ou zerar qualquer outro grupo muscular do plano por causa da prioridade — o corpo inteiro continua sendo treinado normalmente. Prioridade significa ÊNFASE EXTRA, não exclusividade.`
+      : '';
+
     const prompt = `Você é um personal trainer especialista em musculação, hipertrofia e periodização esportiva.
 ${scientificBasis}
 Crie um plano de treino estruturado em JSON para um aluno com o seguinte perfil:
@@ -231,6 +244,7 @@ REGRA CRÍTICA SOBRE A DIVISÃO MUSCULAR (SPLIT E COERÊNCIA):
 3. É ESTRITAMENTE PROIBIDO colocar um exercício do bloco "[MÚSCULO: BÍCEPS]" ou "[MÚSCULO: COSTAS]" em um dia de "Peito/Tríceps". ISSO É UM ERRO GRAVE.
 4. A dica (tips) DEVE fazer sentido para o exercício escolhido. Jamais gere dicas sobre "alongar o peito" para um exercício de perna.
 5. Se o método for Superset (Biset), certifique-se de parear exercícios coerentes com a sessão atual.
+${priorityBlock}
 
 ${ruleTitle}
 ${goalSpecificInstructions}
