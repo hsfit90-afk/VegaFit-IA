@@ -94,6 +94,7 @@ export default function Generator() {
         ...data,
         id: crypto.randomUUID(),
         createdAt: Date.now(),
+        trainingMethod: form.trainingMethod,
         sessions: data.sessions.map((session: any) => ({
           ...session,
           id: crypto.randomUUID(),

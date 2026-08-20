@@ -46,6 +46,10 @@ export default function ActiveWorkout() {
   const [showVideoFor, setShowVideoFor] = useState<string | null>(null);
   const [libraryExercises, setLibraryExercises] = useState<any[]>([]); // To store DB exercises for mediaUrl
   const [swappingIndex, setSwappingIndex] = useState<number | null>(null);
+  // Mini-pausa do método Rest-Pause: pausa curta DENTRO da mesma série (não é o descanso normal
+  // entre séries) — o usuário aciona manualmente entre os "clusters" de reps até a falha.
+  const [miniPause, setMiniPause] = useState<{ exIndex: number; setIndex: number; endTime: number } | null>(null);
+  const [miniPauseRemaining, setMiniPauseRemaining] = useState(0);
 
   useEffect(() => {
     // Load library exercises to map mediaUrl
@@ -199,6 +203,27 @@ export default function ActiveWorkout() {
     };
   }, [restEndTime, profile?.soundEnabled]);
 
+  // FEATURE: Mini-pausa do método Rest-Pause (10-15s DENTRO da série, separado do descanso normal)
+  useEffect(() => {
+    if (!miniPause) {
+      setMiniPauseRemaining(0);
+      return;
+    }
+    const update = () => {
+      const remaining = Math.max(0, Math.ceil((miniPause.endTime - Date.now()) / 1000));
+      setMiniPauseRemaining(remaining);
+      if (remaining === 0) {
+        setMiniPause(null);
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate([80, 40, 80]);
+        }
+      }
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [miniPause]);
+
   if (!currentSession) {
     return (
       <div className="p-6 md:p-10 text-center pt-20">
@@ -209,6 +234,30 @@ export default function ActiveWorkout() {
       </div>
     );
   }
+
+  // MECÂNICA DE MÉTODO DE TREINO: até aqui, Superset/Rest-Pause/Circuito eram só texto na dica do
+  // exercício — a tela sempre disparava o mesmo timer de descanso padrão depois de CADA série,
+  // não importa o método. Agora:
+  // - Superset: agrupa exercícios em pares consecutivos (0&1, 2&3...); o descanso só dispara
+  //   depois da série do SEGUNDO exercício do par, permitindo alternar sem descanso entre os dois.
+  // - Circuito: a sessão inteira vira um grupo só; o descanso só dispara depois do ÚLTIMO exercício.
+  // - Qualquer outro método (inclusive undefined, pra plano salvo antes dessa feature existir):
+  //   cada exercício é seu próprio grupo — comportamento idêntico ao de sempre, sem mudança.
+  const trainingMethod = currentPlan?.trainingMethod || 'tradicional';
+
+  const getGroupInfo = (exIndex: number): { isLastInGroup: boolean; pairIndex: number | null } => {
+    if (trainingMethod === 'superset') {
+      const pairStart = exIndex % 2 === 0 ? exIndex : exIndex - 1;
+      const pairEnd = pairStart + 1;
+      const hasPair = pairEnd < activeExercises.length;
+      if (!hasPair) return { isLastInGroup: true, pairIndex: null };
+      return { isLastInGroup: exIndex === pairEnd, pairIndex: exIndex === pairStart ? pairEnd : pairStart };
+    }
+    if (trainingMethod === 'circuito') {
+      return { isLastInGroup: exIndex === activeExercises.length - 1, pairIndex: null };
+    }
+    return { isLastInGroup: true, pairIndex: null };
+  };
 
   const handleSetUpdate = (exerciseIndex: number, setIndex: number, field: keyof ActiveSet, value: any) => {
     setActiveExercises(prev => {
@@ -265,8 +314,11 @@ export default function ActiveWorkout() {
 
       // Start rest timer if completed (outside state updater!)
       if (!isCurrentlyCompleted) {
-         const restSeconds = profile?.defaultRestTimer || currentSession?.exercises[exerciseIndex]?.restSeconds || 60;
-         setRestEndTime(Date.now() + restSeconds * 1000);
+         const { isLastInGroup } = getGroupInfo(exerciseIndex);
+         if (isLastInGroup) {
+           const restSeconds = profile?.defaultRestTimer || currentSession?.exercises[exerciseIndex]?.restSeconds || 60;
+           setRestEndTime(Date.now() + restSeconds * 1000);
+         }
          if (typeof navigator !== 'undefined' && navigator.vibrate) {
            navigator.vibrate(50);
          }
@@ -847,6 +899,19 @@ export default function ActiveWorkout() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <div>
                   <h2 className="text-2xl font-outfit font-bold text-white mb-2">{ex.name}</h2>
+                  {trainingMethod === 'superset' && (() => {
+                    const { pairIndex } = getGroupInfo(exIndex);
+                    return pairIndex !== null ? (
+                      <p className="text-xs font-bold text-accent flex items-center gap-1.5 mb-2 uppercase tracking-wide">
+                        ⚡ Superset com {activeExercises[pairIndex]?.name} — sem descanso entre os dois
+                      </p>
+                    ) : null;
+                  })()}
+                  {trainingMethod === 'circuito' && (
+                    <p className="text-xs font-bold text-accent flex items-center gap-1.5 mb-2 uppercase tracking-wide">
+                      🔄 Circuito — etapa {exIndex + 1} de {activeExercises.length} (descanso só no fim da volta)
+                    </p>
+                  )}
                   <p className="text-sm text-primary flex items-center gap-2 mb-2">
                      <Zap className="w-4 h-4 shrink-0" /> {currentSession.exercises[exIndex].tips}
                   </p>
@@ -973,9 +1038,10 @@ export default function ActiveWorkout() {
               </div>
               
               {ex.sets.map((set, setIndex) => (
-                <div key={setIndex} className={`grid grid-cols-12 gap-2 items-center p-2 md:p-3 rounded-2xl border transition-all duration-300 relative group ${
-                  set.completed 
-                    ? 'bg-gradient-to-r from-primary/10 to-transparent border-primary/30 shadow-[0_0_20px_rgba(0,255,136,0.15)]' 
+                <div key={setIndex}>
+                <div className={`grid grid-cols-12 gap-2 items-center p-2 md:p-3 rounded-2xl border transition-all duration-300 relative group ${
+                  set.completed
+                    ? 'bg-gradient-to-r from-primary/10 to-transparent border-primary/30 shadow-[0_0_20px_rgba(0,255,136,0.15)]'
                     : 'bg-surface border-border hover:bg-white/[0.06]'
                 }`}>
                   <div className="col-span-1 flex justify-center">
@@ -1047,6 +1113,24 @@ export default function ActiveWorkout() {
                       <Check className="w-5 h-5" />
                     </button>
                   </div>
+                </div>
+
+                {trainingMethod === 'rest_pause' && !set.completed && (
+                  <div className="flex items-center justify-center gap-2 mt-1.5 mb-1">
+                    {miniPause && miniPause.exIndex === exIndex && miniPause.setIndex === setIndex ? (
+                      <span className="text-xs font-mono font-bold text-accent bg-accent/10 border border-accent/30 rounded-lg px-3 py-1">
+                        Mini-pausa: {miniPauseRemaining}s
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setMiniPause({ exIndex, setIndex, endTime: Date.now() + 15000 })}
+                        className="text-[11px] font-semibold text-foreground-muted hover:text-accent border border-white/10 hover:border-accent/40 rounded-lg px-3 py-1 transition-colors"
+                      >
+                        ⏸️ Mini-pausa (15s) entre clusters
+                      </button>
+                    )}
+                  </div>
+                )}
                 </div>
               ))}
               

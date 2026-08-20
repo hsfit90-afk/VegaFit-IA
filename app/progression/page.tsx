@@ -55,7 +55,9 @@ export default function ProgressionCheckIn() {
 
       const data = await response.json();
       if (data.plan) {
-        setNewPlan(data.plan);
+        // Preserva o método de treino do plano atual — o endpoint de progressão não pergunta
+        // método, então sem isso o Superset/Circuito/Rest-Pause se perderiam a cada check-in.
+        setNewPlan({ ...data.plan, trainingMethod: workoutPlans[0]?.trainingMethod });
       } else {
         alert("Erro ao analisar a progressão.");
       }

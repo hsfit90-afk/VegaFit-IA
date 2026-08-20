@@ -116,7 +116,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           name: p.name,
           split: p.split,
           sessions: p.sessions,
-          createdAt: new Date(p.created_at).getTime()
+          createdAt: new Date(p.created_at).getTime(),
+          trainingMethod: p.training_method || undefined,
         }));
         setWorkoutPlans(parsedPlans);
         
@@ -224,7 +225,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       user_id: userId,
       name: plan.name,
       split: plan.split,
-      sessions: plan.sessions
+      sessions: plan.sessions,
+      training_method: plan.trainingMethod || null,
     });
 
     await supabase.from('user_session_index').upsert({

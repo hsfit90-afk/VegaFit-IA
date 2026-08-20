@@ -45,6 +45,7 @@ export interface WorkoutPlan {
   split: string;
   sessions: WorkoutSession[];
   createdAt: number;
+  trainingMethod?: string; // tradicional | superset | drop_set | piramide | rest_pause | circuito
 }
 
 export interface ActiveSet {
