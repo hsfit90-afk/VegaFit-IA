@@ -16,7 +16,7 @@ const DESKTOP_NAV_ITEMS = [
   { href: '/library', label: 'Exercícios', icon: Dumbbell },
   { href: '/history', label: 'Histórico', icon: History },
   { href: '/progression', label: 'Check-in', icon: TrendingUp },
-  // { href: '/nutrition', label: 'Nutrição IA', icon: Apple },
+  { href: '/nutrition', label: 'Nutrição IA', icon: Apple },
   { href: '/coach', label: 'AI Coach', icon: MessageSquare },
   { href: '/settings', label: 'Perfil', icon: Settings },
 ];
@@ -54,7 +54,7 @@ export function Navigation() {
   }
 
   const filteredDesktopNav = desktopItems.filter(item => {
-    if (item.href === '/manual-workout') {
+    if (item.href === '/manual-workout' || item.href === '/nutrition') {
       return role === 'master';
     }
     if (item.href === '/library') {
@@ -64,7 +64,7 @@ export function Navigation() {
   });
 
   const filteredMobileNav = mobileItems.filter(item => {
-    if (item.href === '/manual-workout') {
+    if (item.href === '/manual-workout' || item.href === '/nutrition') {
       return role === 'master';
     }
     return true;

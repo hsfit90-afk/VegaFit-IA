@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/app/context/AppContext';
 import { Apple, Loader2, Target, Flame, Activity, Info } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -21,8 +22,15 @@ interface NutritionData {
 
 export default function NutritionPage() {
   const { profile } = useAppContext();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<NutritionData | null>(null);
+
+  useEffect(() => {
+    if (profile && profile.role !== 'master') {
+      router.push('/');
+    }
+  }, [profile, router]);
 
   useEffect(() => {
     // Tenta carregar do cache local primeiro
