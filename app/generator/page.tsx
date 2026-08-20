@@ -9,6 +9,7 @@ import { getExercises } from '@/lib/db/exercises';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
+import { mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 
 export default function Generator() {
   const { addWorkoutPlan, profile, history } = useAppContext();
@@ -37,7 +38,7 @@ export default function Generator() {
     level: profile?.level || 'Intermediário',
     daysPerWeek: 4,
     duration: 60,
-    equipment: 'Academia completa',
+    equipment: mapAnamneseLocationToEquipment(profile?.trainingLocation),
     priorities: [] as string[],
     limitations: profile?.intent || '',
     trainingMethod: 'tradicional',

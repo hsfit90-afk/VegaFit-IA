@@ -53,6 +53,52 @@ export async function POST(req: NextRequest) {
       availableExercises = availableExercises.filter((ex: any) => !profile.bannedExercises.includes(ex.id));
     }
 
+    // Restringe o catálogo pelo local de treino, ANTES de montar o prompt — não basta pedir pra
+    // IA "respeitar o equipamento" no texto (já vimos hoje que enforcement só por prompt falha:
+    // reps repetidos, contagem de exercício errada). Aqui a IA simplesmente nunca vê exercício de
+    // máquina se o aluno está treinando em casa/ar livre.
+    //
+    // O campo "equipment" da tabela exercises está inutilizável (todo exercício cadastrado pela UI
+    // grava "Haltere" fixo, sem exceção — não existe campo de equipamento no formulário). Então
+    // classificamos por palavra-chave no NOME, mesma abordagem (best-effort) usada pra composto/
+    // isolado no repair de contagem de exercícios.
+    const MACHINE_KEYWORDS = ['máquina', 'maquina', 'polia', 'cabo', 'smith', 'cross over', 'crossover', 'leg press', 'hack', 'cadeira', 'mesa flexora', 'mesa extensora', 'voador', 'pec deck', 'alavanca', 'multi power', 'graviton', 'simulador', 'elíptica', 'eliptica', 'esteira', 'ergométrica', 'ergometrica', 'assistid'];
+    const classifyEquipmentTier = (name: string): 'maquina' | 'barra' | 'halteres' | 'peso_corporal' => {
+      const n = name.toLowerCase();
+      if (MACHINE_KEYWORDS.some(k => n.includes(k))) return 'maquina';
+      if (n.includes('barra') && !n.includes('barra fixa')) return 'barra';
+      if (n.includes('haltere') || n.includes('halter') || n.includes('kettlebell') || n.includes('anilha')) return 'halteres';
+      if (n.includes('elástico') || n.includes('elastico') || n.includes('banda') || n.includes('faixa')) return 'halteres';
+      return 'peso_corporal';
+    };
+
+    const EQUIPMENT_ALLOWED_TIERS: Record<string, string[]> = {
+      'Academia completa': ['maquina', 'barra', 'halteres', 'peso_corporal'],
+      'Halteres em casa': ['halteres', 'peso_corporal'],
+      'Barra e anilhas': ['barra', 'peso_corporal'],
+      'Sem equipamento (calistenia)': ['peso_corporal'],
+    };
+    const allowedTiers = EQUIPMENT_ALLOWED_TIERS[config.equipment as string];
+
+    if (allowedTiers) {
+      const filteredExercises = availableExercises.filter((ex: any) => allowedTiers.includes(classifyEquipmentTier(ex.name)));
+
+      // Salvaguarda: se o filtro zerar um grupo muscular inteiro (ex: "Pernas" só tem exercício de
+      // máquina cadastrado), volta a liberar esse grupo específico sem filtro — prefere mostrar um
+      // exercício fora do ideal a deixar a IA sem NENHUMA opção pra aquele músculo.
+      const musclesWithOptions = new Set(filteredExercises.map((ex: any) => ex.muscle_group));
+      const allMuscles = new Set(availableExercises.map((ex: any) => ex.muscle_group));
+      const emptiedMuscles = [...allMuscles].filter(m => !musclesWithOptions.has(m));
+
+      if (emptiedMuscles.length > 0) {
+        console.warn(`[treino] Filtro de equipamento ("${config.equipment}") zerou ${emptiedMuscles.join(', ')} — liberando sem filtro só pra esses grupos.`);
+        const fallbackExtra = availableExercises.filter((ex: any) => emptiedMuscles.includes(ex.muscle_group));
+        availableExercises = [...filteredExercises, ...fallbackExtra];
+      } else {
+        availableExercises = filteredExercises;
+      }
+    }
+
     // BUG FIX: Limit exercises per muscle group to avoid exceeding Groq TPM token limits (413 Payload Too Large).
     // Baixado de 15 pra 10 porque o catálogo cresceu (novas categorias Cardio/Lombar/Antebraço) e passou
     // a estourar o limite de 8000 TPM da conta (testado e confirmado: 15 gerava 413 na prática).

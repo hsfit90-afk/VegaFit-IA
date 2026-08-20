@@ -83,6 +83,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           gender: profileData.gender || 'M',
           waist: profileData.waist || 0,
           hip: profileData.hip || 0,
+          trainingLocation: profileData.training_location || undefined,
         });
 
         const path = window.location.pathname;

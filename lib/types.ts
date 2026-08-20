@@ -94,4 +94,5 @@ export interface UserProfile {
   gender?: 'M' | 'F';
   waist?: number;
   hip?: number;
+  trainingLocation?: string;
 }

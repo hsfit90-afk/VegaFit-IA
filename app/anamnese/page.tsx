@@ -165,10 +165,11 @@ export default function AnamnesePage() {
       // Salva no supabase no campo intent (ou um campo novo)
       const { error } = await supabase
         .from('profiles')
-        .update({ 
+        .update({
           intent: anamneseText, // Usando o campo intent para guardar a anamnese e alimentar a IA depois
           goal: answers.objetivo?.[0] || profile?.goal,
-          level: answers.nivel || profile?.level
+          level: answers.nivel || profile?.level,
+          training_location: answers.local || profile?.trainingLocation,
         })
         .eq('id', userId);
 

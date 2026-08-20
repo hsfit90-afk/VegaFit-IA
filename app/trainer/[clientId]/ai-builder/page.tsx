@@ -9,6 +9,7 @@ import { getExercises } from '@/lib/db/exercises';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useAppContext } from '@/app/context/AppContext';
+import { mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 
 export default function TrainerAIGenerator() {
   const params = useParams();
@@ -47,6 +48,7 @@ export default function TrainerAIGenerator() {
           ...prev,
           goal: data.goal || 'Hipertrofia',
           level: data.level || 'Intermediário',
+          equipment: mapAnamneseLocationToEquipment(data.training_location),
           limitations: data.intent || ''
         }));
       }
