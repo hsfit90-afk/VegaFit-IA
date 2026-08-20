@@ -53,11 +53,13 @@ export async function POST(req: NextRequest) {
       availableExercises = availableExercises.filter((ex: any) => !profile.bannedExercises.includes(ex.id));
     }
 
-    // BUG FIX: Limit exercises per muscle group to avoid exceeding Groq TPM token limits (413 Payload Too Large)
-    const MAX_EXERCISES_PER_MUSCLE = 15;
+    // BUG FIX: Limit exercises per muscle group to avoid exceeding Groq TPM token limits (413 Payload Too Large).
+    // Baixado de 15 pra 10 porque o catálogo cresceu (novas categorias Cardio/Lombar/Antebraço) e passou
+    // a estourar o limite de 8000 TPM da conta (testado e confirmado: 15 gerava 413 na prática).
+    const MAX_EXERCISES_PER_MUSCLE = 10;
     const exercisesByMuscle: Record<string, any[]> = {};
-    
-    // Sort randomly so users don't always get the exact same 15 exercises for the prompt
+
+    // Sort randomly so users don't always get the exact same 10 exercises for the prompt
     const shuffledExercises = availableExercises.sort(() => 0.5 - Math.random());
     
     shuffledExercises.forEach((ex: any) => {
@@ -250,6 +252,61 @@ REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause, 
     for (const session of json.sessions) {
       if (!session.exercises || !Array.isArray(session.exercises) || session.exercises.length === 0) {
         throw new Error(`A sessão "${session.name || 'sem nome'}" veio sem exercícios. Tente novamente.`);
+      }
+    }
+
+    // BUG FIX (achado testando geração real): a IA às vezes ignora a contagem EXATA de exercícios
+    // pedida por sessão (ex: pediu 6, veio 4) — prompt sozinho não garante 100% de conformidade.
+    // Corrige aqui no código: sessões curtas são completadas com exercícios reais do(s) mesmo(s)
+    // grupo(s) muscular(es) já usados na sessão (mantém a REGRA CRÍTICA de coerência do split),
+    // aplicando a MESMA regra de reps/séries/periodização por tipo de exercício (composto/isolado)
+    // que a IA foi instruída a seguir. Sessões com exercícios a mais são cortadas pro tamanho exato.
+    const COMPOUND_KEYWORDS = ['agachamento', 'supino', 'terra', 'remada', 'desenvolvimento', 'leg press', 'puxada', 'barra fixa', 'stiff', 'dip', 'mergulho', 'remo'];
+    const classifyExerciseType = (name: string): 'composto' | 'isolado' =>
+      COMPOUND_KEYWORDS.some(k => name.toLowerCase().includes(k)) ? 'composto' : 'isolado';
+
+    const buildWeek1Method = (setsStart: number): string =>
+      isWeightLoss
+        ? `Semana 1: ${setsStart} séries. Semana 2: ${setsStart + 1} séries. Semana 3: + repetições. Semana 4: Deload (Emagrecimento).`
+        : `Semana 1: ${setsStart} séries. Semana 2: ${setsStart + 1} séries. Semana 3: ${setsStart + 2} séries. Semana 4: Deload (Hipertrofia).`;
+
+    const usedExerciseNames = new Set<string>(
+      json.sessions.flatMap((s: any) => s.exercises.map((e: any) => e.name))
+    );
+
+    for (const session of json.sessions) {
+      if (session.exercises.length > exercisesPerSession) {
+        session.exercises = session.exercises.slice(0, exercisesPerSession);
+      }
+
+      if (session.exercises.length < exercisesPerSession) {
+        const missing = exercisesPerSession - session.exercises.length;
+        const sessionMuscles = new Set(session.exercises.map((e: any) => e.muscleGroup));
+        const candidates = limitedExercises.filter((ex: any) =>
+          sessionMuscles.has(ex.muscle_group) && !usedExerciseNames.has(ex.name)
+        );
+
+        console.warn(`[treino] Sessão "${session.name}" veio com ${session.exercises.length}/${exercisesPerSession} exercícios. Completando com ${Math.min(missing, candidates.length)} do catálogo (faltavam ${missing}, ${candidates.length} candidatos disponíveis).`);
+
+        for (let i = 0; i < missing && i < candidates.length; i++) {
+          const candidate = candidates[i];
+          const tipo = classifyExerciseType(candidate.name);
+          const sets = tipo === 'composto' ? compoundSets : isolationSets;
+          const reps = tipo === 'composto' ? compoundReps : isolationReps;
+
+          session.exercises.push({
+            name: candidate.name,
+            muscleGroup: candidate.muscle_group,
+            sets,
+            reps,
+            restSeconds: isWeightLoss ? 45 : 60,
+            tips: 'Execute com controle, priorizando boa técnica e amplitude completa de movimento.',
+            method: buildWeek1Method(sets),
+            targetLabels: Array.from({ length: sets }, (_, idx) => `S${idx + 1}`),
+            youtubeSearchTerm: `${candidate.name} como executar corretamente`,
+          });
+          usedExerciseNames.add(candidate.name);
+        }
       }
     }
 
