@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
 import { checkRateLimit } from "@/utils/rate-limit";
+import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
+import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,10 +30,10 @@ export async function POST(req: NextRequest) {
     // risco que já tínhamos corrigido no gerador de treino, mas nunca tinha chegado até aqui).
     // Todo mundo aqui é dono dos próprios dados (RLS via cliente autenticado — sem service role).
     const supabase = await createClient();
-    const [{ data: plans }, { data: recentHistory }, { data: anamneseRows }] = await Promise.all([
+    const [{ data: plans }, { data: recentHistory }, latestAnswers] = await Promise.all([
       supabase.from('workout_plans').select('name, split, sessions').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1),
       supabase.from('workout_history').select('date, session_name, total_volume, duration_seconds').eq('user_id', user.id).order('date', { ascending: false }).limit(5),
-      supabase.from('anamnese_history').select('answers').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1),
+      fetchLatestAnamneseAnswers(supabase, user.id),
     ]);
 
     const currentPlan = plans?.[0];
@@ -43,7 +45,6 @@ export async function POST(req: NextRequest) {
       ? recentHistory.map((h: any) => `- ${new Date(h.date).toLocaleDateString('pt-BR')}: ${h.session_name || 'Sessão'}, volume total ${h.total_volume || 0}kg, duração ${Math.round((h.duration_seconds || 0) / 60)}min`).join('\n')
       : 'Nenhum treino registrado ainda.';
 
-    const latestAnswers = anamneseRows?.[0]?.answers as Record<string, any> | undefined;
     const healthSummary = latestAnswers
       ? `- Lesões atuais ou histórico: ${latestAnswers.lesoes?.trim() || 'Nenhuma relatada'}\n- Condições médicas relevantes: ${latestAnswers.condicoes?.trim() || 'Nenhuma relatada'}\n- Liberação médica para treinar: ${latestAnswers.liberacao || 'Não informado'}`
       : 'Aluno ainda não preencheu a anamnese.';
@@ -79,7 +80,7 @@ Use formatação leve (negrito com **texto**) para destacar os pontos principais
       { role: "user", content: message },
     ];
 
-    const response = await groq.chat.completions.create({
+    const response = await createGroqCompletionWithRetry(groq, {
       model: "openai/gpt-oss-120b",
       messages,
       reasoning_effort: "low",

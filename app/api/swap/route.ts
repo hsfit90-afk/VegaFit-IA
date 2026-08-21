@@ -4,6 +4,8 @@ import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
 import { checkRateLimit } from "@/utils/rate-limit";
 import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
+import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
+import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
 
 export async function POST(req: NextRequest) {
   try {
@@ -58,13 +60,7 @@ export async function POST(req: NextRequest) {
     // banco (RLS via cliente autenticado, cada um só vê os próprios dados), não confia em dado
     // vindo do cliente pra isso.
     const supabase = await createClient();
-    const { data: anamneseRows } = await supabase
-      .from('anamnese_history')
-      .select('answers')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1);
-    const latestAnswers = anamneseRows?.[0]?.answers as Record<string, any> | undefined;
+    const latestAnswers = await fetchLatestAnamneseAnswers(supabase, user.id);
     const lesoes = latestAnswers?.lesoes?.trim();
     const condicoes = latestAnswers?.condicoes?.trim();
     const healthBlock = (lesoes || condicoes)
@@ -89,7 +85,7 @@ Exemplo de retorno OBRIGATÓRIO:
   "id": "123e4567-e89b-12d3-a456-426614174000"
 }`;
 
-    const response = await groq.chat.completions.create({
+    const response = await createGroqCompletionWithRetry(groq, {
       model: "openai/gpt-oss-120b",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },

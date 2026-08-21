@@ -2,6 +2,7 @@ import Groq from "groq-sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
 import { checkRateLimit } from "@/utils/rate-limit";
+import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
 
 const FALLBACK_TIP = "Mantenha a constância. A hidratação e um bom descanso são tão importantes quanto o treino.";
 
@@ -33,12 +34,12 @@ Gere UMA única dica curta (máximo 2 frases) de treino, nutrição ou recupera�
 A dica deve ser motivadora, direta e mudar o foco (as vezes falar de água, outras de sono, outras de proteína, outras de carga, dependendo do perfil).
 Retorne apenas o texto da dica, sem aspas e sem formatação extra.`;
 
-    const response = await groq.chat.completions.create({
+    const response = await createGroqCompletionWithRetry(groq, {
       model: "openai/gpt-oss-120b",
       messages: [{ role: "user", content: prompt }],
       reasoning_effort: "low",
       max_tokens: 300,
-    });
+    }, 1);
 
     const text = response.choices[0]?.message?.content;
 

@@ -4,6 +4,8 @@ import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
 import { checkRateLimit } from "@/utils/rate-limit";
 import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
+import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
+import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,16 +37,11 @@ export async function POST(req: NextRequest) {
     // no fluxo do próprio aluno o profile do AppContext não carrega o id, então cai no user.id da sessão.
     const targetUserId = profile?.id || user.id;
 
-    const [{ data: dbExercises }, { data: anamneseRows }] = await Promise.all([
+    const [{ data: dbExercises }, latestAnswers] = await Promise.all([
       serviceSupabase
         .from('exercises')
         .select('id, name, muscle_group'), // Buscar todos os exercícios, ignorando user_id por enquanto (B2C)
-      serviceSupabase
-        .from('anamnese_history')
-        .select('answers')
-        .eq('user_id', targetUserId)
-        .order('created_at', { ascending: false })
-        .limit(1),
+      fetchLatestAnamneseAnswers(serviceSupabase, targetUserId),
     ]);
 
     let availableExercises = dbExercises || [];
@@ -172,7 +169,6 @@ export async function POST(req: NextRequest) {
 
     // Dados de saúde vêm SEMPRE da anamnese estruturada (anamnese_history), não do texto livre acima —
     // se o aluno editar/apagar o campo de preferências, lesões e condições médicas não podem sumir do prompt.
-    const latestAnswers = anamneseRows?.[0]?.answers as Record<string, any> | undefined;
     const healthBlock = latestAnswers
       ? `
 
@@ -270,7 +266,7 @@ REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause, 
 1. Use o array "targetLabels" para nomear as séries (ex: ["S1", "S2", "Drop Set"]). O tamanho DEVE ser igual ao número de "sets". Para o método tradicional, use ["S1", "S2", "S3"].
 2. Você DEVE explicar brevemente como executar o método no campo "tips" de CADA exercício (ex: "No Drop Set, ao falhar, reduza 20% da carga e continue sem descanso").`;
 
-    const response = await groq.chat.completions.create({
+    const response = await createGroqCompletionWithRetry(groq, {
       model: "openai/gpt-oss-120b",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
