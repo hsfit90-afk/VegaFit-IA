@@ -81,13 +81,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // BUG FIX: Limit exercises per muscle group to avoid exceeding Groq TPM token limits (413 Payload Too Large).
-    // Baixado de 15 pra 10 porque o catálogo cresceu (novas categorias Cardio/Lombar/Antebraço) e passou
-    // a estourar o limite de 8000 TPM da conta (testado e confirmado: 15 gerava 413 na prática).
-    const MAX_EXERCISES_PER_MUSCLE = 10;
+    // BUG FIX (2ª ocorrência — achado em produção real): limite fixo de 10/grupo estourou nosso
+    // próprio limite de 8000 TPM de novo, porque desde a última vez o prompt cresceu (regra de
+    // Músculos Prioritários, entre outras) mesmo com o catálogo do mesmo tamanho. Em vez de um
+    // número fixo — que já falhou 2x conforme o app crescia — o orçamento agora é TOTAL e dividido
+    // pelo número de grupos musculares existentes, então continua se ajustando sozinho se o prompt
+    // ou o catálogo crescerem de novo no futuro, sem precisar caçar esse bug uma terceira vez.
+    const TOTAL_CATALOG_BUDGET = 70;
+    const muscleGroupCount = new Set(availableExercises.map((ex: any) => ex.muscle_group || 'Outros')).size || 1;
+    const MAX_EXERCISES_PER_MUSCLE = Math.max(4, Math.floor(TOTAL_CATALOG_BUDGET / muscleGroupCount));
     const exercisesByMuscle: Record<string, any[]> = {};
 
-    // Sort randomly so users don't always get the exact same 10 exercises for the prompt
+    // Sort randomly so users don't always get the exact same exercises for the prompt
     const shuffledExercises = availableExercises.sort(() => 0.5 - Math.random());
     
     shuffledExercises.forEach((ex: any) => {
