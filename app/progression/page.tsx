@@ -55,9 +55,10 @@ export default function ProgressionCheckIn() {
 
       const data = await response.json();
       if (data.plan) {
-        // Preserva o método de treino do plano atual — o endpoint de progressão não pergunta
-        // método, então sem isso o Superset/Circuito/Rest-Pause se perderiam a cada check-in.
-        setNewPlan({ ...data.plan, trainingMethod: workoutPlans[0]?.trainingMethod });
+        // Preserva método de treino e equipamento do plano atual — o endpoint de progressão não
+        // pergunta nenhum dos dois, então sem isso Superset/Circuito/Rest-Pause e o filtro de
+        // equipamento no swap se perderiam a cada check-in.
+        setNewPlan({ ...data.plan, trainingMethod: workoutPlans[0]?.trainingMethod, equipment: workoutPlans[0]?.equipment });
       } else {
         alert("Erro ao analisar a progressão.");
       }

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
 import { checkRateLimit } from "@/utils/rate-limit";
+import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,24 +61,8 @@ export async function POST(req: NextRequest) {
     //
     // O campo "equipment" da tabela exercises está inutilizável (todo exercício cadastrado pela UI
     // grava "Haltere" fixo, sem exceção — não existe campo de equipamento no formulário). Então
-    // classificamos por palavra-chave no NOME, mesma abordagem (best-effort) usada pra composto/
-    // isolado no repair de contagem de exercícios.
-    const MACHINE_KEYWORDS = ['máquina', 'maquina', 'polia', 'cabo', 'smith', 'cross over', 'crossover', 'leg press', 'hack', 'cadeira', 'mesa flexora', 'mesa extensora', 'voador', 'pec deck', 'alavanca', 'multi power', 'graviton', 'simulador', 'elíptica', 'eliptica', 'esteira', 'ergométrica', 'ergometrica', 'assistid'];
-    const classifyEquipmentTier = (name: string): 'maquina' | 'barra' | 'halteres' | 'peso_corporal' => {
-      const n = name.toLowerCase();
-      if (MACHINE_KEYWORDS.some(k => n.includes(k))) return 'maquina';
-      if (n.includes('barra') && !n.includes('barra fixa')) return 'barra';
-      if (n.includes('haltere') || n.includes('halter') || n.includes('kettlebell') || n.includes('anilha')) return 'halteres';
-      if (n.includes('elástico') || n.includes('elastico') || n.includes('banda') || n.includes('faixa')) return 'halteres';
-      return 'peso_corporal';
-    };
-
-    const EQUIPMENT_ALLOWED_TIERS: Record<string, string[]> = {
-      'Academia completa': ['maquina', 'barra', 'halteres', 'peso_corporal'],
-      'Halteres em casa': ['halteres', 'peso_corporal'],
-      'Barra e anilhas': ['barra', 'peso_corporal'],
-      'Sem equipamento (calistenia)': ['peso_corporal'],
-    };
+    // classificamos por palavra-chave no NOME (ver lib/equipmentTier.ts, compartilhado com o
+    // endpoint de troca de exercício).
     const allowedTiers = EQUIPMENT_ALLOWED_TIERS[config.equipment as string];
 
     if (allowedTiers) {

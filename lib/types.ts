@@ -46,6 +46,7 @@ export interface WorkoutPlan {
   sessions: WorkoutSession[];
   createdAt: number;
   trainingMethod?: string; // tradicional | superset | drop_set | piramide | rest_pause | circuito
+  equipment?: string; // Academia completa | Halteres em casa | Barra e anilhas | Sem equipamento (calistenia)
 }
 
 export interface ActiveSet {

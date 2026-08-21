@@ -440,6 +440,8 @@ export default function ActiveWorkout() {
         body: JSON.stringify({
           apiKey: profile?.geminiApiKey || '',
           currentExerciseName: currentActiveEx.name,
+          muscleGroup: currentActiveEx.muscleGroup,
+          equipment: currentPlan?.equipment,
           libraryExercises: availableAlternatives.map(e => ({
             id: e.id,
             name: e.name,

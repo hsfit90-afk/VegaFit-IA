@@ -102,6 +102,7 @@ export default function TrainerAIGenerator() {
         id: crypto.randomUUID(),
         createdAt: Date.now(),
         trainingMethod: form.trainingMethod,
+        equipment: form.equipment,
         sessions: data.sessions.map((session: any) => ({
           ...session,
           id: crypto.randomUUID(),

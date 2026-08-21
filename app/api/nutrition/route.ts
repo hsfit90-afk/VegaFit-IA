@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
+import { createClient } from '@/utils/supabase/server';
 import { requireAuth } from '@/utils/supabase/auth-guard';
 import { checkRateLimit } from '@/utils/rate-limit';
 
@@ -24,6 +25,24 @@ export async function POST(req: Request) {
 
     const groq = new Groq({ apiKey: keyToUse });
 
+    // BUG FIX: essa rota sugeria refeições sem saber de alergia/restrição alimentar ou condição
+    // médica cadastrada na anamnese — mesmo risco de segurança já corrigido no gerador de treino,
+    // no Coach e na troca de exercício, que faltava aqui. Busca direto do banco (RLS via cliente
+    // autenticado), não confia em dado vindo do cliente pra isso.
+    const supabase = await createClient();
+    const { data: anamneseRows } = await supabase
+      .from('anamnese_history')
+      .select('answers')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    const latestAnswers = anamneseRows?.[0]?.answers as Record<string, any> | undefined;
+    const restricoes = latestAnswers?.restricoes?.trim();
+    const condicoes = latestAnswers?.condicoes?.trim();
+    const healthBlock = (restricoes || condicoes)
+      ? `\nRestrições alimentares/alergias: ${restricoes || 'Nenhuma relatada'}\nCondições médicas relevantes: ${condicoes || 'Nenhuma relatada'}\nREGRA CRÍTICA DE SEGURANÇA: NUNCA inclua nas refeições sugeridas nenhum alimento que conflite com as restrições/alergias acima.`
+      : '';
+
     const systemPrompt = `Você é um Nutricionista Esportivo de alto nível.
 Baseado no perfil do aluno abaixo, calcule a Taxa Metabólica Basal (TMB), o Gasto Energético Total (GET) assumindo treinos de força de 4 a 5 vezes na semana, e a divisão ideal de Macronutrientes diários em gramas (Proteína, Carboidrato e Gordura) para o objetivo principal do aluno.
 Também recomende 3 exemplos de refeições principais ricas nos alimentos necessários.
@@ -33,6 +52,7 @@ Nome: ${profile.name}
 Idade: ${profile.age} | Peso: ${profile.weight}kg | Altura: ${profile.height}cm
 Objetivo: ${profile.goal}
 Limitações/Preferências: ${profile.intent || 'Nenhuma'}
+${healthBlock}
 
 RETORNE APENAS UM JSON VÁLIDO no seguinte formato exato, sem NENHUM markdown:
 {
