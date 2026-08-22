@@ -40,6 +40,24 @@ export async function POST(req: NextRequest) {
     // no fluxo do próprio aluno o profile do AppContext não carrega o id, então cai no user.id da sessão.
     const targetUserId = profile?.id || user.id;
 
+    // FALHA DE SEGURANÇA CORRIGIDA: até aqui, nada verificava se quem chama essa rota tem
+    // permissão de gerar treino EM NOME de outro usuário — o profile.id vinha direto do corpo
+    // da requisição e era usado com service_role (que ignora RLS) pra ler a anamnese de saúde
+    // de QUALQUER pessoa. A tela normal do app nunca expõe isso porque só carrega alunos que
+    // já passam pela RLS, mas a API sozinha, chamada direto (fora da UI), não tinha essa trava.
+    // Só passa se for o próprio usuário, o trainer atribuído a ele, ou um master.
+    if (targetUserId !== user.id) {
+      const [{ data: callerProfile }, { data: targetProfile }] = await Promise.all([
+        serviceSupabase.from('profiles').select('role').eq('id', user.id).single(),
+        serviceSupabase.from('profiles').select('trainer_id').eq('id', targetUserId).single(),
+      ]);
+      const isAssignedTrainer = targetProfile?.trainer_id === user.id;
+      const isMaster = callerProfile?.role === 'master';
+      if (!isAssignedTrainer && !isMaster) {
+        return NextResponse.json({ error: 'Você não tem permissão para gerar treino para esse usuário.' }, { status: 403 });
+      }
+    }
+
     const [{ data: dbExercises }, latestAnswers] = await Promise.all([
       serviceSupabase
         .from('exercises')
