@@ -1,7 +1,7 @@
 import Groq from "groq-sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
-import { checkRateLimit } from "@/utils/rate-limit";
+import { checkRateLimit, checkGlobalAiCapacity } from "@/utils/rate-limit";
 import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
 
 const FALLBACK_TIP = "Mantenha a constância. A hidratação e um bom descanso são tão importantes quanto o treino.";
@@ -15,6 +15,9 @@ export async function POST(req: NextRequest) {
     // se o limite estourar, cai de volta pra dica estática em vez de quebrar a UI.
     const rateLimitError = await checkRateLimit(user.id, "daily-tip", { limit: 30, windowMinutes: 1440 });
     if (rateLimitError) return NextResponse.json({ tip: FALLBACK_TIP });
+
+    const globalCapacityError = await checkGlobalAiCapacity("daily-tip");
+    if (globalCapacityError) return NextResponse.json({ tip: FALLBACK_TIP });
 
     const { apiKey, profile } = await req.json();
     const key = apiKey || process.env.GROQ_API_KEY;

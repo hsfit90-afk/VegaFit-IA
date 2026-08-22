@@ -2,7 +2,7 @@ import Groq from "groq-sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
-import { checkRateLimit } from "@/utils/rate-limit";
+import { checkRateLimit, checkGlobalAiCapacity } from "@/utils/rate-limit";
 import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
 import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
 
@@ -13,6 +13,9 @@ export async function POST(req: NextRequest) {
 
     const rateLimitError = await checkRateLimit(user.id, "coach-chat", { limit: 40, windowMinutes: 60 });
     if (rateLimitError) return rateLimitError;
+
+    const globalCapacityError = await checkGlobalAiCapacity("coach-chat");
+    if (globalCapacityError) return globalCapacityError;
 
     const { apiKey, profile, message, history } = await req.json();
 
