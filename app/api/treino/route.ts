@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
 import { checkRateLimit, checkGlobalAiCapacity } from "@/utils/rate-limit";
 import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
+import { isMobilityOnly } from "@/lib/exerciseType";
 import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
 import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
 
@@ -71,6 +72,14 @@ export async function POST(req: NextRequest) {
     if (profile?.bannedExercises && profile.bannedExercises.length > 0) {
       availableExercises = availableExercises.filter((ex: any) => !profile.bannedExercises.includes(ex.id));
     }
+
+    // Tira alongamento/postura/liberação miofascial do pool ANTES de tudo — o import de Mobilidade
+    // taggeou esses exercícios pelo grupo muscular real (Ombro, Lombar, Panturrilhas...), então
+    // sem esse filtro eles competem igual com exercício de força de verdade no mesmo balde, e o
+    // gerador prescreveria "4 séries de 12-15 reps" pra um alongamento estático. Sem salvaguarda de
+    // "esvaziou o grupo" aqui de propósito: mesmo removendo essas linhas, cada grupo muscular ainda
+    // sobra com exercícios de força reais o suficiente (ver lib/exerciseType.ts).
+    availableExercises = availableExercises.filter((ex: any) => !isMobilityOnly(ex.name));
 
     // Restringe o catálogo pelo local de treino, ANTES de montar o prompt — não basta pedir pra
     // IA "respeitar o equipamento" no texto (já vimos hoje que enforcement só por prompt falha:

@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
 import { checkRateLimit, checkGlobalAiCapacity } from "@/utils/rate-limit";
 import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
+import { isMobilityOnly } from "@/lib/exerciseType";
 import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
 import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
 
@@ -46,6 +47,13 @@ export async function POST(req: NextRequest) {
       const filtered = candidates.filter((e) => allowedTiers.includes(classifyEquipmentTier(e.name)));
       if (filtered.length > 0) candidates = filtered;
     }
+
+    // Tira alongamento/postura/liberação miofascial das opções de troca — mesmo motivo do gerador
+    // (lib/exerciseType.ts): esses exercícios não têm série/repetição fixa e não fazem sentido como
+    // substituto de um exercício de força. Com salvaguarda aqui (diferente do gerador): a lista já
+    // está restrita a um único grupo muscular, então tem mais chance de esvaziar de vez.
+    const nonMobility = candidates.filter((e) => !isMobilityOnly(e.name));
+    if (nonMobility.length > 0) candidates = nonMobility;
 
     // Segunda salvaguarda de tamanho: mesmo já filtrado, corta num teto seguro de tokens (evita
     // repetir o mesmo erro caso um grupo muscular específico tenha crescido demais no catálogo).
