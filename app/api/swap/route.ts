@@ -13,7 +13,10 @@ export async function POST(req: NextRequest) {
     const { user, error: authError } = await requireAuth();
     if (authError) return authError;
 
-    const rateLimitError = await checkRateLimit(user.id, "swap", { limit: 30, windowMinutes: 60 });
+    // Limite DIÁRIO, não por hora: 30/hora permitia 480 trocas/dia por usuário — teto de custo
+    // desnecessário (ninguém monta treino de verdade com mais de 20 trocas num dia). Com 100
+    // alunos, o pior caso cai de ~US$ 1.170/mês para o que o teto de gasto do Groq permitir.
+    const rateLimitError = await checkRateLimit(user.id, "swap", { limit: 20, windowMinutes: 1440 });
     if (rateLimitError) return rateLimitError;
 
     const globalCapacityError = await checkGlobalAiCapacity("swap");
@@ -96,8 +99,13 @@ Exemplo de retorno OBRIGATÓRIO:
   "id": "123e4567-e89b-12d3-a456-426614174000"
 }`;
 
+    // Modelo leve de propósito: a troca é "escolha 1 entre ~15 candidatos já filtrados, respeitando
+    // as lesões" — não precisa do 120B. O 20B é da mesma família (mesmo comportamento de prompt e
+    // reasoning_effort), 2x mais rápido (1000 tps) e bem mais barato. A troca responde por ~70% do
+    // consumo de tokens do app (medido em ai_usage_log), então é aqui que o custo por aluno cai.
+    // O 120B fica reservado pra geração de treino e coach chat, onde a qualidade pesa mais.
     const response = await createGroqCompletionWithRetry(groq, {
-      model: "openai/gpt-oss-120b",
+      model: "openai/gpt-oss-20b",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       reasoning_effort: "low",
