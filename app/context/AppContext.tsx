@@ -119,6 +119,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           split: p.split,
           sessions: p.sessions,
           createdAt: new Date(p.created_at).getTime(),
+          cycleStartedAt: p.cycle_started_at ? new Date(p.cycle_started_at).getTime() : null,
           trainingMethod: p.training_method || undefined,
           equipment: p.equipment || undefined,
         }));
@@ -260,7 +261,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await supabase.from('workout_plans').update({
       name: plan.name,
       split: plan.split,
-      sessions: plan.sessions
+      sessions: plan.sessions,
+      cycle_started_at: plan.cycleStartedAt ? new Date(plan.cycleStartedAt).toISOString() : null,
     }).eq('id', plan.id).eq('user_id', userId);
   };
 

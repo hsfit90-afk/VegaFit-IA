@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
+import { computePeriodization, INACTIVITY_RESET_DAYS } from '@/lib/periodization';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart } from 'lucide-react';
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
@@ -51,6 +52,17 @@ export default function ActiveWorkout() {
   const [miniPause, setMiniPause] = useState<{ exIndex: number; setIndex: number; endTime: number } | null>(null);
   const [miniPauseRemaining, setMiniPauseRemaining] = useState(0);
 
+  // Semana/ciclo da periodização, ancorados no aluno (lib/periodization.ts). Uma fonte só — antes
+  // o mesmo cálculo estava duplicado aqui e no JSX da progressão, e os dois usavam a data de
+  // criação do plano em dias corridos.
+  const periodization = useMemo(
+    () => (currentPlan ? computePeriodization(currentPlan, history || []) : null),
+    [currentPlan, history]
+  );
+  const currentWeek = periodization?.week ?? 1;
+  // Aviso de reset por inatividade — mostrado uma vez, no início do treino em que o reset acontece.
+  const [resetNotice, setResetNotice] = useState<number | null>(null);
+
   useEffect(() => {
     // Load library exercises to map mediaUrl
     getExercises().then((data: any) => {
@@ -67,10 +79,13 @@ export default function ActiveWorkout() {
         return;
       }
 
-      // Calcula a semana atual baseada na criação do plano
-      const planCreatedAt = currentPlan?.createdAt || Date.now();
-      const daysSinceStart = Math.floor((Date.now() - planCreatedAt) / (1000 * 60 * 60 * 24));
-      const currentWeek = Math.min(Math.floor(daysSinceStart / 7) + 1, 4);
+      // "No ato do início do treino": é aqui, e só aqui, que a âncora do ciclo é gravada — no
+      // primeiro treino do plano, ou num reset depois de INACTIVITY_RESET_DAYS parado. Abrir a
+      // home não conta como voltar a treinar.
+      if (currentPlan && periodization?.anchorToPersist) {
+        updateWorkoutPlan({ ...currentPlan, cycleStartedAt: periodization.anchorToPersist });
+        if (periodization.needsReset) setResetNotice(periodization.daysSinceLastSession);
+      }
 
       const initialized = currentSession.exercises.map(ex => {
         let finalSetCount = ex.sets;
@@ -867,6 +882,22 @@ export default function ActiveWorkout() {
         </div>
       )}
 
+      {resetNotice !== null && (
+        <div className="mb-6 p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-100 flex items-start gap-3">
+          <RefreshCw className="w-5 h-5 mt-0.5 shrink-0 text-amber-400" />
+          <div className="flex-1 text-sm leading-relaxed">
+            <p className="font-semibold text-amber-300 mb-1">Periodização reiniciada</p>
+            <p>
+              Você ficou <strong>{resetNotice} dias</strong> sem treinar. Para voltar com segurança, recomeçamos na <strong>semana 1</strong> —
+              as séries de hoje estão mais leves de propósito. Em {INACTIVITY_RESET_DAYS} dias de constância você retoma o ritmo.
+            </p>
+          </div>
+          <button onClick={() => setResetNotice(null)} className="text-amber-300/70 hover:text-amber-200 text-xs font-medium shrink-0" aria-label="Fechar aviso">
+            OK
+          </button>
+        </div>
+      )}
+
       <div className="space-y-6">
         {activeExercises.map((ex, exIndex) => {
           const exercise = currentSession.exercises[exIndex];
@@ -936,10 +967,7 @@ export default function ActiveWorkout() {
                      <Zap className="w-4 h-4 shrink-0" /> {currentSession.exercises[exIndex].tips}
                   </p>
                   {currentSession.exercises[exIndex].method && (() => {
-                    // Detecta semana atual baseado na criação do plano (createdAt)
-                    const planCreatedAt = currentPlan?.createdAt || Date.now();
-                    const daysSinceStart = Math.floor((Date.now() - planCreatedAt) / (1000 * 60 * 60 * 24));
-                    const currentWeek = Math.min(Math.floor(daysSinceStart / 7) + 1, 4);
+                    // currentWeek vem do useMemo de periodização no topo do componente.
 
                     // Parseia o texto da IA em semanas — suporta separadores: "|", "." e quebra de linha
                     const methodText = currentSession.exercises[exIndex].method || '';

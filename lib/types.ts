@@ -45,6 +45,7 @@ export interface WorkoutPlan {
   split: string;
   sessions: WorkoutSession[];
   createdAt: number;
+  cycleStartedAt?: number | null; // timestamp do início do ciclo de periodização atual (ver lib/periodization.ts)
   trainingMethod?: string; // tradicional | superset | drop_set | piramide | rest_pause | circuito
   equipment?: string; // Academia completa | Halteres em casa | Barra e anilhas | Sem equipamento (calistenia)
 }
