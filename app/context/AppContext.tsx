@@ -94,13 +94,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // Removido o bloqueio estrito de rotas para permitir navegação
         // Apenas redireciona se estiver na tela de login/onboarding
         if (path === '/login' || path === '/register') {
-          if (role === 'master') {
-            router.push('/admin');
-          } else if (role === 'trainer') {
-            router.push('/trainer');
-          } else {
-            router.push('/');
-          }
+          router.push(role === 'master' ? '/admin' : '/');
         }
       } else if (!profileData && mounted) {
         const path = window.location.pathname;

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2, PlusCircle, ClipboardList } from 'lucide-react';
+import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2, ClipboardList } from 'lucide-react';
 import { useAppContext } from '@/app/context/AppContext';
 
 // Full list for Desktop Sidebar
@@ -11,7 +11,6 @@ const DESKTOP_NAV_ITEMS = [
   { href: '/anamnese', label: 'Anamnese', icon: ClipboardList },
   { href: '/progress', label: 'Progresso', icon: BarChart2 },
   { href: '/generator', label: 'Gerador IA', icon: Zap },
-  { href: '/manual-workout', label: 'Criar Treino', icon: PlusCircle },
   { href: '/active', label: 'Treinar', icon: PlayCircle },
   { href: '/library', label: 'Exercícios', icon: Dumbbell },
   { href: '/history', label: 'Histórico', icon: History },
@@ -34,39 +33,28 @@ export function Navigation() {
   const pathname = usePathname();
   const { profile, clearData } = useAppContext();
 
-  const hideNavigation = ['/login', '/register', '/onboarding', '/role-select'].includes(pathname);
+  const hideNavigation = ['/login', '/register', '/onboarding'].includes(pathname);
   if (hideNavigation) return null;
 
-  // Filtrar menu baseado no perfil
+  // App é B2C: o único papel com menu extra é o master, que cuida da biblioteca global de
+  // exercícios pelo /admin. O papel de trainer e suas telas foram removidos.
   const role = profile?.role || 'client';
-  
-  let desktopItems = [...DESKTOP_NAV_ITEMS];
-  let mobileItems = [...MOBILE_NAV_ITEMS];
-  
-  // Adicionar painéis específicos baseados na role
+
+  const desktopItems = [...DESKTOP_NAV_ITEMS];
+  const mobileItems = [...MOBILE_NAV_ITEMS];
+
   if (role === 'master') {
     desktopItems.unshift({ href: '/admin', label: 'Admin (Master)', icon: Settings });
-    desktopItems.unshift({ href: '/trainer', label: 'Meus Alunos', icon: Zap });
-    // mobileItems.unshift({ href: '/trainer', label: 'Alunos', icon: Zap });
-  } else if (role === 'trainer') {
-    desktopItems.unshift({ href: '/trainer', label: 'Meus Alunos', icon: Zap });
-    // mobileItems.unshift({ href: '/trainer', label: 'Alunos', icon: Zap });
   }
 
   const filteredDesktopNav = desktopItems.filter(item => {
-    if (item.href === '/manual-workout' || item.href === '/nutrition') {
-      return role === 'master';
-    }
-    if (item.href === '/library') {
-      return role === 'trainer' || role === 'master';
-    }
+    if (item.href === '/nutrition') return role === 'master';
+    if (item.href === '/library') return role === 'master';
     return true;
   });
 
   const filteredMobileNav = mobileItems.filter(item => {
-    if (item.href === '/manual-workout' || item.href === '/nutrition') {
-      return role === 'master';
-    }
+    if (item.href === '/nutrition') return role === 'master';
     return true;
   });
 

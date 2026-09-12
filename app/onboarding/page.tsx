@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Minus, Plus, Target, Zap, Clock, ChevronRight, Sparkles, Dumbbell } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
 import { useAppContext } from '@/app/context/AppContext';
@@ -35,9 +35,8 @@ export default function Onboarding() {
   const [days, setDays] = useState(4);
   const [duration, setDuration] = useState('60');
 
-  const searchParams = useSearchParams();
-  const trainerId = searchParams.get('trainer');
-  const selectedRole = searchParams.get('role'); // 'trainer' or null (defaults to 'client')
+  // App é B2C: todo cadastro novo entra como 'client'. Os parâmetros ?trainer= e ?role= do fluxo
+  // de convite do personal saíram junto com as telas de /trainer.
 
   const totalSteps = 6;
 
@@ -83,8 +82,8 @@ export default function Onboarding() {
       geminiApiKey: '',
       soundEnabled: true,
       defaultRestTimer: 60,
-      role: existingProfile?.role || selectedRole || 'client',
-      trainerId: existingProfile?.trainer_id || trainerId || null,
+      role: existingProfile?.role || 'client',
+      trainerId: existingProfile?.trainer_id || null,
     };
 
     const { error } = await supabase.from('profiles').upsert({
@@ -144,13 +143,8 @@ export default function Onboarding() {
     } catch (e) {
       console.error("Error generating initial plan:", e);
     }
-    // Redirect based on role
-    const finalRole = existingProfile?.role || selectedRole || 'client';
-    if (finalRole === 'trainer' || finalRole === 'master') {
-      router.push('/trainer');
-    } else {
-      router.push('/');
-    }
+    const finalRole = existingProfile?.role || 'client';
+    router.push(finalRole === 'master' ? '/admin' : '/');
   };
 
   const nextStep = () => setStep(prev => Math.min(prev + 1, totalSteps));

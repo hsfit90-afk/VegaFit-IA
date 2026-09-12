@@ -33,12 +33,8 @@ export default function Login() {
       if (user) {
         const { data: profile } = await supabase.from('profiles').select('id, role').eq('id', user.id).single();
         if (profile) {
-          // Existing user — redirect based on role
-          if (profile.role === 'trainer' || profile.role === 'master') {
-            window.location.href = '/trainer';
-          } else {
-            window.location.href = '/';
-          }
+          // App é B2C: só o master tem painel próprio (biblioteca global de exercícios).
+          window.location.href = profile.role === 'master' ? '/admin' : '/';
         } else {
           // New user without profile — go directly to onboarding (B2C default)
           window.location.href = '/onboarding';

@@ -354,28 +354,12 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {(!profile?.trainerId || profile?.role === 'master' || profile?.role === 'trainer') ? (
-                    <>
-                      <Link href="/generator" className="block">
-                        <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
-                          GERAR TREINO COM IA
-                          <Zap className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
-                        </Button>
-                      </Link>
-                      {profile?.role === 'master' && (
-                        <Link href="/manual-workout" className="block">
-                          <Button size="lg" variant="outline" fullWidth className="group text-base border-primary/50 hover:bg-primary/10">
-                            CRIAR TREINO MANUALMENTE
-                            <Dumbbell className="w-5 h-5 ml-2 group-hover:rotate-12 transition-transform" />
-                          </Button>
-                        </Link>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-center p-4 bg-surface rounded-xl border border-white/5">
-                      <p className="text-foreground-muted">Aguardando seu professor enviar o seu treino.</p>
-                    </div>
-                  )}
+                  <Link href="/generator" className="block">
+                    <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
+                      GERAR TREINO COM IA
+                      <Zap className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
+                    </Button>
+                  </Link>
                 </div>
               )}
             </div>
@@ -422,26 +406,11 @@ export default function Dashboard() {
             <LayoutList className="w-5 h-5 text-primary" /> Meus Planos de Treino
           </h4>
           <div className="flex gap-2">
-            {(!profile?.trainerId || profile?.role === 'master' || profile?.role === 'trainer') ? (
-              <>
-                {profile?.role === 'master' && (
-                  <Link href="/manual-workout">
-                    <Button size="sm" variant="outline" className="text-xs border-primary/30 hover:bg-primary/10">
-                      <Dumbbell className="w-3.5 h-3.5 mr-1.5" /> Criar Manual
-                    </Button>
-                  </Link>
-                )}
-                <Link href="/generator">
-                  <Button size="sm" className="text-xs shadow-[0_2px_10px_rgba(0,255,136,0.2)]">
-                    <Zap className="w-3.5 h-3.5 mr-1.5" /> Gerar com IA
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <span className="text-xs text-primary px-3 py-1.5 bg-primary/10 rounded-lg flex items-center gap-2 font-semibold border border-primary/20">
-                <Star className="w-3.5 h-3.5" /> Acompanhamento Personalizado
-              </span>
-            )}
+            <Link href="/generator">
+              <Button size="sm" className="text-xs shadow-[0_2px_10px_rgba(0,255,136,0.2)]">
+                <Zap className="w-3.5 h-3.5 mr-1.5" /> Gerar com IA
+              </Button>
+            </Link>
           </div>
         </div>
         
@@ -487,25 +456,12 @@ export default function Dashboard() {
             <CardContent className="p-8 text-center flex flex-col items-center">
               <LayoutList className="w-10 h-10 text-foreground-muted opacity-30 mb-3" />
               <p className="text-white font-medium mb-1">Nenhum plano salvo.</p>
-              {(!profile?.trainerId || profile?.role === 'master' || profile?.role === 'trainer') ? (
-                <>
-                  <p className="text-sm text-foreground-muted mb-4">Gere um treino com IA{profile?.role === 'master' ? ' ou crie o seu próprio plano.' : '.'}</p>
-                  <div className="flex gap-3 justify-center">
-                    <Link href="/generator">
-                      <Button size="sm">Com IA</Button>
-                    </Link>
-                    {profile?.role === 'master' && (
-                      <Link href="/manual-workout">
-                        <Button size="sm" variant="outline">Manual</Button>
-                      </Link>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-foreground-muted mb-4 mt-2">
-                  Você está sendo acompanhado por um treinador. Seus treinos aparecerão aqui assim que forem enviados.
-                </p>
-              )}
+              <p className="text-sm text-foreground-muted mb-4">Gere seu primeiro treino com IA.</p>
+              <div className="flex gap-3 justify-center">
+                <Link href="/generator">
+                  <Button size="sm">Gerar com IA</Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         )}

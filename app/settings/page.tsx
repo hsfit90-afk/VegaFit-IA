@@ -149,8 +149,8 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Atalho para Biblioteca de Exercícios (Apenas Master/Trainer) */}
-        {(profile?.role === 'master' || profile?.role === 'trainer') && (
+        {/* Atalho para Biblioteca de Exercícios (apenas master) */}
+        {profile?.role === 'master' && (
           <Card className="bg-surface border-border overflow-hidden relative">
             <div className="absolute -right-4 -top-4 text-foreground/5">
               <Dumbbell className="w-32 h-32" />
