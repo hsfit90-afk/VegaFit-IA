@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
+import { computeUnlock, textoBloqueio, type MethodId } from '@/lib/trainingUnlock';
 import { Zap, Loader2 } from 'lucide-react';
 import { Exercise as DbExercise } from '@/lib/types';
 import { useRouter } from 'next/navigation';
@@ -43,6 +44,17 @@ export default function Generator() {
     limitations: profile?.intent || '',
     trainingMethod: 'tradicional',
   });
+
+  // Métodos liberados pela constância real do aluno (lib/trainingUnlock.ts).
+  const unlock = useMemo(() => computeUnlock(history || []), [history]);
+
+  // Salvaguarda: se um método deixou de estar liberado (ex: plano antigo, reset de histórico),
+  // volta pro tradicional em vez de mandar pro gerador um método que o aluno não pode usar.
+  useEffect(() => {
+    if (!unlock.liberados.includes(form.trainingMethod as MethodId)) {
+      setForm(prev => ({ ...prev, trainingMethod: 'tradicional' }));
+    }
+  }, [unlock, form.trainingMethod]);
 
   const handlePriorityToggle = (muscle: string) => {
     setForm(prev => {
@@ -285,25 +297,52 @@ export default function Generator() {
               </div>
 
               <div className="space-y-3 md:col-span-2">
-                <label className="text-sm text-foreground-muted font-medium">Método de Treino</label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {TRAINING_METHODS.map(method => (
-                    <button
-                      type="button"
-                      key={method.id}
-                      onClick={() => setForm({ ...form, trainingMethod: method.id })}
-                      className={`p-3 rounded-xl border text-left transition-all ${
-                        form.trainingMethod === method.id
-                          ? 'border-primary bg-primary/10 text-white'
-                          : 'border-border bg-surface text-foreground-muted hover:bg-white/5 hover:border-white/20'
-                      }`}
-                    >
-                      <div className="text-xl mb-1">{method.icon}</div>
-                      <div className="font-semibold text-sm">{method.label}</div>
-                      <div className="text-xs text-foreground-muted/70 mt-0.5 leading-tight">{method.desc}</div>
-                    </button>
-                  ))}
+                <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                  <label className="text-sm text-foreground-muted font-medium">Método de Treino</label>
+                  {unlock.proximaFase && (
+                    <span className="text-xs text-foreground-muted/70">
+                      {unlock.treinosFeitos} treinos concluídos
+                    </span>
+                  )}
                 </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {TRAINING_METHODS.map(method => {
+                    const bloqueio = textoBloqueio(unlock, method.id as MethodId);
+                    const bloqueado = bloqueio !== null;
+                    return (
+                      <button
+                        type="button"
+                        key={method.id}
+                        // Bloqueado não é só visual: o clique é ignorado, então não dá pra selecionar
+                        // um método avançado sem a constância que o libera.
+                        disabled={bloqueado}
+                        onClick={() => !bloqueado && setForm({ ...form, trainingMethod: method.id })}
+                        title={bloqueio || method.desc}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          bloqueado
+                            ? 'border-border/50 bg-surface/40 text-foreground-muted/40 cursor-not-allowed'
+                            : form.trainingMethod === method.id
+                              ? 'border-primary bg-primary/10 text-white'
+                              : 'border-border bg-surface text-foreground-muted hover:bg-white/5 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="text-xl mb-1">{bloqueado ? '🔒' : method.icon}</div>
+                        <div className="font-semibold text-sm">{method.label}</div>
+                        {bloqueado ? (
+                          <div className="text-[11px] text-accent/70 mt-0.5 leading-tight font-medium">{bloqueio}</div>
+                        ) : (
+                          <div className="text-xs text-foreground-muted/70 mt-0.5 leading-tight">{method.desc}</div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {unlock.proximaFase && (
+                  <p className="text-xs text-foreground-muted/60 leading-relaxed">
+                    Técnicas avançadas levam à falha muscular e pedem base de força e técnica.
+                    Elas se abrem conforme sua constância no app — treine e desbloqueie.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2 md:col-span-2">

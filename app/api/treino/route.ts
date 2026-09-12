@@ -7,6 +7,7 @@ import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentT
 import { isMobilityOnly } from "@/lib/exerciseType";
 import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
 import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
+import { computeUnlock, type MethodId } from "@/lib/trainingUnlock";
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,11 +60,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const [{ data: dbExercises }, latestAnswers] = await Promise.all([
+    const [{ data: dbExercises }, latestAnswers, { data: historyRows }] = await Promise.all([
       serviceSupabase
         .from('exercises')
         .select('id, name, muscle_group'), // Buscar todos os exercícios, ignorando user_id por enquanto (B2C)
       fetchLatestAnamneseAnswers(serviceSupabase, targetUserId),
+      serviceSupabase.from('workout_history').select('date').eq('user_id', targetUserId),
     ]);
 
     let availableExercises = dbExercises || [];
@@ -160,7 +162,21 @@ export async function POST(req: NextRequest) {
       rest_pause: 'Rest-Pause: faça reps até a falha, descanse 10-15s, repita',
       circuito: 'Circuito: todos os exercícios em sequência com mínimo descanso',
     };
-    const methodLabel = config.trainingMethod || 'tradicional';
+    // Métodos avançados liberados por constância comprovada (lib/trainingUnlock.ts). Validado AQUI
+    // e não só na tela: o botão desabilitado no gerador é cosmético — sem esta checagem, bastava
+    // um POST direto pra pedir Drop Set no primeiro dia de treino. Técnicas de falha muscular em
+    // quem não tem base são risco de lesão, então a regra tem que valer no servidor.
+    const unlock = computeUnlock(
+      (historyRows || []).map((h: any) => ({ date: new Date(h.date).getTime() }))
+    );
+    const pedido = config.trainingMethod || 'tradicional';
+    const methodLabel = unlock.liberados.includes(pedido as MethodId) ? pedido : 'tradicional';
+    if (methodLabel !== pedido) {
+      console.warn(
+        `[VegaFit] Método "${pedido}" pedido por ${targetUserId} ainda não liberado ` +
+        `(${unlock.treinosFeitos} treinos, ${unlock.mesesTreinando} meses). Usando tradicional.`
+      );
+    }
     const methodDesc = methodDescriptions[methodLabel] || methodDescriptions['tradicional'];
 
     const durationMinutes = parseInt(config.duration) || 60;
