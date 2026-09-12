@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff } from 'lucide-react';
+import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart } from 'lucide-react';
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import confetti from 'canvas-confetti';
 import { Card } from '@/components/ui/Card';
@@ -13,7 +13,7 @@ import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator'
 import { saveWorkoutState, loadWorkoutState, clearWorkoutState } from '@/utils/workoutCache';
 
 export default function ActiveWorkout() {
-  const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, history, activePlanId } = useAppContext();
+  const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -433,8 +433,28 @@ export default function ActiveWorkout() {
     setSwappingIndex(exIndex);
 
     try {
-      // 1. Tenta usar a IA para uma troca inteligente
-      const response = await fetch('/api/swap', {
+      let bestAlternative = null;
+
+      // 0. Favorito antes da IA: se o aluno tem um favorito do mesmo grupo muscular que ainda não
+      // está no treino de hoje, é quase certo que é isso que ele quer. Resolve na hora, sem chamada
+      // de IA — e é a única troca que sabemos ser a preferência dele, não um palpite do modelo.
+      const normalizeName = (s: string) => s ? s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim() : "";
+      const favorites = profile?.favoriteExercises || [];
+      if (favorites.length > 0) {
+        const currentMuscle = normalizeName(currentActiveEx.muscleGroup);
+        const inWorkout = new Set(activeExercises.map(e => e.exerciseId));
+        const favoriteMatches = availableAlternatives.filter(ex =>
+          favorites.includes(ex.id) &&
+          !inWorkout.has(ex.id) &&
+          normalizeName(ex.muscleGroup) === currentMuscle
+        );
+        if (favoriteMatches.length > 0) {
+          bestAlternative = favoriteMatches[Math.floor(Math.random() * favoriteMatches.length)];
+        }
+      }
+
+      // 1. Sem favorito compatível: usa a IA para uma troca inteligente
+      const response = bestAlternative ? null : await fetch('/api/swap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -450,11 +470,9 @@ export default function ActiveWorkout() {
         })
       });
 
-      let bestAlternative = null;
-
-      if (response.ok) {
+      if (response?.ok) {
         const data = await response.json();
-        bestAlternative = availableAlternatives.find(e => e.id === data.id);
+        bestAlternative = availableAlternatives.find(e => e.id === data.id) || null;
       }
 
       // 2. Fallback: se a IA falhar ou retornar algo inválido, usa logica local original
@@ -992,9 +1010,22 @@ export default function ActiveWorkout() {
 
                 </div>
                 <div className="flex flex-wrap gap-3 items-center">
-                  {/* Swap and Ban Buttons */}
+                  {/* Favorite, Swap and Ban Buttons */}
                   <div className="flex gap-1 mr-2">
-                    <button 
+                    {(() => {
+                      const isFav = (profile?.favoriteExercises || []).includes(ex.exerciseId);
+                      return (
+                        <button
+                          onClick={() => toggleFavoriteExercise(ex.exerciseId)}
+                          className={`p-3 border rounded-xl transition-all flex items-center justify-center shadow-lg ${isFav ? 'bg-red-500/20 border-red-500/50 text-red-400' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'}`}
+                          title={isFav ? 'Remover dos favoritos' : 'Favoritar exercício'}
+                          aria-label={isFav ? 'Remover dos favoritos' : 'Favoritar exercício'}
+                        >
+                          <Heart className={`w-5 h-5 ${isFav ? 'fill-current' : ''}`} />
+                        </button>
+                      );
+                    })()}
+                    <button
                       onClick={() => handleAutoSwap(exIndex)}
                       disabled={swappingIndex === exIndex}
                       className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:text-primary transition-all text-gray-400 flex items-center justify-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"

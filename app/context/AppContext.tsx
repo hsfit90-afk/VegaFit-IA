@@ -27,6 +27,7 @@ interface AppContextState {
   advanceSession: (totalSessions: number) => void;
   resetSessionIndex: () => void;
   banExerciseForUser: (exerciseId: string) => Promise<void>;
+  toggleFavoriteExercise: (exerciseId: string) => Promise<void>;
   // Novidades
   bodyWeightHistory: BodyWeightEntry[];
   addBodyWeight: (weight: number) => Promise<void>;
@@ -77,6 +78,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           soundEnabled: profileData.sound_enabled,
           defaultRestTimer: profileData.default_rest_timer,
           bannedExercises: profileData.banned_exercises || [],
+          favoriteExercises: profileData.favorite_exercises || [],
           role: profileData.role || 'client',
           trainerId: profileData.trainer_id || null,
           maxClients: profileData.max_clients || 5,
@@ -192,6 +194,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       sound_enabled: newProfile.soundEnabled,
       default_rest_timer: newProfile.defaultRestTimer,
       banned_exercises: newProfile.bannedExercises || [],
+      favorite_exercises: newProfile.favoriteExercises || [],
       role: newProfile.role || 'client',
       trainer_id: newProfile.trainerId || null,
       max_clients: newProfile.maxClients || 5,
@@ -209,6 +212,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const newBanned = [...currentBanned, exerciseId];
     setProfileState({ ...profile, bannedExercises: newBanned });
     await supabase.from('profiles').update({ banned_exercises: newBanned }).eq('id', userId);
+  };
+
+  // Espelho de banExerciseForUser, mas alterna (favoritar / desfavoritar). Otimista: atualiza a
+  // UI antes do banco, igual ao ban — o coração responde na hora mesmo em rede lenta.
+  const toggleFavoriteExercise = async (exerciseId: string) => {
+    if (!profile || !userId) return;
+    const current = profile.favoriteExercises || [];
+    const newFavorites = current.includes(exerciseId)
+      ? current.filter(id => id !== exerciseId)
+      : [...current, exerciseId];
+
+    setProfileState({ ...profile, favoriteExercises: newFavorites });
+    await supabase.from('profiles').update({ favorite_exercises: newFavorites }).eq('id', userId);
   };
 
   const addWorkoutPlan = async (plan: WorkoutPlan) => {
@@ -382,6 +398,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         advanceSession,
         resetSessionIndex,
         banExerciseForUser,
+        toggleFavoriteExercise,
         bodyWeightHistory,
         addBodyWeight,
         activePlanId,

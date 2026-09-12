@@ -73,6 +73,14 @@ export async function POST(req: NextRequest) {
       availableExercises = availableExercises.filter((ex: any) => !profile.bannedExercises.includes(ex.id));
     }
 
+    // Favoritos do aluno, resolvidos pelo pool JÁ filtrado (um favorito que também foi banido, ou
+    // que saiu do catálogo, não chega ao prompt). Vai como "priorize quando couber", nunca como
+    // regra — favoritos não podem furar o protocolo de volume/split nem a regra de saúde.
+    const favoriteIds: string[] = profile?.favoriteExercises || [];
+    const favoriteNames = favoriteIds.length > 0
+      ? availableExercises.filter((ex: any) => favoriteIds.includes(ex.id)).map((ex: any) => ex.name)
+      : [];
+
     // Tira alongamento/postura/liberação miofascial do pool ANTES de tudo — o import de Mobilidade
     // taggeou esses exercícios pelo grupo muscular real (Ombro, Lombar, Panturrilhas...), então
     // sem esse filtro eles competem igual com exercício de força de verdade no mesmo balde, e o
@@ -246,7 +254,11 @@ REGRA CRÍTICA SOBRE AS PREFERÊNCIAS DO ALUNO (RESPEITAR OS PROTOCOLOS CIENTÍF
 O aluno forneceu as seguintes preferências: "${studentPreferences}".
 Você DEVE adaptar a seleção de exercícios e o foco do treino para atender a esses pedidos do aluno (ex: evitar exercícios que causem dor, priorizar os músculos que ele pediu, respeitar o horário/local se mencionado).
 PORÉM, os pedidos do aluno NUNCA podem violar os dois protocolos científicos obrigatórios definidos abaixo (REGRA CRÍTICA SOBRE VOLUME/INTENSIDADE e REGRA CRÍTICA DE EXERCÍCIOS DISPONÍVEIS): a quantidade exata de exercícios por sessão, o volume/intensidade do objetivo (hipertrofia ou emagrecimento) e a periodização de 4 semanas são inegociáveis. Se o pedido do aluno conflitar com essas regras (ex: pedir muito menos exercícios do que o protocolo exige), encaixe a preferência dele DENTRO do protocolo em vez de quebrar o protocolo — nunca o contrário.
-
+${favoriteNames.length > 0 ? `
+EXERCÍCIOS FAVORITOS DO ALUNO (preferência, não obrigação):
+${favoriteNames.map((n: string) => `- ${n}`).join('\n')}
+Quando um favorito trabalhar o grupo muscular que a sessão pede e for compatível com as regras de saúde e de volume, prefira-o a um equivalente não favorito. Se não couber no protocolo, ignore sem forçar.
+` : ''}
 REGRA CRÍTICA DE EXERCÍCIOS DISPONÍVEIS:
 Abaixo está o catálogo oficial de exercícios agrupados por MÚSCULO. Você DEVE escolher os exercícios APENAS desta lista aprovada:
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, Info, Play, Plus, Trash2, Loader2, Upload, Link as LinkIcon, Image as ImageIcon, Check } from 'lucide-react';
+import { Search, Info, Play, Plus, Trash2, Loader2, Upload, Link as LinkIcon, Image as ImageIcon, Check, Heart } from 'lucide-react';
 import { Exercise } from '@/lib/types';
 import { getExercises, addExercise, deleteExercise, updateExerciseMuscleGroup } from '@/lib/db/exercises';
 import { useAppContext } from '@/app/context/AppContext';
@@ -14,7 +14,8 @@ const MUSCLE_GROUP_OPTIONS = [
 ];
 
 export default function Library() {
-  const { profile } = useAppContext();
+  const { profile, toggleFavoriteExercise } = useAppContext();
+  const favorites = profile?.favoriteExercises || [];
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -294,7 +295,16 @@ export default function Library() {
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-4">
                 <span className="px-3 py-1 bg-primary/20 text-primary text-xs font-semibold rounded-full">{ex.muscleGroup}</span>
-                
+
+                <div className="flex items-center gap-1">
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleFavoriteExercise(ex.id); }}
+                  className={`p-1.5 rounded-lg transition-colors ${favorites.includes(ex.id) ? 'text-red-500' : 'text-foreground-muted hover:text-red-400 hover:bg-red-500/10'}`}
+                  title={favorites.includes(ex.id) ? 'Remover dos favoritos' : 'Favoritar'}
+                  aria-label={favorites.includes(ex.id) ? 'Remover dos favoritos' : 'Favoritar'}
+                >
+                  <Heart className={`w-4 h-4 ${favorites.includes(ex.id) ? 'fill-current' : ''}`} />
+                </button>
                 {profile?.role === 'master' && (
                   <button
                     onClick={(e) => handleDelete(e, ex.id)}
@@ -303,8 +313,9 @@ export default function Library() {
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
+                </div>
               </div>
-              
+
               <h3 className="font-outfit text-xl font-semibold mb-2 group-hover:text-primary transition-colors pr-8">{ex.name}</h3>
               
               {ex.mediaUrl ? (
