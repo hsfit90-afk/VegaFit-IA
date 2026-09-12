@@ -45,8 +45,12 @@ export default function Generator() {
     trainingMethod: 'tradicional',
   });
 
-  // Métodos liberados pela constância real do aluno (lib/trainingUnlock.ts).
-  const unlock = useMemo(() => computeUnlock(history || []), [history]);
+  // Métodos liberados pela constância real do aluno (lib/trainingUnlock.ts). O master vê tudo,
+  // pra conseguir testar os métodos sem esperar 6 meses.
+  const unlock = useMemo(
+    () => computeUnlock(history || [], Date.now(), profile?.role),
+    [history, profile?.role]
+  );
 
   // Salvaguarda: se um método deixou de estar liberado (ex: plano antigo, reset de histórico),
   // volta pro tradicional em vez de mandar pro gerador um método que o aluno não pode usar.
@@ -299,11 +303,15 @@ export default function Generator() {
               <div className="space-y-3 md:col-span-2">
                 <div className="flex items-baseline justify-between gap-3 flex-wrap">
                   <label className="text-sm text-foreground-muted font-medium">Método de Treino</label>
-                  {unlock.proximaFase && (
+                  {unlock.liberadoPorPapel ? (
+                    <span className="text-xs text-accent/80 font-medium">
+                      Master — todos os métodos liberados
+                    </span>
+                  ) : unlock.proximaFase ? (
                     <span className="text-xs text-foreground-muted/70">
                       {unlock.treinosFeitos} treinos concluídos
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {TRAINING_METHODS.map(method => {

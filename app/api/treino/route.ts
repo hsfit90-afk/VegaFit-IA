@@ -60,13 +60,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const [{ data: dbExercises }, latestAnswers, { data: historyRows }] = await Promise.all([
-      serviceSupabase
-        .from('exercises')
-        .select('id, name, muscle_group'), // Buscar todos os exercícios, ignorando user_id por enquanto (B2C)
-      fetchLatestAnamneseAnswers(serviceSupabase, targetUserId),
-      serviceSupabase.from('workout_history').select('date').eq('user_id', targetUserId),
-    ]);
+    const [{ data: dbExercises }, latestAnswers, { data: historyRows }, { data: targetRole }] =
+      await Promise.all([
+        serviceSupabase
+          .from('exercises')
+          .select('id, name, muscle_group'), // Buscar todos os exercícios, ignorando user_id por enquanto (B2C)
+        fetchLatestAnamneseAnswers(serviceSupabase, targetUserId),
+        serviceSupabase.from('workout_history').select('date').eq('user_id', targetUserId),
+        // Papel lido do BANCO, nunca do corpo da requisição: `profile` vem do cliente e poderia
+        // chegar com role:'master' forjado pra driblar o desbloqueio por constância.
+        serviceSupabase.from('profiles').select('role').eq('id', targetUserId).single(),
+      ]);
 
     let availableExercises = dbExercises || [];
 
@@ -167,7 +171,9 @@ export async function POST(req: NextRequest) {
     // um POST direto pra pedir Drop Set no primeiro dia de treino. Técnicas de falha muscular em
     // quem não tem base são risco de lesão, então a regra tem que valer no servidor.
     const unlock = computeUnlock(
-      (historyRows || []).map((h: any) => ({ date: new Date(h.date).getTime() }))
+      (historyRows || []).map((h: any) => ({ date: new Date(h.date).getTime() })),
+      Date.now(),
+      targetRole?.role
     );
     const pedido = config.trainingMethod || 'tradicional';
     const methodLabel = unlock.liberados.includes(pedido as MethodId) ? pedido : 'tradicional';

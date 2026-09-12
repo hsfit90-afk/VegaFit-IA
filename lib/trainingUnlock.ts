@@ -27,6 +27,9 @@ export const FASES: { fase: 1 | 2 | 3; meses: number; treinos: number; libera: M
   { fase: 3, meses: 6, treinos: 48, libera: ['drop_set', 'rest_pause', 'piramide'] },
 ];
 
+/** Todos os métodos, na ordem em que aparecem na tela do gerador. */
+export const TODOS_METODOS: MethodId[] = FASES.flatMap(f => f.libera);
+
 export interface UnlockState {
   fase: 1 | 2 | 3;
   liberados: MethodId[];
@@ -34,12 +37,30 @@ export interface UnlockState {
   mesesTreinando: number;
   /** O que falta pra próxima fase; null quando já está na fase 3. */
   proximaFase: { fase: 2 | 3; mesesFaltando: number; treinosFaltando: number } | null;
+  /** true quando o acesso veio do papel master, não da constância. */
+  liberadoPorPapel: boolean;
 }
 
 export function computeUnlock(
   history: Pick<WorkoutHistoryEntry, 'date'>[],
-  now: number = Date.now()
+  now: number = Date.now(),
+  /** 'master' vê tudo liberado: é a conta de administração, precisa testar os métodos sem
+   *  esperar 6 meses de constância. Aluno comum ('client') segue a regra normal. */
+  role?: string | null
 ): UnlockState {
+  if (role === 'master') {
+    const datas = (history || []).map(h => h.date).filter(d => Number.isFinite(d));
+    const primeiro = datas.length ? Math.min(...datas) : null;
+    return {
+      fase: 3,
+      liberados: [...TODOS_METODOS],
+      treinosFeitos: datas.length,
+      mesesTreinando: primeiro === null ? 0 : Math.floor((now - primeiro) / MES_MS),
+      proximaFase: null,
+      liberadoPorPapel: true,
+    };
+  }
+
   const datas = (history || []).map(h => h.date).filter(d => Number.isFinite(d));
   const treinosFeitos = datas.length;
   const primeiro = treinosFeitos ? Math.min(...datas) : null;
@@ -67,7 +88,7 @@ export function computeUnlock(
       }
     : null;
 
-  return { fase, liberados, treinosFeitos, mesesTreinando, proximaFase };
+  return { fase, liberados, treinosFeitos, mesesTreinando, proximaFase, liberadoPorPapel: false };
 }
 
 /** Texto curto do que falta, pra mostrar no cartão bloqueado. */
