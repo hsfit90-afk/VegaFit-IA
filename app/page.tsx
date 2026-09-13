@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { motion, type Variants } from 'motion/react';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { WorkoutPlan } from '@/lib/types';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function Dashboard() {
   const { profile, history, workoutPlans, activePlanId, setActivePlan, deleteWorkoutPlan, currentSessionIndex } = useAppContext();
@@ -460,18 +461,12 @@ export default function Dashboard() {
             })()}
           </div>
         ) : (
-          <Card>
-            <CardContent className="p-8 text-center flex flex-col items-center">
-              <LayoutList className="w-10 h-10 text-foreground-muted opacity-30 mb-3" />
-              <p className="text-white font-medium mb-1">Nenhum plano salvo.</p>
-              <p className="text-sm text-foreground-muted mb-4">Gere seu primeiro treino com IA.</p>
-              <div className="flex gap-3 justify-center">
-                <Link href="/generator">
-                  <Button size="sm">Gerar com IA</Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icone={<LayoutList className="w-10 h-10" />}
+            titulo="Nenhum plano salvo"
+            descricao="Gere seu primeiro treino com IA."
+            acao={<Link href="/generator"><Button size="sm">Gerar com IA</Button></Link>}
+          />
         )}
       </motion.div>
 

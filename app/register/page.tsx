@@ -5,6 +5,8 @@ import { createClient } from '@/utils/supabase/client';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Dumbbell, Loader2, MailCheck } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Field } from '@/components/ui/Field';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -68,29 +70,12 @@ export default function Register() {
           </div>
         ) : (
           <form onSubmit={handleRegister} className="space-y-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
-                placeholder="seu@email.com"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Senha</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
-                placeholder="••••••••"
-                minLength={6}
-              />
-            </div>
+            <Field label="Email" htmlFor="register-email">
+              <Input id="register-email" variant="auth" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" />
+            </Field>
+            <Field label="Senha" htmlFor="register-senha">
+              <Input id="register-senha" variant="auth" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" minLength={6} />
+            </Field>
             <button
               type="submit"
               disabled={loading}

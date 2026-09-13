@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import Link from 'next/link';
 import { isPushSupported, getCurrentPushSubscription, subscribeToPush, unsubscribeFromPush } from '@/utils/push';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default function Settings() {
   const { profile, setProfile, clearData } = useAppContext();
@@ -130,21 +131,16 @@ export default function Settings() {
 
   return (
     <div className="p-6 md:p-10 max-w-2xl mx-auto animate-fade-in pb-32">
-      <header className="mb-10 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-outfit font-bold mb-2">Perfil e Configurações</h1>
-          <p className="text-foreground-muted">Gerencie sua conta e histórico físico</p>
-        </div>
-        <div className="flex gap-3">
-          <Button 
-            onClick={handleSave}
-            className="w-full md:w-auto"
-          >
+      <PageHeader
+        titulo="Perfil e Configurações"
+        subtitulo="Gerencie sua conta e histórico físico"
+        acoes={
+          <Button onClick={handleSave} className="w-full md:w-auto">
             {saved ? <CheckCircle2 className="w-5 h-5 mr-2" /> : null}
             {saved ? 'Salvo!' : 'Salvar Nome'}
           </Button>
-        </div>
-      </header>
+        }
+      />
 
       <div className="space-y-6">
         

@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Dumbbell, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { Dumbbell, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Field } from '@/components/ui/Field';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -95,30 +98,31 @@ export default function Login() {
         )}
 
         <form onSubmit={handleLogin} className="space-y-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
-            <input
+          <Field label="Email" htmlFor="login-email">
+            <Input
+              id="login-email"
+              variant="auth"
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
               placeholder="seu@email.com"
             />
-          </div>
+          </Field>
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-400">Senha</label>
+              <label htmlFor="login-senha" className="block text-sm font-medium text-foreground-muted">Senha</label>
               <Link href="/forgot-password" className="text-xs text-[var(--color-primary)] hover:underline">
                 Esqueceu sua senha?
               </Link>
             </div>
-            <input
+            <Input
+              id="login-senha"
+              variant="auth"
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
               placeholder="••••••••"
             />
           </div>
@@ -127,7 +131,7 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar'}
+            {loading ? <LoadingSpinner tamanho="sm" rotulo="Entrando…" /> : 'Entrar'}
           </button>
         </form>
 

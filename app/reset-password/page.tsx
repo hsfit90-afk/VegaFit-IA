@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Dumbbell, Loader2, CheckCircle2 } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Field } from '@/components/ui/Field';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -74,30 +76,12 @@ export default function ResetPassword() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Nova senha</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
-                placeholder="••••••••"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Confirmar nova senha</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
-                placeholder="••••••••"
-              />
-            </div>
+            <Field label="Nova senha" htmlFor="reset-password-nova-senha">
+              <Input id="reset-password-nova-senha" variant="auth" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+            </Field>
+            <Field label="Confirmar nova senha" htmlFor="reset-password-confirmar-nova-senha">
+              <Input id="reset-password-confirmar-nova-senha" variant="auth" type="password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" />
+            </Field>
             <button
               type="submit"
               disabled={loading || hasSession === null}

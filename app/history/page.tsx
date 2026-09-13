@@ -14,6 +14,7 @@ const VolumeHistoryChart = dynamic(() => import('@/components/charts/VolumeHisto
 });
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default function History() {
   const { history } = useAppContext();
@@ -80,10 +81,10 @@ export default function History() {
 
   return (
     <div className="p-6 md:p-10 max-w-5xl mx-auto animate-fade-in pb-32">
-      <header className="mb-10">
-        <h1 className="text-3xl md:text-4xl font-outfit font-bold mb-2">Histórico de Treinos</h1>
-        <p className="text-foreground-muted">Acompanhe sua evolução ao longo do tempo</p>
-      </header>
+      <PageHeader
+        titulo="Histórico de Treinos"
+        subtitulo="Acompanhe sua evolução ao longo do tempo"
+      />
 
       {history.length > 0 ? (
         <>

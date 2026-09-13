@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 const MUSCLE_GROUP_OPTIONS = [
   'Peito', 'Costas', 'Ombro', 'Bíceps', 'Tríceps', 'Antebraço', 'Pernas (quadríceps)',
@@ -350,12 +351,11 @@ export default function Library() {
       </div>
 
       {filteredExercises.length === 0 && (
-        <Card className="text-center py-20 border-dashed border-2">
-           <CardContent className="flex flex-col items-center">
-             <Search className="w-16 h-16 text-foreground-muted mx-auto mb-4 opacity-50" />
-             <h2 className="text-xl font-outfit text-foreground-muted">Nenhum exercício encontrado.</h2>
-           </CardContent>
-         </Card>
+        <EmptyState
+          icone={<Search className="w-16 h-16" />}
+          titulo="Nenhum exercício encontrado"
+          descricao="Tente outro termo de busca ou mude o filtro de grupo muscular."
+        />
       )}
 
       {/* Bulk Import Modal */}

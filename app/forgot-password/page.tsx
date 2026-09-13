@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Link from 'next/link';
 import { Dumbbell, ArrowLeft, Loader2, MailCheck } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Field } from '@/components/ui/Field';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -58,17 +60,9 @@ export default function ForgotPassword() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
-                placeholder="seu@email.com"
-              />
-            </div>
+            <Field label="Email" htmlFor="forgot-password-email">
+              <Input id="forgot-password-email" variant="auth" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" />
+            </Field>
             <button
               type="submit"
               disabled={loading}
