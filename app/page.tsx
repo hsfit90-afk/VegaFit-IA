@@ -281,12 +281,12 @@ export default function Dashboard() {
         <motion.div variants={itemVariants} className="space-y-6">
           
           {/* Box de Treino */}
-          <div className="bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 rounded-3xl p-6 relative overflow-hidden shadow-[0_0_40px_rgba(0,255,136,0.1)]">
+          <div className="bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 rounded-3xl p-6 relative overflow-hidden shadow-[0_0_40px_rgb(var(--color-primary-rgb)/0.1)]">
             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
             
             <div className="relative z-10 mb-6">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(0,255,136,1)]" />
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgb(var(--color-primary-rgb)/1)]" />
                 <h4 className="text-lg font-bold text-white m-0">Plano Ativo</h4>
               </div>
               
@@ -335,7 +335,7 @@ export default function Dashboard() {
                     onClick={() => router.push(`/active?sessionIndex=${displaySessionIndex}`)}
                     className="block w-full"
                   >
-                    <Button size="lg" className="w-full text-sm md:text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)] group">
+                    <Button size="lg" className="w-full text-sm md:text-base shadow-[0_4px_20px_rgb(var(--color-primary-rgb)/0.3)] group">
                       INICIAR TREINO
                       <ChevronRight className="w-4 h-4 md:w-5 md:h-5 ml-1 md:ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
@@ -356,7 +356,7 @@ export default function Dashboard() {
               ) : (
                 <div className="flex flex-col gap-3">
                   <Link href="/generator" className="block">
-                    <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgba(0,255,136,0.3)]">
+                    <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgb(var(--color-primary-rgb)/0.3)]">
                       GERAR TREINO COM IA
                       <Zap className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
                     </Button>
@@ -408,7 +408,7 @@ export default function Dashboard() {
           </h4>
           <div className="flex gap-2">
             <Link href="/generator">
-              <Button size="sm" className="text-xs shadow-[0_2px_10px_rgba(0,255,136,0.2)]">
+              <Button size="sm" className="text-xs shadow-[0_2px_10px_rgb(var(--color-primary-rgb)/0.2)]">
                 <Zap className="w-3.5 h-3.5 mr-1.5" /> Gerar com IA
               </Button>
             </Link>
@@ -421,7 +421,7 @@ export default function Dashboard() {
               // Puxar o plano ativo, se não achar puxar o primeiro (mais recente)
               const activePlan = workoutPlans.find(p => p.id === activePlanId) || workoutPlans[0];
               return (
-              <Card key={activePlan.id} className="border-primary shadow-[0_0_20px_rgba(0,255,136,0.15)] bg-surface-light relative overflow-hidden">
+              <Card key={activePlan.id} className="border-primary shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.15)] bg-surface-light relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
                 
                 <CardContent className="p-6 md:p-8 relative z-10">

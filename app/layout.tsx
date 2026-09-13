@@ -21,13 +21,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a0f',
+  themeColor: 'var(--color-background-deep)',
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="pt-BR">
-      <body className={`${inter.variable} ${outfit.variable} font-sans bg-[#0a0a0f] text-white antialiased`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${outfit.variable} font-sans bg-[var(--color-background-deep)] text-white antialiased`} suppressHydrationWarning>
         <AppProvider>
           <ClientLayout>
             {children}

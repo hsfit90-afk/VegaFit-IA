@@ -66,10 +66,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white/[0.03] backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-2xl">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-[#00ff88] to-[#7c3aed] rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-[#7c3aed]/20">
+          <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-[var(--color-accent)]/20">
             <Dumbbell className="w-8 h-8 text-black" />
           </div>
           <h1 className="text-3xl font-outfit font-bold text-white mb-2">Bem-vindo de volta</h1>
@@ -102,14 +102,14 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
               placeholder="seu@email.com"
             />
           </div>
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-sm font-medium text-gray-400">Senha</label>
-              <Link href="/forgot-password" className="text-xs text-[#00ff88] hover:underline">
+              <Link href="/forgot-password" className="text-xs text-[var(--color-primary)] hover:underline">
                 Esqueceu sua senha?
               </Link>
             </div>
@@ -118,14 +118,14 @@ export default function Login() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
               placeholder="••••••••"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar'}
           </button>
@@ -136,7 +136,7 @@ export default function Login() {
             <div className="w-full border-t border-white/10"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-[#0a0a0f] text-gray-500">Ou continue com</span>
+            <span className="px-2 bg-[var(--color-background-deep)] text-gray-500">Ou continue com</span>
           </div>
         </div>
 
@@ -167,7 +167,7 @@ export default function Login() {
 
         <p className="text-center text-gray-400 text-sm">
           Ainda não tem uma conta?{' '}
-          <Link href="/register" className="text-[#00ff88] hover:underline font-medium">
+          <Link href="/register" className="text-[var(--color-primary)] hover:underline font-medium">
             Criar conta
           </Link>
         </p>

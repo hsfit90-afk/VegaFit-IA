@@ -747,7 +747,7 @@ export default function ActiveWorkout() {
           particleCount: 200,
           spread: 90,
           origin: { y: 0.6 },
-          colors: ['#00ff88', '#7c3aed', '#ffffff', '#ffd700']
+          colors: ['var(--color-primary)', 'var(--color-accent)', '#ffffff', 'var(--color-gold)']
         });
       })
       .catch(() => { /* sem confete, o treino segue concluído */ });
@@ -776,14 +776,14 @@ export default function ActiveWorkout() {
     const completedSetsCount = finishedExercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
 
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex flex-col items-center justify-center p-4 py-12 animate-fade-in relative overflow-hidden">
+      <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-4 py-12 animate-fade-in relative overflow-hidden">
         {/* Glow Effects */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[120%] h-[500px] bg-primary/20 rounded-[100%] blur-[120px] pointer-events-none"></div>
         
-        <div id="share-card" className="w-full max-w-md bg-surface/40 backdrop-blur-3xl border border-white/10 rounded-[40px] p-8 shadow-[0_0_80px_rgba(0,255,136,0.15)] relative z-10 flex flex-col items-center">
+        <div id="share-card" className="w-full max-w-md bg-surface/40 backdrop-blur-3xl border border-white/10 rounded-[40px] p-8 shadow-[0_0_80px_rgb(var(--color-primary-rgb)/0.15)] relative z-10 flex flex-col items-center">
           {/* Trophy Icon */}
-          <div className="w-28 h-28 bg-gradient-to-br from-primary via-primary to-accent rounded-[32px] flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(0,255,136,0.5)] transform -rotate-6">
-            <Trophy className="w-14 h-14 text-[#0a0a0f]" />
+          <div className="w-28 h-28 bg-gradient-to-br from-primary via-primary to-accent rounded-[32px] flex items-center justify-center mb-8 shadow-[0_0_50px_rgb(var(--color-primary-rgb)/0.5)] transform -rotate-6">
+            <Trophy className="w-14 h-14 text-[var(--color-background-deep)]" />
           </div>
           
           <h1 className="text-4xl font-outfit font-black mb-1 text-white uppercase tracking-tight text-center">Treino Concluído</h1>
@@ -817,9 +817,9 @@ export default function ActiveWorkout() {
 
           {/* PR destaque */}
           {recentPRs.length > 0 && (
-            <div className="w-full mb-8 p-5 bg-gradient-to-br from-[#ffd700]/15 to-[#ffd700]/5 border border-[#ffd700]/40 rounded-3xl text-left relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#ffd700]/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
-              <p className="text-xs text-[#ffd700] uppercase tracking-widest font-black mb-3 flex items-center gap-2 relative z-10">
+            <div className="w-full mb-8 p-5 bg-gradient-to-br from-[var(--color-gold)]/15 to-[var(--color-gold)]/5 border border-[var(--color-gold)]/40 rounded-3xl text-left relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-gold)]/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
+              <p className="text-xs text-[var(--color-gold)] uppercase tracking-widest font-black mb-3 flex items-center gap-2 relative z-10">
                 <Trophy className="w-4 h-4" /> Novos Recordes!
               </p>
               <div className="space-y-1.5 relative z-10">
@@ -850,7 +850,7 @@ export default function ActiveWorkout() {
 
         {showToast && (
           <div role="status" aria-live="polite" className="fixed bottom-6 left-6 right-6 md:left-auto md:right-10 md:bottom-10 flex flex-col gap-3 z-50">
-            <div className="bg-background/90 border border-primary/30 text-primary p-4 rounded-xl backdrop-blur-xl animate-fade-in shadow-[0_0_30px_rgba(0,255,136,0.15)] flex items-center gap-4">
+            <div className="bg-background/90 border border-primary/30 text-primary p-4 rounded-xl backdrop-blur-xl animate-fade-in shadow-[0_0_30px_rgb(var(--color-primary-rgb)/0.15)] flex items-center gap-4">
               <div className="bg-primary/20 p-3 rounded-lg">
                 <Zap className="w-6 h-6 text-primary" />
               </div>
@@ -898,7 +898,7 @@ export default function ActiveWorkout() {
       {/* Immersive Rest Timer Modal */}
       {restRemaining > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-surface/90 border border-primary/30 p-8 rounded-[32px] shadow-[0_0_50px_rgba(0,255,136,0.2)] flex flex-col items-center max-w-sm w-full animate-in zoom-in-95 duration-300">
+          <div className="bg-surface/90 border border-primary/30 p-8 rounded-[32px] shadow-[0_0_50px_rgb(var(--color-primary-rgb)/0.2)] flex flex-col items-center max-w-sm w-full animate-in zoom-in-95 duration-300">
             <div className="w-24 h-24 rounded-full border-4 border-primary/20 flex items-center justify-center relative mb-6">
               <div className="absolute inset-0 border-4 border-primary rounded-full animate-[spin_4s_linear_infinite] border-t-transparent"></div>
               <Clock className="w-8 h-8 text-primary" />
@@ -1023,7 +1023,7 @@ export default function ActiveWorkout() {
                     // Fallback: se o texto não for parseável, mostra como antes mas formatado
                     if (parsedWeeks.length === 0) {
                       return (
-                        <div className="bg-[#0a0a0f] border border-blue-500/30 p-3 rounded-xl mt-2">
+                        <div className="bg-[var(--color-background-deep)] border border-blue-500/30 p-3 rounded-xl mt-2">
                           <p className="text-[11px] text-blue-400 font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
                             <span>📅</span> Periodização (4 Semanas)
                           </p>
@@ -1137,7 +1137,7 @@ export default function ActiveWorkout() {
                 <div key={setIndex}>
                 <div className={`grid grid-cols-12 gap-2 items-center p-2 md:p-3 rounded-2xl border transition-all duration-300 relative group ${
                   set.completed
-                    ? 'bg-gradient-to-r from-primary/10 to-transparent border-primary/30 shadow-[0_0_20px_rgba(0,255,136,0.15)]'
+                    ? 'bg-gradient-to-r from-primary/10 to-transparent border-primary/30 shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.15)]'
                     : 'bg-surface border-border hover:bg-white/[0.06]'
                 }`}>
                   <div className="col-span-1 flex justify-center">
@@ -1204,7 +1204,7 @@ export default function ActiveWorkout() {
                       aria-label={`${set.completed ? 'Desmarcar' : 'Marcar'} série ${setIndex + 1} de ${ex.name} como concluída`}
                       className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                         set.completed 
-                          ? 'bg-primary text-[#0a0a0f] shadow-[0_0_20px_rgba(0,255,136,0.5)]' 
+                          ? 'bg-primary text-[var(--color-background-deep)] shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.5)]' 
                           : 'bg-white/5 text-gray-500 hover:bg-primary/20 hover:text-primary hover:scale-110'
                       }`}
                     >
@@ -1261,7 +1261,7 @@ export default function ActiveWorkout() {
         onClick={finishWorkout}
         fullWidth
         size="lg"
-        className="mt-10 font-bold text-xl shadow-[0_0_30px_rgba(0,255,136,0.3)] h-16"
+        className="mt-10 font-bold text-xl shadow-[0_0_30px_rgb(var(--color-primary-rgb)/0.3)] h-16"
       >
         Finalizar Treino
       </Button>

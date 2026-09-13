@@ -24,6 +24,33 @@
   --color-destructive: #ff453a;
   --color-success: #32d74b;
   --color-warning: #ffd60a;
+
+  /* Roxo de destaque. O código já usava `text-accent`/`bg-accent` em 27 lugares, mas o token
+     nunca existiu — então essas classes não eram geradas e os elementos ficavam sem cor,
+     herdando a do pai. */
+  --color-accent: #7C3AED;
+  --color-accent-hover: #6D28D9;
+
+  /* Fundo mais escuro que o --color-background, usado em telas de entrada e overlays. */
+  --color-background-deep: #0A0A0F;
+
+  /* Dourado de recorde pessoal (troféu, PR). */
+  --color-gold: #FFD700;
+
+  /* Canais do primary em RGB, para montar brilhos com opacidade variável sem repetir o hex:
+     shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.3)]. São 26 combinações de desfoque e
+     opacidade no app — um token por combinação seria pior que a doença. */
+  --color-primary-rgb: 5 213 144;
+  --color-accent-rgb: 124 58 237;
+
+  /* Paleta dos gráficos (components/charts/). Separada de propósito: eixo e grade não são
+     "foreground-muted", são elementos de leitura de dado, e mudam junto com o gráfico. */
+  --color-chart-axis: #6B7280;
+  --color-chart-label: #9CA3AF;
+  --color-chart-surface: #0F0F13;
+  --color-chart-border: #1F2937;
+  --color-chart-weight: #60A5FA;
+  --color-chart-weight-active: #3B82F6;
 }
 
 :root {

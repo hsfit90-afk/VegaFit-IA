@@ -47,10 +47,10 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white/[0.03] backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-2xl">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-[#00ff88] to-[#7c3aed] rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-[#7c3aed]/20">
+          <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-[var(--color-accent)]/20">
             <Dumbbell className="w-8 h-8 text-black" />
           </div>
           <h1 className="text-3xl font-outfit font-bold text-white mb-2">Nova senha</h1>
@@ -64,7 +64,7 @@ export default function ResetPassword() {
         )}
 
         {success ? (
-          <div className="bg-[#00ff88]/10 border border-[#00ff88]/20 text-[#00ff88] p-5 rounded-xl text-sm text-center flex flex-col items-center gap-2">
+          <div className="bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] p-5 rounded-xl text-sm text-center flex flex-col items-center gap-2">
             <CheckCircle2 className="w-8 h-8" />
             <p>Senha atualizada! Redirecionando para o login...</p>
           </div>
@@ -82,7 +82,7 @@ export default function ResetPassword() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
                 placeholder="••••••••"
               />
             </div>
@@ -94,14 +94,14 @@ export default function ResetPassword() {
                 minLength={6}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#7c3aed] transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
                 placeholder="••••••••"
               />
             </div>
             <button
               type="submit"
               disabled={loading || hasSession === null}
-              className="w-full bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar nova senha'}
             </button>

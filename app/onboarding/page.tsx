@@ -168,7 +168,7 @@ export default function Onboarding() {
         <div className="flex flex-col items-center justify-center p-8 text-center max-w-sm">
           <div className="relative mb-8">
             <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse"></div>
-            <div className="w-20 h-20 bg-surface border border-primary/50 rounded-2xl flex items-center justify-center relative z-10 shadow-[0_0_40px_rgba(0,255,136,0.2)]">
+            <div className="w-20 h-20 bg-surface border border-primary/50 rounded-2xl flex items-center justify-center relative z-10 shadow-[0_0_40px_rgb(var(--color-primary-rgb)/0.2)]">
               <Sparkles className="w-10 h-10 text-primary animate-pulse" />
             </div>
           </div>
@@ -202,7 +202,7 @@ export default function Onboarding() {
             {Array.from({ length: totalSteps }).map((_, i) => (
               <div 
                 key={i} 
-                className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${step > i ? 'bg-primary shadow-[0_0_10px_rgba(0,255,136,0.4)]' : 'bg-surface'}`} 
+                className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${step > i ? 'bg-primary shadow-[0_0_10px_rgb(var(--color-primary-rgb)/0.4)]' : 'bg-surface'}`} 
               />
             ))}
           </div>
@@ -240,7 +240,7 @@ export default function Onboarding() {
                       key={g.id} 
                       onClick={() => setGoal(g.id)} 
                       aria-pressed={goal === g.id}
-                      className={`w-full text-left p-5 rounded-2xl border transition-all flex items-center gap-4 ${goal === g.id ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(0,255,136,0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
+                      className={`w-full text-left p-5 rounded-2xl border transition-all flex items-center gap-4 ${goal === g.id ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgb(var(--color-primary-rgb)/0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
                     >
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${goal === g.id ? 'bg-primary/20 text-primary' : 'bg-black/20 text-foreground-muted'}`}>
                         <g.icon className="w-6 h-6" />
@@ -269,7 +269,7 @@ export default function Onboarding() {
                       key={l.id} 
                       onClick={() => setLevel(l.id)} 
                       aria-pressed={level === l.id}
-                      className={`w-full text-left p-5 rounded-2xl border transition-all relative overflow-hidden ${level === l.id ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(0,255,136,0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
+                      className={`w-full text-left p-5 rounded-2xl border transition-all relative overflow-hidden ${level === l.id ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgb(var(--color-primary-rgb)/0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
                     >
                       <div className="text-lg font-semibold text-foreground mb-1">{l.label}</div>
                       <div className="text-sm text-foreground-muted pr-8">{l.desc}</div>
@@ -311,7 +311,7 @@ export default function Onboarding() {
                 <div className="w-full flex flex-col items-center mt-10">
                   <div className="flex items-center justify-center gap-6">
                     <button onClick={() => adjustNumber(setAge, -1, 14, 100)} aria-label="Diminuir idade" className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Minus /></button>
-                    <div className="text-6xl md:text-7xl font-black text-primary w-28 md:w-32 text-center drop-shadow-[0_0_20px_rgba(0,255,136,0.3)]">{age}</div>
+                    <div className="text-6xl md:text-7xl font-black text-primary w-28 md:w-32 text-center drop-shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.3)]">{age}</div>
                     <button onClick={() => adjustNumber(setAge, 1, 14, 100)} aria-label="Aumentar idade" className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Plus /></button>
                   </div>
                   <p className="text-foreground-muted mt-12 text-center px-4 max-w-sm">
@@ -347,7 +347,7 @@ export default function Onboarding() {
                       key={d.v} 
                       onClick={() => setDuration(d.v)}
                       aria-pressed={duration === d.v}
-                      className={`p-4 rounded-2xl border text-left transition-all ${duration === d.v ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(0,255,136,0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
+                      className={`p-4 rounded-2xl border text-left transition-all ${duration === d.v ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgb(var(--color-primary-rgb)/0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
                     >
                       <div className="font-bold text-foreground mb-1">{d.label}</div>
                       <div className="text-xs text-foreground-muted">{d.desc}</div>
@@ -365,7 +365,7 @@ export default function Onboarding() {
           <button 
             onClick={step === totalSteps ? handleComplete : nextStep} 
             disabled={step === 1 && !name}
-            className="w-full bg-primary hover:bg-primary-hover text-primary-foreground font-extrabold text-base py-4 rounded-full flex items-center justify-center gap-2 transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(0,255,136,0.4)] hover:shadow-[0_4px_25px_rgba(0,255,136,0.6)] hover:-translate-y-0.5 active:translate-y-0"
+            className="w-full bg-primary hover:bg-primary-hover text-primary-foreground font-extrabold text-base py-4 rounded-full flex items-center justify-center gap-2 transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_20px_rgb(var(--color-primary-rgb)/0.4)] hover:shadow-[0_4px_25px_rgb(var(--color-primary-rgb)/0.6)] hover:-translate-y-0.5 active:translate-y-0"
           >
             {step === totalSteps ? 'FINALIZAR E GERAR' : 'CONTINUAR'}
           </button>

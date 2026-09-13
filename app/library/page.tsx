@@ -298,7 +298,7 @@ export default function Library() {
           </Button>
           <Button 
             onClick={() => setIsAddModalOpen(true)}
-            className="shadow-[0_0_20px_rgba(0,255,136,0.2)]"
+            className="shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.2)]"
           >
             <Plus className="w-4 h-4 mr-2" /> Novo Exercício
           </Button>

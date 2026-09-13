@@ -113,7 +113,7 @@ export function Navigation() {
               className="relative flex flex-col items-center justify-center min-w-[70px] pb-3 pt-1 group"
             >
               {isActive && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-primary rounded-b-full shadow-[0_0_10px_rgba(0,255,136,0.5)]" />
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-primary rounded-b-full shadow-[0_0_10px_rgb(var(--color-primary-rgb)/0.5)]" />
               )}
               <div className={`p-2 rounded-xl transition-all duration-300 ${isActive ? 'bg-primary/10 text-primary' : 'text-foreground-muted group-hover:text-foreground'}`}>
                 <Icon className={`w-6 h-6 ${isActive ? 'fill-primary/20' : ''}`} />

@@ -64,7 +64,7 @@ export function InstallPrompt() {
   if (isStandalone || !showPrompt) return null;
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-[9999] bg-[#1a1a24] border border-[#00ff88]/30 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-5 md:hidden">
+    <div className="fixed bottom-20 left-4 right-4 z-[9999] bg-surface border border-[var(--color-primary)]/30 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-5 md:hidden">
       <button
         onClick={handleClose}
         aria-label="Dispensar convite para instalar o app"
@@ -74,9 +74,9 @@ export function InstallPrompt() {
       </button>
       
       <div className="flex items-start gap-4 pr-6">
-        <div className="w-12 h-12 bg-gradient-to-br from-[#00ff88] to-[#7c3aed] rounded-xl flex-shrink-0 flex items-center justify-center p-0.5">
-          <div className="w-full h-full bg-[#0a0a0f] rounded-[10px] flex items-center justify-center">
-            <Download className="text-[#00ff88]" size={20} />
+        <div className="w-12 h-12 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-xl flex-shrink-0 flex items-center justify-center p-0.5">
+          <div className="w-full h-full bg-[var(--color-background-deep)] rounded-[10px] flex items-center justify-center">
+            <Download className="text-[var(--color-primary)]" size={20} />
           </div>
         </div>
         
@@ -93,20 +93,20 @@ export function InstallPrompt() {
           {!isIOS && deferredPrompt && (
             <button 
               onClick={handleInstallClick}
-              className="bg-[#00ff88] text-[#0a0a0f] text-xs font-bold px-4 py-2 rounded-lg w-full"
+              className="bg-[var(--color-primary)] text-[var(--color-background-deep)] text-xs font-bold px-4 py-2 rounded-lg w-full"
             >
               Instalar Aplicativo
             </button>
           )}
           
           {isIOS && (
-            <div className="flex items-center justify-center gap-2 text-[#00ff88] bg-[#00ff88]/10 py-2 rounded-lg text-xs font-bold">
+            <div className="flex items-center justify-center gap-2 text-[var(--color-primary)] bg-[var(--color-primary)]/10 py-2 rounded-lg text-xs font-bold">
               <Share size={14} /> Ícone de Compartilhar
             </div>
           )}
 
           {!isIOS && !deferredPrompt && (
-            <div className="flex items-center justify-center gap-2 text-[#00ff88] bg-[#00ff88]/10 py-2 rounded-lg text-xs font-bold">
+            <div className="flex items-center justify-center gap-2 text-[var(--color-primary)] bg-[var(--color-primary)]/10 py-2 rounded-lg text-xs font-bold">
               <MoreVertical size={14} /> Menu do Navegador
             </div>
           )}

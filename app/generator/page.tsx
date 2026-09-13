@@ -377,7 +377,7 @@ export default function Generator() {
               disabled={loading}
               fullWidth
               size="lg"
-              className="text-lg font-bold shadow-[0_0_20px_rgba(0,255,136,0.2)]"
+              className="text-lg font-bold shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.2)]"
             >
               {loading
                 ? <Loader2 className="w-6 h-6 animate-spin mr-2" />

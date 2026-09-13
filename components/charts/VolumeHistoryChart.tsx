@@ -45,12 +45,12 @@ export default function VolumeHistoryChart({
         <XAxis
           dataKey="index"
           tickFormatter={(val) => fullChartData[val]?.date || ''}
-          stroke="#888"
+          stroke="var(--color-chart-axis)"
           fontSize={12}
           tickLine={false}
           axisLine={false}
         />
-        <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
+        <YAxis stroke="var(--color-chart-axis)" fontSize={12} tickLine={false} axisLine={false} />
         <Tooltip
           labelFormatter={(label) => fullChartData[label as number]?.date || ''}
           contentStyle={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)', borderRadius: '12px', color: '#fff' }}

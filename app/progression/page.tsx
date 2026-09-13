@@ -133,7 +133,7 @@ export default function ProgressionCheckIn() {
                       onClick={() => setFatigueLevel(num)}
                       aria-pressed={fatigueLevel === num}
                       aria-label={`Nível de fadiga ${num} de 10`}
-                      className={`w-12 h-12 rounded-lg font-bold transition-all ${fatigueLevel === num ? 'bg-primary text-black scale-110 shadow-[0_0_15px_rgba(0,255,136,0.5)]' : 'bg-background/50 text-foreground-muted hover:bg-white/10 border border-transparent hover:border-border'}`}
+                      className={`w-12 h-12 rounded-lg font-bold transition-all ${fatigueLevel === num ? 'bg-primary text-black scale-110 shadow-[0_0_15px_rgb(var(--color-primary-rgb)/0.5)]' : 'bg-background/50 text-foreground-muted hover:bg-white/10 border border-transparent hover:border-border'}`}
                     >
                       {num}
                     </button>
@@ -168,7 +168,7 @@ export default function ProgressionCheckIn() {
                   setStep(2);
                   handleGenerateProgression();
                 }}
-                className="mt-6 font-bold shadow-[0_0_20px_rgba(124,58,237,0.3)] bg-gradient-to-r from-blue-600 to-accent hover:from-blue-500 hover:to-accent/80 border-0"
+                className="mt-6 font-bold shadow-[0_0_20px_rgb(var(--color-accent-rgb)/0.3)] bg-gradient-to-r from-blue-600 to-accent hover:from-blue-500 hover:to-accent/80 border-0"
                 fullWidth
                 size="lg"
               >
@@ -213,7 +213,7 @@ export default function ProgressionCheckIn() {
                 <Button onClick={() => setStep(1)} variant="outline" className="flex-1">
                   Voltar
                 </Button>
-                <Button onClick={saveAndApplyPlan} className="flex-1 shadow-[0_0_20px_rgba(0,255,136,0.3)]">
+                <Button onClick={saveAndApplyPlan} className="flex-1 shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.3)]">
                   Aplicar Mudanças
                 </Button>
               </div>

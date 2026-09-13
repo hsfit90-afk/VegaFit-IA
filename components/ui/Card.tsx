@@ -16,7 +16,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     if (glass || variant === 'glass') {
       variantStyles = "glass-panel bg-surface/60 border-white/5";
     } else if (variant === 'neon-hover') {
-      variantStyles = "border-border hover:border-primary/50 hover:shadow-[0_0_20px_rgba(0,255,136,0.15)] hover:-translate-y-1";
+      variantStyles = "border-border hover:border-primary/50 hover:shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.15)] hover:-translate-y-1";
     }
     
     const Component = animated ? motion.div : 'div';

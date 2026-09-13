@@ -117,7 +117,7 @@ export default function Coach() {
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] md:max-w-[70%] p-4 ${
               msg.role === 'user' 
-                ? 'bg-accent text-white rounded-[20px] rounded-br-sm shadow-[0_5px_15px_rgba(124,58,237,0.2)]' 
+                ? 'bg-accent text-white rounded-[20px] rounded-br-sm shadow-[0_5px_15px_rgb(var(--color-accent-rgb)/0.2)]' 
                 : 'bg-surface backdrop-blur-md border border-border text-gray-200 rounded-[20px] rounded-bl-sm shadow-sm'
             }`}>
               <div className="whitespace-pre-wrap text-sm md:text-base leading-relaxed">
