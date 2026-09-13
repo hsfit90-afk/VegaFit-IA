@@ -6,7 +6,6 @@ import { computePeriodization, INACTIVITY_RESET_DAYS } from '@/lib/periodization
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart } from 'lucide-react';
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
-import confetti from 'canvas-confetti';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { getExercises, deleteExercise } from '@/lib/db/exercises';
@@ -739,12 +738,19 @@ export default function ActiveWorkout() {
     
     setTimeout(() => setShowToast(false), 8000);
     
-    confetti({
-      particleCount: 200,
-      spread: 90,
-      origin: { y: 0.6 },
-      colors: ['#00ff88', '#7c3aed', '#ffffff', '#ffd700']
-    });
+    // canvas-confetti só é baixado quando o aluno realmente termina o treino — antes disso
+    // ficava no bundle da rota sem nunca ser usado na maior parte das sessões.
+    // Falha no import não pode derrubar a conclusão do treino: a animação é enfeite.
+    import('canvas-confetti')
+      .then(({ default: confetti }) => {
+        confetti({
+          particleCount: 200,
+          spread: 90,
+          origin: { y: 0.6 },
+          colors: ['#00ff88', '#7c3aed', '#ffffff', '#ffd700']
+        });
+      })
+      .catch(() => { /* sem confete, o treino segue concluído */ });
   };
 
   // FEATURE: Compartilhar treino concluído via Web Share API

@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { Dumbbell, Flame, Trophy, Calendar, Lightbulb, ChevronRight, Activity, Zap, Star, LayoutList, Trash2, CheckCircle2, PlayCircle } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';

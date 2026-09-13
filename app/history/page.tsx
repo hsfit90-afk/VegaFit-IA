@@ -3,7 +3,15 @@
 import { useState, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { Calendar, Clock, Dumbbell } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
+import dynamic from 'next/dynamic';
+import { ChartSkeleton } from '@/components/charts/ChartSkeleton';
+
+// recharts (~100 kB) sai do bundle inicial: só baixa quando o gráfico entra na tela.
+// ssr:false porque ele depende de medir o container, o que não existe no servidor.
+const VolumeHistoryChart = dynamic(() => import('@/components/charts/VolumeHistoryChart'), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
@@ -95,36 +103,15 @@ export default function History() {
             <CardContent>
                <p className="text-sm text-foreground-muted mb-6">Clique e arraste no gráfico para focar em um período específico.</p>
                <div className="h-[300px] w-full select-none">
-                 <ResponsiveContainer width="100%" height="100%">
-                   <LineChart 
-                     data={chartData}
-                     onMouseDown={(e) => {
-                       if (e && e.activeLabel !== undefined) setRefAreaLeft(e.activeLabel as number);
-                     }}
-                     onMouseMove={(e) => {
-                       if (refAreaLeft !== null && e && e.activeLabel !== undefined) setRefAreaRight(e.activeLabel as number);
-                     }}
-                     onMouseUp={zoom}
-                   >
-                     <XAxis 
-                       dataKey="index" 
-                       tickFormatter={(val) => fullChartData[val]?.date || ''}
-                       stroke="#888" 
-                       fontSize={12} 
-                       tickLine={false} 
-                       axisLine={false} 
-                     />
-                     <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
-                     <Tooltip 
-                       labelFormatter={(label) => fullChartData[label as number]?.date || ''}
-                       contentStyle={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)', borderRadius: '12px', color: '#fff' }}
-                     />
-                     <Line type="monotone" dataKey="volume" stroke="var(--color-accent)" strokeWidth={3} dot={{ r: 4, fill: 'var(--color-primary)', strokeWidth: 0 }} activeDot={{ r: 6, fill: 'var(--color-primary)' }} />
-                     {refAreaLeft !== null && refAreaRight !== null && (
-                       <ReferenceArea x1={refAreaLeft} x2={refAreaRight} strokeOpacity={0.3} fill="var(--color-primary)" fillOpacity={0.1} />
-                     )}
-                   </LineChart>
-                 </ResponsiveContainer>
+                 <VolumeHistoryChart
+                   chartData={chartData}
+                   fullChartData={fullChartData}
+                   refAreaLeft={refAreaLeft}
+                   refAreaRight={refAreaRight}
+                   onRefAreaLeft={setRefAreaLeft}
+                   onRefAreaRight={setRefAreaRight}
+                   onZoom={zoom}
+                 />
                </div>
             </CardContent>
           </Card>

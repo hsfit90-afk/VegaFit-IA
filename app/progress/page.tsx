@@ -5,7 +5,26 @@ import { useAppContext } from '@/app/context/AppContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { TrendingUp, Scale, Trophy, Activity, Plus, BarChart2, ChevronDown } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, ReferenceLine } from 'recharts';
+import dynamic from 'next/dynamic';
+import { ChartSkeleton } from '@/components/charts/ChartSkeleton';
+
+// recharts (~100 kB) sai do bundle inicial da rota. Os três gráficos vêm do mesmo módulo, então
+// compartilham um único chunk em vez de baixar a biblioteca três vezes.
+// ssr:false porque o recharts mede o container, o que não existe no servidor.
+// As opções precisam ser objeto literal em cada chamada: o plugin do Next lê isso em tempo de
+// compilação e recusa uma variável compartilhada.
+const WeightChart = dynamic(
+  () => import('@/components/charts/ProgressCharts').then(m => m.WeightChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+const MuscleVolumeChart = dynamic(
+  () => import('@/components/charts/ProgressCharts').then(m => m.MuscleVolumeChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+const ExerciseEvolutionChart = dynamic(
+  () => import('@/components/charts/ProgressCharts').then(m => m.ExerciseEvolutionChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
 
 export default function ProgressPage() {
   const { profile, bodyWeightHistory, addBodyWeight, history } = useAppContext();
@@ -204,24 +223,7 @@ export default function ProgressPage() {
 
               <div className="h-[200px] w-full">
                 {weightData.length > 1 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={weightData}>
-                      <XAxis dataKey="dateStr" stroke="#4B5563" fontSize={12} tickMargin={10} minTickGap={20} />
-                      <YAxis domain={['dataMin - 2', 'dataMax + 2']} stroke="#4B5563" fontSize={12} width={40} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#0f0f13', borderColor: '#1f2937', borderRadius: '12px' }}
-                        itemStyle={{ color: '#60A5FA', fontWeight: 'bold' }}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="weight" 
-                        stroke="#60A5FA" 
-                        strokeWidth={3}
-                        dot={{ r: 4, fill: '#60A5FA', strokeWidth: 0 }}
-                        activeDot={{ r: 6, fill: '#3B82F6', stroke: '#1f2937', strokeWidth: 2 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <WeightChart data={weightData} />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-foreground-muted border-2 border-dashed border-border rounded-xl">
                     <Scale className="w-8 h-8 opacity-20 mb-2" />
@@ -243,17 +245,7 @@ export default function ProgressPage() {
             <CardContent>
               {muscleVolume.length > 0 ? (
                 <div className="h-[200px] w-full mt-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={muscleVolume} layout="vertical" margin={{ top: 0, right: 0, left: 30, bottom: 0 }}>
-                      <XAxis type="number" hide />
-                      <YAxis dataKey="name" type="category" stroke="#9CA3AF" fontSize={12} axisLine={false} tickLine={false} />
-                      <Tooltip 
-                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                        contentStyle={{ backgroundColor: '#0f0f13', borderColor: '#1f2937', borderRadius: '12px' }}
-                      />
-                      <Bar dataKey="series" fill="#7C3AED" radius={[0, 4, 4, 0]} barSize={20} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <MuscleVolumeChart data={muscleVolume} />
                 </div>
               ) : (
                 <div className="py-10 text-center text-foreground-muted">
@@ -315,27 +307,7 @@ export default function ProgressPage() {
 
                       {/* Gráfico de linha */}
                       <div className="h-[220px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={exerciseEvolutionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                            <XAxis dataKey="dateStr" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} domain={['dataMin - 5', 'dataMax + 5']} />
-                            <Tooltip
-                              contentStyle={{ backgroundColor: '#0f0f13', borderColor: '#1f2937', borderRadius: '12px', fontSize: '12px' }}
-                              formatter={(val: any) => [`${val} kg`, 'Carga Máx.']}
-                            />
-                            {exerciseEvolutionData.length > 0 && (
-                              <ReferenceLine y={exerciseEvolutionData[0].maxWeight} stroke="#374151" strokeDasharray="4 4" />
-                            )}
-                            <Line
-                              type="monotone"
-                              dataKey="maxWeight"
-                              stroke="var(--color-secondary)"
-                              strokeWidth={3}
-                              dot={{ r: 4, fill: 'var(--color-secondary)', strokeWidth: 0 }}
-                              activeDot={{ r: 6, fill: 'var(--color-secondary)', stroke: '#1f2937', strokeWidth: 2 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
+                        <ExerciseEvolutionChart data={exerciseEvolutionData} />
                       </div>
                     </>
                   ) : selectedExercise ? (
