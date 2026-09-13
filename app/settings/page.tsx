@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { User, Key, Bell, Download, Trash2, CheckCircle2, Sliders, Volume2, LogOut, Info, X, ClipboardList, Dumbbell } from 'lucide-react';
+import { User, Key, Bell, Download, Trash2, CheckCircle2, Sliders, Volume2, LogOut, Info, X, ClipboardList, Dumbbell, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -12,6 +12,32 @@ import { isPushSupported, getCurrentPushSubscription, subscribeToPush, unsubscri
 export default function Settings() {
   const { profile, setProfile, clearData } = useAppContext();
   const router = useRouter();
+
+  // Exclusão de conta (LGPD Art. 18, V)
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirm !== 'EXCLUIR' || deleting) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const res = await fetch('/api/account/delete', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Não conseguimos excluir sua conta agora. Tente novamente em alguns minutos.');
+      }
+      // A conta já não existe: limpa o estado local e sai. Vai pro /login, não pra home — sem
+      // sessão o AppContext redireciona pra cá de qualquer forma, e a mensagem só piscaria.
+      await clearData();
+      router.push('/login?conta=excluida');
+    } catch (err: unknown) {
+      setDeleteError(err instanceof Error ? err.message : 'Erro inesperado. Tente novamente.');
+      setDeleting(false);
+    }
+  };
   
   const [form, setForm] = useState(profile || {
     name: '',
@@ -235,22 +261,129 @@ export default function Settings() {
         <Card className="border-destructive/20 mt-12">
           <CardHeader className="border-b border-border pb-4 mb-6">
             <CardTitle className="flex items-center gap-2 text-destructive">
-              <LogOut className="w-5 h-5" /> Zona de Perigo
+              <AlertTriangle className="w-5 h-5" /> Zona de Perigo
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-foreground-muted mb-4">Encerre sua sessão no dispositivo atual.</p>
-            <Button 
-              onClick={() => { clearData(); router.push('/'); }} 
-              variant="outline"
-              className="border-destructive/30 text-destructive hover:bg-destructive/10 w-full md:w-auto"
-            >
-              Sair da Conta
-            </Button>
+          <CardContent className="space-y-6">
+            <div>
+              <p className="text-sm text-white font-medium mb-1">Sair da conta</p>
+              <p className="text-sm text-foreground-muted mb-3">Encerra a sessão neste dispositivo. Seus dados continuam salvos.</p>
+              <Button
+                onClick={() => { clearData(); router.push('/'); }}
+                variant="outline"
+                className="border-destructive/30 text-destructive hover:bg-destructive/10 w-full md:w-auto"
+              >
+                <LogOut className="w-4 h-4 mr-2" /> Sair da Conta
+              </Button>
+            </div>
+
+            <div className="pt-6 border-t border-destructive/20">
+              <p className="text-sm text-white font-medium mb-1">Excluir minha conta</p>
+              <p className="text-sm text-foreground-muted mb-3">
+                Apaga permanentemente sua conta e tudo que o app guarda sobre você, incluindo os
+                dados de saúde da anamnese. Não há como desfazer.
+              </p>
+              <Button
+                onClick={() => { setDeleteOpen(true); setDeleteConfirm(''); setDeleteError(''); }}
+                className="bg-destructive text-white hover:bg-destructive/90 w-full md:w-auto"
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Excluir minha conta
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
       </div>
+
+      {/* Confirmação de exclusão — exige digitar EXCLUIR, porque a ação é irreversível
+          e um clique acidental apagaria meses de histórico de treino. */}
+      {deleteOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/70 backdrop-blur-sm p-0 md:p-4"
+          onClick={() => !deleting && setDeleteOpen(false)}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="excluir-titulo"
+            aria-describedby="excluir-descricao"
+            className="bg-surface border border-destructive/30 rounded-t-3xl md:rounded-2xl w-full md:max-w-lg p-6 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <h2 id="excluir-titulo" className="font-outfit text-xl font-bold text-destructive flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 shrink-0" /> Excluir sua conta
+              </h2>
+              <button
+                onClick={() => setDeleteOpen(false)}
+                disabled={deleting}
+                aria-label="Fechar sem excluir"
+                className="text-foreground-muted hover:text-white disabled:opacity-40 shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div id="excluir-descricao" className="text-sm text-foreground-muted space-y-3 mb-5">
+              <p className="text-white">Isto apaga <strong>para sempre</strong>:</p>
+              <ul className="space-y-1.5 pl-1">
+                {[
+                  'Seu perfil e suas configurações',
+                  'Todos os planos de treino que você gerou',
+                  'Todo o histórico de treinos, cargas e progresso',
+                  'Suas anamneses, com lesões e condições médicas',
+                  'Seu histórico de peso corporal',
+                  'Exercícios e mídias que você enviou',
+                ].map((item) => (
+                  <li key={item} className="flex gap-2">
+                    <span className="text-destructive shrink-0">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-destructive font-medium">
+                Não é possível recuperar depois. Você precisará criar uma conta nova do zero.
+              </p>
+            </div>
+
+            <label htmlFor="excluir-confirmacao" className="block text-sm text-foreground-muted mb-2">
+              Para confirmar, digite <strong className="text-white font-mono">EXCLUIR</strong> abaixo:
+            </label>
+            <input
+              id="excluir-confirmacao"
+              type="text"
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              disabled={deleting}
+              autoComplete="off"
+              placeholder="EXCLUIR"
+              className="w-full bg-background border border-border rounded-xl px-4 py-3 text-white font-mono tracking-wider focus:border-destructive focus:outline-none disabled:opacity-50"
+            />
+
+            {deleteError && (
+              <p role="alert" className="text-sm text-destructive mt-3">{deleteError}</p>
+            )}
+
+            <div className="flex flex-col-reverse md:flex-row gap-3 mt-6">
+              <Button
+                onClick={() => setDeleteOpen(false)}
+                disabled={deleting}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirm !== 'EXCLUIR' || deleting}
+                className="flex-1 bg-destructive text-white hover:bg-destructive/90 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {deleting ? 'Excluindo…' : 'Excluir permanentemente'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

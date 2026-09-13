@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Dumbbell, ArrowRight, Loader2 } from 'lucide-react';
+import { Dumbbell, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -13,6 +13,17 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
+
+  // Confirmação de exclusão de conta. Lido de window.location em vez de useSearchParams pra não
+  // exigir um boundary de Suspense nesta página estática. O destino é o login (e não a home)
+  // porque, sem sessão, o AppContext manda todo mundo pra cá — na home a mensagem só piscaria.
+  const [contaExcluida, setContaExcluida] = useState(false);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('conta') === 'excluida') {
+      setContaExcluida(true);
+      window.history.replaceState({}, '', '/login'); // não repete o aviso se recarregar
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +75,18 @@ export default function Login() {
           <h1 className="text-3xl font-outfit font-bold text-white mb-2">Bem-vindo de volta</h1>
           <p className="text-gray-400 text-center">Entre para continuar sua evolução.</p>
         </div>
+
+        {contaExcluida && (
+          <div role="status" className="bg-primary/10 border border-primary/25 text-primary p-4 rounded-xl mb-6 text-sm flex gap-3">
+            <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold mb-1">Conta excluída</p>
+              <p className="text-primary/80">
+                Seus dados foram apagados permanentemente, incluindo os de saúde. Obrigado por ter treinado com a gente.
+              </p>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6 text-sm text-center">
