@@ -205,11 +205,18 @@ export default function Generator() {
       <Card>
         <CardContent className="p-6 md:p-8">
           <form onSubmit={handleGenerate} className="space-y-8">
-            {error && (
-              <div className="p-4 bg-destructive/10 border border-destructive/50 rounded-xl text-destructive text-sm">
-                {error}
-              </div>
-            )}
+            {/* assertive: o aluno precisa saber na hora que a geração falhou */}
+            <div role="alert" aria-live="assertive">
+              {error && (
+                <div className="p-4 bg-destructive/10 border border-destructive/50 rounded-xl text-destructive text-sm">
+                  {error}
+                </div>
+              )}
+            </div>
+            {/* Anuncia o andamento sem roubar o foco de quem está no formulário. */}
+            <p aria-live="polite" className="sr-only">
+              {loading ? 'Gerando seu treino com IA. Isso pode levar alguns segundos.' : ''}
+            </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -288,6 +295,7 @@ export default function Generator() {
                       type="button"
                       key={muscle}
                       onClick={() => handlePriorityToggle(muscle)}
+                      aria-pressed={form.priorities.includes(muscle)}
                       className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                         form.priorities.includes(muscle)
                           ? 'bg-accent text-white'

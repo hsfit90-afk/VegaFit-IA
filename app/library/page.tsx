@@ -301,14 +301,17 @@ export default function Library() {
                   onClick={(e) => { e.stopPropagation(); toggleFavoriteExercise(ex.id); }}
                   className={`p-1.5 rounded-lg transition-colors ${favorites.includes(ex.id) ? 'text-red-500' : 'text-foreground-muted hover:text-red-400 hover:bg-red-500/10'}`}
                   title={favorites.includes(ex.id) ? 'Remover dos favoritos' : 'Favoritar'}
-                  aria-label={favorites.includes(ex.id) ? 'Remover dos favoritos' : 'Favoritar'}
+                  aria-label={`${ex.name}: ${favorites.includes(ex.id) ? 'remover dos favoritos' : 'adicionar aos favoritos'}`}
+                  aria-pressed={favorites.includes(ex.id)}
                 >
                   <Heart className={`w-4 h-4 ${favorites.includes(ex.id) ? 'fill-current' : ''}`} />
                 </button>
                 {profile?.role === 'master' && (
                   <button
                     onClick={(e) => handleDelete(e, ex.id)}
-                    className="p-1.5 text-foreground-muted hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                    aria-label={`Excluir ${ex.name} da biblioteca permanentemente`}
+                    title="Excluir da biblioteca"
+                    className="p-1.5 text-foreground-muted hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -344,7 +347,7 @@ export default function Library() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
           <Card className="w-full max-w-md shadow-2xl relative border-primary/30">
             {bulkStatus !== 'uploading' && (
-              <button onClick={() => setIsBulkModalOpen(false)} className="absolute top-4 right-4 p-2 text-foreground-muted hover:text-white transition-all">✕</button>
+              <button onClick={() => setIsBulkModalOpen(false)} aria-label="Fechar importação em massa" className="absolute top-4 right-4 p-2 text-foreground-muted hover:text-white transition-all">✕</button>
             )}
             <CardContent className="p-6">
               <h2 className="text-2xl font-outfit font-bold text-white mb-6">Importação em Massa</h2>
@@ -415,7 +418,7 @@ export default function Library() {
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
           <Card className="w-full max-w-md shadow-2xl relative border-primary/30">
-            <button onClick={() => setIsAddModalOpen(false)} className="absolute top-4 right-4 p-2 text-foreground-muted hover:text-white transition-all">✕</button>
+            <button onClick={() => setIsAddModalOpen(false)} aria-label="Fechar formulário de novo exercício" className="absolute top-4 right-4 p-2 text-foreground-muted hover:text-white transition-all">✕</button>
             <CardContent className="p-6">
               <h2 className="text-2xl font-outfit font-bold text-white mb-6">Adicionar Exercício</h2>
               

@@ -353,7 +353,8 @@ export default function AnamnesePage() {
                               handleChange(f.id, Array.from(curr));
                             }
                           }}
-                          className={`px-4 py-2.5 rounded-full border text-sm font-medium transition-all ${
+                          aria-pressed={isSelected}
+                          className={`px-4 py-2.5 rounded-full border text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                             isSelected 
                               ? 'bg-primary border-primary text-primary-foreground' 
                               : 'bg-surface border-border text-foreground'

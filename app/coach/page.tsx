@@ -106,7 +106,13 @@ export default function Coach() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 md:border-x md:border-border bg-gradient-to-b from-surface/30 to-transparent">
+      {/* Log da conversa: cada resposta do coach é anunciada quando chega. */}
+      <div
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+        className="flex-1 overflow-y-auto p-4 space-y-6 md:border-x md:border-border bg-gradient-to-b from-surface/30 to-transparent"
+      >
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] md:max-w-[70%] p-4 ${
@@ -122,7 +128,8 @@ export default function Coach() {
         ))}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-surface backdrop-blur-md border border-border p-4 rounded-[20px] rounded-bl-sm flex gap-2 items-center">
+            <span className="sr-only">O coach está escrevendo uma resposta.</span>
+            <div aria-hidden="true" className="bg-surface backdrop-blur-md border border-border p-4 rounded-[20px] rounded-bl-sm flex gap-2 items-center">
               <span className="w-2 h-2 bg-primary rounded-full animate-bounce"></span>
               <span className="w-2 h-2 bg-primary rounded-full animate-bounce delay-75"></span>
               <span className="w-2 h-2 bg-primary rounded-full animate-bounce delay-150"></span>
@@ -159,6 +166,7 @@ export default function Coach() {
           <button 
             onClick={() => handleSend(input)}
             disabled={isLoading || !input.trim()}
+            aria-label="Enviar pergunta ao coach"
             className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-primary text-black rounded-xl disabled:opacity-50 hover:scale-105 transition-all shadow-lg"
           >
             <Send className="w-5 h-5" />

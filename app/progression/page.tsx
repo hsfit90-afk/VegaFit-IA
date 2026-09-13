@@ -129,6 +129,8 @@ export default function ProgressionCheckIn() {
                     <button
                       key={num}
                       onClick={() => setFatigueLevel(num)}
+                      aria-pressed={fatigueLevel === num}
+                      aria-label={`Nível de fadiga ${num} de 10`}
                       className={`w-12 h-12 rounded-lg font-bold transition-all ${fatigueLevel === num ? 'bg-primary text-black scale-110 shadow-[0_0_15px_rgba(0,255,136,0.5)]' : 'bg-background/50 text-foreground-muted hover:bg-white/10 border border-transparent hover:border-border'}`}
                     >
                       {num}

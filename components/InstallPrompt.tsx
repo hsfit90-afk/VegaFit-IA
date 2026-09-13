@@ -65,9 +65,10 @@ export function InstallPrompt() {
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-[9999] bg-[#1a1a24] border border-[#00ff88]/30 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-5 md:hidden">
-      <button 
+      <button
         onClick={handleClose}
-        className="absolute top-2 right-2 text-gray-400 hover:text-white p-1"
+        aria-label="Dispensar convite para instalar o app"
+        className="absolute top-2 right-2 text-gray-400 hover:text-white p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
       >
         <X size={18} />
       </button>

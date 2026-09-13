@@ -816,8 +816,13 @@ export default function ActiveWorkout() {
         </div>
 
         {/* Toast de volume (fica embaixo da tela) */}
+        {/* Status da troca de exercício, anunciado sem interromper o treino. */}
+        <p aria-live="polite" className="sr-only">
+          {swappingIndex !== null ? 'Buscando um exercício substituto.' : ''}
+        </p>
+
         {showToast && (
-          <div className="fixed bottom-6 left-6 right-6 md:left-auto md:right-10 md:bottom-10 flex flex-col gap-3 z-50">
+          <div role="status" aria-live="polite" className="fixed bottom-6 left-6 right-6 md:left-auto md:right-10 md:bottom-10 flex flex-col gap-3 z-50">
             <div className="bg-background/90 border border-primary/30 text-primary p-4 rounded-xl backdrop-blur-xl animate-fade-in shadow-[0_0_30px_rgba(0,255,136,0.15)] flex items-center gap-4">
               <div className="bg-primary/20 p-3 rounded-lg">
                 <Zap className="w-6 h-6 text-primary" />
@@ -1047,7 +1052,8 @@ export default function ActiveWorkout() {
                           onClick={() => toggleFavoriteExercise(ex.exerciseId)}
                           className={`p-3 border rounded-xl transition-all flex items-center justify-center shadow-lg ${isFav ? 'bg-red-500/20 border-red-500/50 text-red-400' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'}`}
                           title={isFav ? 'Remover dos favoritos' : 'Favoritar exercício'}
-                          aria-label={isFav ? 'Remover dos favoritos' : 'Favoritar exercício'}
+                          aria-label={`${ex.name}: ${isFav ? 'remover dos favoritos' : 'adicionar aos favoritos'}`}
+                          aria-pressed={isFav}
                         >
                           <Heart className={`w-5 h-5 ${isFav ? 'fill-current' : ''}`} />
                         </button>
@@ -1056,14 +1062,16 @@ export default function ActiveWorkout() {
                     <button
                       onClick={() => handleAutoSwap(exIndex)}
                       disabled={swappingIndex === exIndex}
-                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:text-primary transition-all text-gray-400 flex items-center justify-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label={swappingIndex === exIndex ? 'Buscando substituto…' : `Substituir ${ex.name} por outro exercício`}
+                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:text-primary transition-all text-gray-400 flex items-center justify-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       title="Substituir por outro com IA inteligente"
                     >
                       <RefreshCw className={`w-5 h-5 ${swappingIndex === exIndex ? 'animate-spin text-primary' : ''}`} />
                     </button>
                     <button 
                       onClick={() => handleBanExercise(exIndex)}
-                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all text-gray-400 flex items-center justify-center shadow-lg"
+                      aria-label={`Banir ${ex.name}: remove do treino e não aparece mais nos seus planos`}
+                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all text-gray-400 flex items-center justify-center shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
                       title="Banir exercício (excluir da biblioteca)"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -1165,7 +1173,9 @@ export default function ActiveWorkout() {
                   <div className="col-span-2 flex justify-center relative">
                     <button 
                       onClick={() => toggleSetComplete(exIndex, setIndex)}
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                      aria-pressed={set.completed}
+                      aria-label={`${set.completed ? 'Desmarcar' : 'Marcar'} série ${setIndex + 1} de ${ex.name} como concluída`}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                         set.completed 
                           ? 'bg-primary text-[#0a0a0f] shadow-[0_0_20px_rgba(0,255,136,0.5)]' 
                           : 'bg-white/5 text-gray-500 hover:bg-primary/20 hover:text-primary hover:scale-110'

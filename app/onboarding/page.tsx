@@ -190,7 +190,9 @@ export default function Onboarding() {
         <div className="flex items-center gap-4 mb-8 mt-2 z-10 relative">
           <button 
             onClick={step > 1 ? prevStep : undefined} 
-            className="w-10 h-10 rounded-full bg-surface hover:bg-surface-hover flex items-center justify-center text-foreground border border-border active:scale-95 transition-all"
+            disabled={step <= 1}
+            aria-label="Voltar para a etapa anterior"
+            className="w-10 h-10 rounded-full bg-surface hover:bg-surface-hover flex items-center justify-center text-foreground border border-border active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -235,6 +237,7 @@ export default function Onboarding() {
                     <button 
                       key={g.id} 
                       onClick={() => setGoal(g.id)} 
+                      aria-pressed={goal === g.id}
                       className={`w-full text-left p-5 rounded-2xl border transition-all flex items-center gap-4 ${goal === g.id ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(0,255,136,0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
                     >
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${goal === g.id ? 'bg-primary/20 text-primary' : 'bg-black/20 text-foreground-muted'}`}>
@@ -263,6 +266,7 @@ export default function Onboarding() {
                     <button 
                       key={l.id} 
                       onClick={() => setLevel(l.id)} 
+                      aria-pressed={level === l.id}
                       className={`w-full text-left p-5 rounded-2xl border transition-all relative overflow-hidden ${level === l.id ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(0,255,136,0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
                     >
                       <div className="text-lg font-semibold text-foreground mb-1">{l.label}</div>
@@ -281,18 +285,18 @@ export default function Onboarding() {
                   <div className="w-full flex flex-col items-center">
                     <span className="text-foreground-muted mb-4 font-medium uppercase tracking-wider text-sm">Peso (kg)</span>
                     <div className="flex items-center justify-center gap-6">
-                      <button onClick={() => adjustNumber(setWeight, -1, 30, 200)} className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Minus /></button>
+                      <button onClick={() => adjustNumber(setWeight, -1, 30, 200)} aria-label="Diminuir peso" className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Minus /></button>
                       <div className="text-5xl md:text-6xl font-black text-foreground w-24 md:w-28 text-center">{weight}</div>
-                      <button onClick={() => adjustNumber(setWeight, 1, 30, 200)} className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Plus /></button>
+                      <button onClick={() => adjustNumber(setWeight, 1, 30, 200)} aria-label="Aumentar peso" className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Plus /></button>
                     </div>
                   </div>
 
                   <div className="w-full flex flex-col items-center">
                     <span className="text-foreground-muted mb-4 font-medium uppercase tracking-wider text-sm">Altura (cm)</span>
                     <div className="flex items-center justify-center gap-6">
-                      <button onClick={() => adjustNumber(setHeight, -1, 100, 250)} className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Minus /></button>
+                      <button onClick={() => adjustNumber(setHeight, -1, 100, 250)} aria-label="Diminuir altura" className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Minus /></button>
                       <div className="text-5xl md:text-6xl font-black text-foreground w-28 md:w-32 text-center">{height}</div>
-                      <button onClick={() => adjustNumber(setHeight, 1, 100, 250)} className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Plus /></button>
+                      <button onClick={() => adjustNumber(setHeight, 1, 100, 250)} aria-label="Aumentar altura" className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Plus /></button>
                     </div>
                   </div>
                 </div>
@@ -304,9 +308,9 @@ export default function Onboarding() {
                 <h1 className="text-3xl font-bold text-foreground mb-12 tracking-tight text-center">Sua Idade</h1>
                 <div className="w-full flex flex-col items-center mt-10">
                   <div className="flex items-center justify-center gap-6">
-                    <button onClick={() => adjustNumber(setAge, -1, 14, 100)} className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Minus /></button>
+                    <button onClick={() => adjustNumber(setAge, -1, 14, 100)} aria-label="Diminuir idade" className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Minus /></button>
                     <div className="text-6xl md:text-7xl font-black text-primary w-28 md:w-32 text-center drop-shadow-[0_0_20px_rgba(0,255,136,0.3)]">{age}</div>
-                    <button onClick={() => adjustNumber(setAge, 1, 14, 100)} className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Plus /></button>
+                    <button onClick={() => adjustNumber(setAge, 1, 14, 100)} aria-label="Aumentar idade" className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Plus /></button>
                   </div>
                   <p className="text-foreground-muted mt-12 text-center px-4 max-w-sm">
                     A idade nos ajuda a ajustar o volume e a intensidade de recuperação do treino.
@@ -322,9 +326,9 @@ export default function Onboarding() {
                 
                 <div className="flex flex-col items-center mb-12 bg-surface/50 py-8 rounded-3xl border border-border">
                   <div className="flex items-center justify-center gap-6 mb-4">
-                    <button onClick={() => adjustNumber(setDays, -1, 1, 7)} className="w-12 h-12 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-xl active:scale-95 shadow-md transition-transform"><Minus /></button>
+                    <button onClick={() => adjustNumber(setDays, -1, 1, 7)} aria-label="Diminuir dias por semana" className="w-12 h-12 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-xl active:scale-95 shadow-md transition-transform"><Minus /></button>
                     <div className="text-5xl font-black text-foreground w-20 text-center">{days}</div>
-                    <button onClick={() => adjustNumber(setDays, 1, 1, 7)} className="w-12 h-12 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-xl active:scale-95 shadow-md transition-transform"><Plus /></button>
+                    <button onClick={() => adjustNumber(setDays, 1, 1, 7)} aria-label="Aumentar dias por semana" className="w-12 h-12 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-xl active:scale-95 shadow-md transition-transform"><Plus /></button>
                   </div>
                   <span className="text-foreground-muted font-medium uppercase tracking-wider text-sm">Dias por semana</span>
                 </div>
@@ -340,6 +344,7 @@ export default function Onboarding() {
                     <button 
                       key={d.v} 
                       onClick={() => setDuration(d.v)}
+                      aria-pressed={duration === d.v}
                       className={`p-4 rounded-2xl border text-left transition-all ${duration === d.v ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(0,255,136,0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
                     >
                       <div className="font-bold text-foreground mb-1">{d.label}</div>
