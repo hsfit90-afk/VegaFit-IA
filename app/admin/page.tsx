@@ -6,9 +6,11 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { UserProfile } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
+import { useToast } from '@/components/ui/Toast';
 
 export default function AdminDashboard() {
   const { profile, userId } = useAppContext();
+  const toast = useToast();
   const router = useRouter();
   const supabase = createClient();
   const [users, setUsers] = useState<any[]>([]);
@@ -41,13 +43,13 @@ export default function AdminDashboard() {
       if (!isNaN(parsed) && parsed > 0) {
         const { error } = await supabase.from('profiles').update({ max_clients: parsed }).eq('id', userId);
         if (error) {
-          alert('Erro ao atualizar limite: ' + error.message);
+          toast.erro('Erro ao atualizar limite: ' + error.message);
         } else {
           setUsers(prev => prev.map(u => u.id === userId ? { ...u, max_clients: parsed } : u));
-          alert('Limite atualizado com sucesso!');
+          toast.sucesso('Limite atualizado com sucesso!');
         }
       } else {
-        alert('Valor inválido.');
+        toast.aviso('Valor inválido.');
       }
     }
   };

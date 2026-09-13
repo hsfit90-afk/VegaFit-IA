@@ -6,6 +6,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { Apple, Loader2, Target, Flame, Activity, Info } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
 
 interface NutritionData {
   tmb: number;
@@ -22,6 +23,7 @@ interface NutritionData {
 
 export default function NutritionPage() {
   const { profile } = useAppContext();
+  const toast = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<NutritionData | null>(null);
@@ -56,10 +58,10 @@ export default function NutritionPage() {
         setData(result);
         localStorage.setItem('fitforge_nutrition', JSON.stringify(result));
       } else {
-        alert("Erro: " + result.error);
+        toast.erro("Erro: " + result.error);
       }
     } catch (e) {
-      alert("Falha na conexão com a IA.");
+      toast.erro("Falha na conexão com a IA.");
     } finally {
       setLoading(false);
     }

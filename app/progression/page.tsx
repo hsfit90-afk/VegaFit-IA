@@ -7,8 +7,10 @@ import { WorkoutPlan } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
 
 export default function ProgressionCheckIn() {
+  const toast = useToast();
   const { profile, history, workoutPlans, addWorkoutPlan } = useAppContext();
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -60,10 +62,10 @@ export default function ProgressionCheckIn() {
         // equipamento no swap se perderiam a cada check-in.
         setNewPlan({ ...data.plan, trainingMethod: workoutPlans[0]?.trainingMethod, equipment: workoutPlans[0]?.equipment });
       } else {
-        alert("Erro ao analisar a progressão.");
+        toast.erro("Erro ao analisar a progressão.");
       }
     } catch (e) {
-      alert("Erro na conexão com a IA.");
+      toast.erro("Erro na conexão com a IA.");
     } finally {
       setIsGenerating(false);
     }

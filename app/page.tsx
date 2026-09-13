@@ -9,11 +9,13 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { motion, type Variants } from 'motion/react';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { WorkoutPlan } from '@/lib/types';
 
 export default function Dashboard() {
   const { profile, history, workoutPlans, activePlanId, setActivePlan, deleteWorkoutPlan, currentSessionIndex } = useAppContext();
   const router = useRouter();
+  const confirmar = useConfirm();
   const [dailyTip, setDailyTip] = useState<string>('Carregando dica do dia...');
   const [manualSessionIndex, setManualSessionIndex] = useState<number | null>(null);
   
@@ -436,10 +438,17 @@ export default function Dashboard() {
                   
                   <div className="flex flex-col md:flex-row items-center gap-3 mt-6">
                     <button 
-                      onClick={() => {
-                        if (confirm(`Deseja realmente excluir este plano?`)) {
-                          deleteWorkoutPlan(activePlan.id);
-                        }
+                      onClick={async () => {
+                        const ok = await confirmar({
+                          titulo: 'Excluir este plano?',
+                          mensagem: `O plano "${activePlan.name}" será apagado da sua conta.`,
+                          perdas: [
+                            `As ${activePlan.sessions.length} sessões montadas neste plano`,
+                            'A periodização em andamento (semana e ciclo atuais)',
+                          ],
+                          textoConfirmar: 'Excluir plano',
+                        });
+                        if (ok) deleteWorkoutPlan(activePlan.id);
                       }}
                       className="w-full md:w-auto h-12 px-6 rounded-xl bg-surface border border-white/5 text-gray-400 hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 flex items-center justify-center gap-2 transition-all font-semibold"
                     >

@@ -59,3 +59,24 @@ body {
     @apply absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent pointer-events-none;
   }
 }
+
+/* Entrada de Toast e ConfirmDialog (components/ui/).
+   Definidas aqui e não via `animate-in` do tw-animate-css porque esse pacote está no
+   package.json mas nunca foi importado — as classes utilitárias dele não existem no CSS gerado.
+   Deslizar de baixo combina com a origem dos dois: o toast sobe acima da navegação inferior e,
+   no celular, o diálogo entra como bottom sheet. */
+@keyframes vf-surgir-de-baixo {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@layer utilities {
+  .vf-entrada {
+    animation: vf-surgir-de-baixo 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+/* Quem pediu menos movimento no sistema recebe o elemento já no lugar, sem deslize. */
+@media (prefers-reduced-motion: reduce) {
+  .vf-entrada { animation: none; }
+}

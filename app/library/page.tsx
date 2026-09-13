@@ -7,6 +7,8 @@ import { getExercises, addExercise, deleteExercise, updateExerciseMuscleGroup } 
 import { useAppContext } from '@/app/context/AppContext';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 const MUSCLE_GROUP_OPTIONS = [
   'Peito', 'Costas', 'Ombro', 'Bíceps', 'Tríceps', 'Antebraço', 'Pernas (quadríceps)',
@@ -15,6 +17,8 @@ const MUSCLE_GROUP_OPTIONS = [
 
 export default function Library() {
   const { profile, toggleFavoriteExercise } = useAppContext();
+  const toast = useToast();
+  const confirmar = useConfirm();
   const favorites = profile?.favoriteExercises || [];
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +70,7 @@ export default function Library() {
     if (!selectedExercise) return;
     const finalMuscleGroup = editMuscleGroupValue === '__custom__' ? customEditMuscleGroup.trim() : editMuscleGroupValue;
     if (!finalMuscleGroup) {
-      alert("Digite o nome da nova categoria.");
+      toast.aviso("Digite o nome da nova categoria.");
       return;
     }
     setIsSavingMuscleGroup(true);
@@ -76,7 +80,7 @@ export default function Library() {
       setSelectedExercise(prev => prev ? { ...prev, muscleGroup: finalMuscleGroup } : prev);
       setEditingMuscleGroup(false);
     } else {
-      alert("Não foi possível atualizar o grupo muscular. Verifique se a regra de permissão do Master (database/17_exercises_master_update.sql) já foi aplicada no Supabase.");
+      toast.erro("Não foi possível atualizar o grupo muscular. Verifique se a regra de permissão do Master (database/17_exercises_master_update.sql) já foi aplicada no Supabase.");
     }
     setIsSavingMuscleGroup(false);
   };
@@ -91,7 +95,7 @@ export default function Library() {
 
     const finalMuscleGroup = newMuscleGroup === '__custom__' ? customNewMuscleGroup.trim() : newMuscleGroup;
     if (!finalMuscleGroup) {
-      alert("Digite o nome da nova categoria.");
+      toast.aviso("Digite o nome da nova categoria.");
       return;
     }
 
@@ -117,7 +121,7 @@ export default function Library() {
       setMediaUrl('');
       setMediaFile(null);
     } else {
-      alert("Erro ao adicionar exercício.");
+      toast.erro("Erro ao adicionar exercício.");
     }
     
     setIsAdding(false);
@@ -125,12 +129,24 @@ export default function Library() {
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (confirm("Deseja realmente apagar este exercício?")) {
+    const alvo = exercises.find(ex => ex.id === id);
+    const ok = await confirmar({
+      titulo: 'Apagar este exercício?',
+      mensagem: `"${alvo?.name || 'Este exercício'}" será removido da biblioteca global.`,
+      perdas: [
+        'O exercício some para todos os alunos',
+        'A IA deixa de usá-lo ao montar treinos',
+        'A mídia enviada para ele é perdida',
+      ],
+      textoConfirmar: 'Apagar exercício',
+    });
+    if (ok) {
       const success = await deleteExercise(id);
       if (success) {
         setExercises(prev => prev.filter(ex => ex.id !== id));
+        toast.sucesso('Exercício apagado da biblioteca.');
       } else {
-        alert("Não foi possível apagar o exercício. Verifique se a regra de permissão do Master (database/16_exercises_master_delete.sql) já foi aplicada no Supabase.");
+        toast.erro("Não foi possível apagar o exercício. Verifique se a regra de permissão do Master (database/16_exercises_master_delete.sql) já foi aplicada no Supabase.");
       }
     }
   };

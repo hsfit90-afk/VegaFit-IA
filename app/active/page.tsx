@@ -12,11 +12,15 @@ import { Button } from '@/components/ui/Button';
 import { getExercises, deleteExercise } from '@/lib/db/exercises';
 import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
 import { saveWorkoutState, loadWorkoutState, clearWorkoutState } from '@/utils/workoutCache';
+import { useToast } from '@/components/ui/Toast';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const toast = useToast();
+  const confirmar = useConfirm();
 
   const currentPlan = activePlanId 
     ? workoutPlans.find(p => p.id === activePlanId) || (workoutPlans.length > 0 ? workoutPlans[0] : null)
@@ -341,7 +345,7 @@ export default function ActiveWorkout() {
          setRestEndTime(0);
       }
     } catch (e: any) {
-      alert("Erro ao ticar: " + e.message);
+      toast.erro("Erro ao ticar: " + e.message);
     }
   };
 
@@ -441,7 +445,7 @@ export default function ActiveWorkout() {
     );
 
     if (availableAlternatives.length === 0) {
-      alert("Não há outros exercícios na sua biblioteca para fazer a troca.");
+      toast.aviso("Não há outros exercícios na sua biblioteca para fazer a troca.");
       return;
     }
 
@@ -552,7 +556,7 @@ export default function ActiveWorkout() {
       }
     } catch (e) {
       console.error(e);
-      alert("Erro de conexão ao tentar trocar exercício via IA.");
+      toast.erro("Erro de conexão ao tentar trocar exercício via IA.");
     } finally {
       setSwappingIndex(null);
     }
@@ -568,17 +572,34 @@ export default function ActiveWorkout() {
     );
 
     if (!dbEx) {
-      alert("Este exercício não está na sua biblioteca oficial (foi gerado solto pela IA). Apenas troque-o usando o botão ao lado.");
+      toast.aviso("Este exercício não está na sua biblioteca oficial (foi gerado solto pela IA). Apenas troque-o usando o botão ao lado.");
       return;
     }
 
     const realExerciseId = dbEx.id;
     const isOwner = dbEx.userId === userId;
-    const confirmMessage = isOwner 
-      ? `DESEJA BANIR PERMANENTEMENTE?\n\nO exercício "${currentActiveEx.name}" será excluído da sua biblioteca GLOBAL e a IA nunca mais o utilizará para ninguém. Esta ação não pode ser desfeita.\n\nApós excluir, colocaremos outro no lugar automaticamente.`
-      : `DESEJA OCULTAR ESTE EXERCÍCIO?\n\nO exercício "${currentActiveEx.name}" será ocultado da sua conta e a IA não o recomendará mais para você.\n\nApós ocultar, colocaremos outro no lugar automaticamente.`;
+    const confirmado = isOwner
+      ? await confirmar({
+          titulo: 'Banir permanentemente?',
+          mensagem: `"${currentActiveEx.name}" será excluído da biblioteca GLOBAL. Colocaremos outro exercício no lugar automaticamente.`,
+          perdas: [
+            'O exercício some para todos os alunos',
+            'A IA nunca mais o utilizará para ninguém',
+            'Não é possível desfazer',
+          ],
+          textoConfirmar: 'Banir para todos',
+        })
+      : await confirmar({
+          titulo: 'Ocultar este exercício?',
+          mensagem: `"${currentActiveEx.name}" será ocultado da sua conta. Colocaremos outro no lugar automaticamente.`,
+          perdas: [
+            'A IA não o recomendará mais para você',
+            'Ele continua disponível para os outros alunos',
+          ],
+          textoConfirmar: 'Ocultar para mim',
+        });
 
-    if (confirm(confirmMessage)) {
+    if (confirmado) {
       
       let success = true;
       if (isOwner) {
@@ -642,10 +663,10 @@ export default function ActiveWorkout() {
             updateWorkoutPlan(updatedPlan);
           }
         } else {
-          alert("Exercício banido! Como não há mais nenhum exercício cadastrado para este grupo muscular, não foi possível colocar outro no lugar.");
+          toast.aviso("Exercício banido! Como não há mais nenhum exercício cadastrado para este grupo muscular, não foi possível colocar outro no lugar.");
         }
       } else {
-        alert("Erro ao excluir o exercício do banco de dados.");
+        toast.erro("Erro ao excluir o exercício do banco de dados.");
       }
     }
   };
@@ -740,7 +761,7 @@ export default function ActiveWorkout() {
     } else {
       // Fallback: copia para clipboard
       await navigator.clipboard.writeText(text);
-      alert('Resumo copiado! Cole onde quiser 😊');
+      toast.sucesso('Resumo copiado! Cole onde quiser 😊');
     }
   };
 

@@ -6,12 +6,14 @@ import { User, Key, Bell, Download, Trash2, CheckCircle2, Sliders, Volume2, LogO
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
 import Link from 'next/link';
 import { isPushSupported, getCurrentPushSubscription, subscribeToPush, unsubscribeFromPush } from '@/utils/push';
 
 export default function Settings() {
   const { profile, setProfile, clearData } = useAppContext();
   const router = useRouter();
+  const toast = useToast();
 
   // Exclusão de conta (LGPD Art. 18, V)
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -81,7 +83,7 @@ export default function Settings() {
       } else {
         const ok = await subscribeToPush();
         setPushStatus(ok ? 'subscribed' : 'unsubscribed');
-        if (!ok) alert('Não foi possível ativar as notificações. Verifique se você permitiu notificações para este site.');
+        if (!ok) toast.erro('Não foi possível ativar as notificações. Verifique se você permitiu notificações para este site.');
       }
     } finally {
       setPushBusy(false);

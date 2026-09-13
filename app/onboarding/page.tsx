@@ -7,6 +7,7 @@ import { ArrowLeft, Loader2, Minus, Plus, Target, Zap, Clock, ChevronRight, Spar
 import { UserProfile } from '@/lib/types';
 import { useAppContext } from '@/app/context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
+import { useToast } from '@/components/ui/Toast';
 
 const LOADING_PHRASES = [
   "Analisando seu biotipo...",
@@ -24,6 +25,7 @@ export default function Onboarding() {
   const router = useRouter();
   const supabase = createClient();
   const { setProfile } = useAppContext();
+  const toast = useToast();
 
   // Form State
   const [name, setName] = useState('');
@@ -103,7 +105,7 @@ export default function Onboarding() {
 
     if (error) {
       console.error("Error saving profile details:", error);
-      alert(`Erro ao salvar perfil: ${error.message || JSON.stringify(error)}`);
+      toast.erro(`Erro ao salvar perfil: ${error.message || JSON.stringify(error)}`);
       setLoading(false);
       return;
     }
