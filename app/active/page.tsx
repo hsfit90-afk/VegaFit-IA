@@ -10,7 +10,11 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { getExercises, deleteExercise } from '@/lib/db/exercises';
 import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
-import { saveWorkoutState, loadWorkoutState, clearWorkoutState } from '@/utils/workoutCache';
+import { loadWorkoutState, clearWorkoutState } from '@/utils/workoutCache';
+import { useWorkoutTimer } from '@/hooks/useWorkoutTimer';
+import { useRestTimer } from '@/hooks/useRestTimer';
+import { useMiniPause } from '@/hooks/useMiniPause';
+import { useWorkoutPersistence } from '@/hooks/useWorkoutPersistence';
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 
@@ -36,7 +40,6 @@ export default function ActiveWorkout() {
   const [activeExercises, setActiveExercises] = useState<ActiveExercise[]>([]);
   const [startTime, setStartTime] = useState<number>(0);
   const [restEndTime, setRestEndTime] = useState<number>(0);
-  const [restRemaining, setRestRemaining] = useState<number>(0);
   const [isFinished, setIsFinished] = useState(false);
   const [finishedVolume, setFinishedVolume] = useState(0);
   const [finishedDuration, setFinishedDuration] = useState(0);
@@ -45,7 +48,6 @@ export default function ActiveWorkout() {
   // BUG FIX: Substituído o hack window.recentPRs por useState
   const [recentPRs, setRecentPRs] = useState<string[]>([]);
   // FEATURE: Cronômetro ao vivo do treino
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showVideoFor, setShowVideoFor] = useState<string | null>(null);
   const [libraryExercises, setLibraryExercises] = useState<any[]>([]); // To store DB exercises for mediaUrl
@@ -53,7 +55,6 @@ export default function ActiveWorkout() {
   // Mini-pausa do método Rest-Pause: pausa curta DENTRO da mesma série (não é o descanso normal
   // entre séries) — o usuário aciona manualmente entre os "clusters" de reps até a falha.
   const [miniPause, setMiniPause] = useState<{ exIndex: number; setIndex: number; endTime: number } | null>(null);
-  const [miniPauseRemaining, setMiniPauseRemaining] = useState(0);
 
   // Semana/ciclo da periodização, ancorados no aluno (lib/periodization.ts). Uma fonte só — antes
   // o mesmo cálculo estava duplicado aqui e no JSX da progressão, e os dois usavam a data de
@@ -158,89 +159,24 @@ export default function ActiveWorkout() {
   }, [currentSession, activeExercises.length]);
 
   // Cache local: salva o progresso do treino a cada mudança, para sobreviver a fechar o app no meio do treino
-  useEffect(() => {
-    if (!userId || !currentPlan || activeExercises.length === 0 || isFinished) return;
-    saveWorkoutState(userId, currentPlan.id, safeIndex, activeExercises, startTime);
-  }, [userId, currentPlan, safeIndex, activeExercises, startTime, isFinished]);
+  // Cronômetros e persistência vivem em hooks próprios (hooks/). A página só liga as pontas.
+  useWorkoutPersistence({
+    userId,
+    planId: currentPlan?.id,
+    sessionIndex: safeIndex,
+    activeExercises,
+    startTime,
+    concluido: isFinished,
+  });
 
-  // FEATURE: Cronômetro ao vivo — atualiza a cada segundo de forma consistente (não pausa quando a tela desliga)
-  useEffect(() => {
-    if (startTime === 0 || isFinished) return;
-    
-    const updateElapsed = () => {
-      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
-    };
+  const elapsedSeconds = useWorkoutTimer(startTime, isFinished);
 
-    const interval = setInterval(updateElapsed, 1000);
-    
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') updateElapsed();
-    };
-    window.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [startTime, isFinished]);
+  const restRemaining = useRestTimer(restEndTime, () => setRestEndTime(0), {
+    somLigado: Boolean(profile?.soundEnabled),
+    audioRef,
+  });
 
-  // FEATURE: Cronômetro de Descanso baseado em Timestamp absoluto (não pausa com tela desligada)
-  useEffect(() => {
-    if (restEndTime === 0) {
-      setRestRemaining(0);
-      return;
-    }
-
-    const updateRest = () => {
-      const now = Date.now();
-      const remaining = Math.max(0, Math.ceil((restEndTime - now) / 1000));
-      setRestRemaining(remaining);
-      
-      if (remaining === 0) {
-        setRestEndTime(0);
-        if (profile?.soundEnabled && audioRef.current) {
-          audioRef.current.play().catch(e => console.log('Audio play failed', e));
-        }
-        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-          navigator.vibrate([100, 50, 100]);
-        }
-      }
-    };
-
-    updateRest(); // update immediately
-    const interval = setInterval(updateRest, 1000);
-    
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') updateRest();
-    };
-    window.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [restEndTime, profile?.soundEnabled]);
-
-  // FEATURE: Mini-pausa do método Rest-Pause (10-15s DENTRO da série, separado do descanso normal)
-  useEffect(() => {
-    if (!miniPause) {
-      setMiniPauseRemaining(0);
-      return;
-    }
-    const update = () => {
-      const remaining = Math.max(0, Math.ceil((miniPause.endTime - Date.now()) / 1000));
-      setMiniPauseRemaining(remaining);
-      if (remaining === 0) {
-        setMiniPause(null);
-        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-          navigator.vibrate([80, 40, 80]);
-        }
-      }
-    };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [miniPause]);
+  const miniPauseRemaining = useMiniPause(miniPause, () => setMiniPause(null));
 
   if (!currentSession) {
     return (
