@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { computePeriodization, INACTIVITY_RESET_DAYS } from '@/lib/periodization';
+import { computePeriodization } from '@/lib/periodization';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart } from 'lucide-react';
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
@@ -15,6 +15,8 @@ import { useWorkoutTimer } from '@/hooks/useWorkoutTimer';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { useMiniPause } from '@/hooks/useMiniPause';
 import { useWorkoutPersistence } from '@/hooks/useWorkoutPersistence';
+import { RestTimerOverlay } from '@/components/workout/RestTimerOverlay';
+import { PeriodizationResetNotice } from '@/components/workout/PeriodizationResetNotice';
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 
@@ -831,40 +833,13 @@ export default function ActiveWorkout() {
         </div>
       </header>
 
-      {/* Immersive Rest Timer Modal */}
-      {restRemaining > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-surface/90 border border-primary/30 p-8 rounded-[32px] shadow-[0_0_50px_rgb(var(--color-primary-rgb)/0.2)] flex flex-col items-center max-w-sm w-full animate-in zoom-in-95 duration-300">
-            <div className="w-24 h-24 rounded-full border-4 border-primary/20 flex items-center justify-center relative mb-6">
-              <div className="absolute inset-0 border-4 border-primary rounded-full animate-[spin_4s_linear_infinite] border-t-transparent"></div>
-              <Clock className="w-8 h-8 text-primary" />
-            </div>
-            <h3 className="text-white font-bold text-xl mb-2">Tempo de Descanso</h3>
-            <div className="font-mono text-primary font-black text-6xl tracking-tight mb-8">
-              {formatTime(restRemaining)}
-            </div>
-            <Button onClick={() => setRestEndTime(0)} variant="outline" className="w-full border-primary/50 text-primary hover:bg-primary/10 rounded-xl">
-              PULAR DESCANSO
-            </Button>
-          </div>
-        </div>
-      )}
+      <RestTimerOverlay
+        segundosRestantes={restRemaining}
+        onPular={() => setRestEndTime(0)}
+        formatarTempo={formatTime}
+      />
 
-      {resetNotice !== null && (
-        <div className="mb-6 p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-100 flex items-start gap-3">
-          <RefreshCw className="w-5 h-5 mt-0.5 shrink-0 text-amber-400" />
-          <div className="flex-1 text-sm leading-relaxed">
-            <p className="font-semibold text-amber-300 mb-1">Periodização reiniciada</p>
-            <p>
-              Você ficou <strong>{resetNotice} dias</strong> sem treinar. Para voltar com segurança, recomeçamos na <strong>semana 1</strong> —
-              as séries de hoje estão mais leves de propósito. Em {INACTIVITY_RESET_DAYS} dias de constância você retoma o ritmo.
-            </p>
-          </div>
-          <button onClick={() => setResetNotice(null)} className="text-amber-300/70 hover:text-amber-200 text-xs font-medium shrink-0" aria-label="Fechar aviso">
-            OK
-          </button>
-        </div>
-      )}
+      <PeriodizationResetNotice diasParado={resetNotice} onFechar={() => setResetNotice(null)} />
 
       <div className="space-y-6">
         {activeExercises.map((ex, exIndex) => {
