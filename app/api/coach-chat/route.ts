@@ -2,20 +2,29 @@ import Groq from "groq-sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
-import { checkRateLimit, checkGlobalAiCapacity } from "@/utils/rate-limit";
+import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
 import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
 
+// Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
+// capacidade (utils/rate-limit.ts) pode somar até AI_MAX_QUEUE_WAIT_MS em cima disso. Sem esta
+// linha vale o default do plano na Vercel, que é menor e mata a chamada por timeout. É um TETO,
+// não uma reserva: rotas rápidas continuam respondendo rápido. 60s é o máximo do plano Hobby.
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
+  // A reserva de orçamento de IA é devolvida no finally sempre que a chamada termina sem
+  // consumir tokens de verdade — qualquer return antecipado daqui pra baixo ou qualquer throw.
+  let aiSlot: AiReservation | null = null;
+  let aiSettled = false;
+
   try {
     const { user, error: authError } = await requireAuth();
     if (authError) return authError;
 
-    const rateLimitError = await checkRateLimit(user.id, "coach-chat", { limit: 40, windowMinutes: 60 });
-    if (rateLimitError) return rateLimitError;
-
-    const globalCapacityError = await checkGlobalAiCapacity("coach-chat");
-    if (globalCapacityError) return globalCapacityError;
+    const capacity = await reserveAiCapacity(user.id, "coach-chat", { limit: 40, windowMinutes: 60 });
+    if (capacity.error) return capacity.error;
+    aiSlot = capacity.slot;
 
     const { apiKey, profile, message, history } = await req.json();
 
@@ -90,6 +99,11 @@ Use formatação leve (negrito com **texto**) para destacar os pontos principais
       max_tokens: 512,
     });
 
+    // Troca a estimativa pelo consumo real antes de qualquer validação que possa falhar:
+    // estes tokens foram gastos de fato, então o orçamento tem que refletir isso.
+    await aiSlot.settle(response?.usage?.total_tokens);
+    aiSettled = true;
+
     const text = response.choices[0]?.message?.content;
 
     return NextResponse.json({ text });
@@ -97,5 +111,7 @@ Use formatação leve (negrito com **texto**) para destacar os pontos principais
   } catch (error: any) {
     console.error("Groq API error:", error);
     return NextResponse.json({ error: error.message || "Failed to respond" }, { status: 500 });
+  } finally {
+    if (aiSlot && !aiSettled) await aiSlot.release();
   }
 }

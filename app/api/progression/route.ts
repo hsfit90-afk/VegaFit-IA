@@ -2,20 +2,29 @@ import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import { createClient } from '@/utils/supabase/server';
 import { requireAuth } from '@/utils/supabase/auth-guard';
-import { checkRateLimit, checkGlobalAiCapacity } from '@/utils/rate-limit';
+import { reserveAiCapacity, type AiReservation } from '@/utils/rate-limit';
 import { fetchLatestAnamneseAnswers } from '@/lib/aiHealthContext';
 import { createGroqCompletionWithRetry } from '@/lib/groqRetry';
 
+// Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
+// capacidade (utils/rate-limit.ts) pode somar até AI_MAX_QUEUE_WAIT_MS em cima disso. Sem esta
+// linha vale o default do plano na Vercel, que é menor e mata a chamada por timeout. É um TETO,
+// não uma reserva: rotas rápidas continuam respondendo rápido. 60s é o máximo do plano Hobby.
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
+  // A reserva de orçamento de IA é devolvida no finally sempre que a chamada termina sem
+  // consumir tokens de verdade — qualquer return antecipado daqui pra baixo ou qualquer throw.
+  let aiSlot: AiReservation | null = null;
+  let aiSettled = false;
+
   try {
     const { user, error: authError } = await requireAuth();
     if (authError) return authError;
 
-    const rateLimitError = await checkRateLimit(user.id, 'progression', { limit: 15, windowMinutes: 1440 });
-    if (rateLimitError) return rateLimitError;
-
-    const globalCapacityError = await checkGlobalAiCapacity('progression');
-    if (globalCapacityError) return globalCapacityError;
+    const capacity = await reserveAiCapacity(user.id, 'progression', { limit: 15, windowMinutes: 1440 });
+    if (capacity.error) return capacity.error;
+    aiSlot = capacity.slot;
 
     const { apiKey, profile, recentHistory, effectiveSets, currentPlan, feedback } = await req.json();
 
@@ -87,6 +96,11 @@ Exemplo do retorno:
       max_tokens: 3500,
     });
 
+    // Troca a estimativa pelo consumo real antes de qualquer validação que possa falhar:
+    // estes tokens foram gastos de fato, então o orçamento tem que refletir isso.
+    await aiSlot.settle(response?.usage?.total_tokens);
+    aiSettled = true;
+
     const responseText = response.choices[0]?.message?.content;
     if (!responseText) throw new Error("Empty AI response");
 
@@ -99,5 +113,7 @@ Exemplo do retorno:
   } catch (error: any) {
     console.error('Progression API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  } finally {
+    if (aiSlot && !aiSettled) await aiSlot.release();
   }
 }

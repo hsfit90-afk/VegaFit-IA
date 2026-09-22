@@ -9,3 +9,14 @@ coverage/
 list_models.js
 rename_videos.js
 check-exercises.js
+tsconfig.tsbuildinfo
+
+# Gerados pelo next-pwa a cada build de producao (o fonte fica em worker/).
+# O nome do worker carrega um hash que muda todo build, entao versionar isso
+# produz um diff espurio a cada deploy.
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+public/worker-*.js
+public/worker-*.js.map

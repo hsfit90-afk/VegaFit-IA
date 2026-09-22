@@ -26,7 +26,7 @@ export default defineConfig({
       // Fora do escopo destes testes: acesso a banco, contexto de IA e listas de dados.
       exclude: ['lib/db/**', 'lib/types.ts', 'lib/utils.ts', 'lib/anamneseSteps.ts',
                 'lib/aiHealthContext.ts', 'lib/groqRetry.ts', 'lib/trainingLocation.ts',
-                'utils/supabase/**', 'utils/push.ts', 'utils/rate-limit.ts',
+                'utils/supabase/**', 'utils/push.ts',
                 'utils/workoutCache.ts'],
     },
   },

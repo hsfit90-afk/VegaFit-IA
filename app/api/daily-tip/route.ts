@@ -1,23 +1,32 @@
 import Groq from "groq-sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
-import { checkRateLimit, checkGlobalAiCapacity } from "@/utils/rate-limit";
+import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
 
 const FALLBACK_TIP = "Mantenha a constância. A hidratação e um bom descanso são tão importantes quanto o treino.";
 
+// Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
+// capacidade (utils/rate-limit.ts) pode somar até AI_MAX_QUEUE_WAIT_MS em cima disso. Sem esta
+// linha vale o default do plano na Vercel, que é menor e mata a chamada por timeout. É um TETO,
+// não uma reserva: rotas rápidas continuam respondendo rápido. 60s é o máximo do plano Hobby.
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
+  // A reserva de orçamento de IA é devolvida no finally sempre que a chamada termina sem
+  // consumir tokens de verdade — qualquer return antecipado daqui pra baixo ou qualquer throw.
+  let aiSlot: AiReservation | null = null;
+  let aiSettled = false;
+
   try {
     const { user, error: authError } = await requireAuth();
     if (authError) return authError;
 
     // Rota chamada automaticamente ao carregar telas, então não usamos 429 aqui:
     // se o limite estourar, cai de volta pra dica estática em vez de quebrar a UI.
-    const rateLimitError = await checkRateLimit(user.id, "daily-tip", { limit: 30, windowMinutes: 1440 });
-    if (rateLimitError) return NextResponse.json({ tip: FALLBACK_TIP });
-
-    const globalCapacityError = await checkGlobalAiCapacity("daily-tip");
-    if (globalCapacityError) return NextResponse.json({ tip: FALLBACK_TIP });
+    const capacity = await reserveAiCapacity(user.id, "daily-tip", { limit: 30, windowMinutes: 1440 });
+    if (capacity.error) return NextResponse.json({ tip: FALLBACK_TIP });
+    aiSlot = capacity.slot;
 
     const { apiKey, profile } = await req.json();
     const key = apiKey || process.env.GROQ_API_KEY;
@@ -44,6 +53,11 @@ Retorne apenas o texto da dica, sem aspas e sem formatação extra.`;
       max_tokens: 300,
     }, 1);
 
+    // Troca a estimativa pelo consumo real antes de qualquer validação que possa falhar:
+    // estes tokens foram gastos de fato, então o orçamento tem que refletir isso.
+    await aiSlot.settle(response?.usage?.total_tokens);
+    aiSettled = true;
+
     const text = response.choices[0]?.message?.content;
 
     if (!text) {
@@ -55,5 +69,7 @@ Retorne apenas o texto da dica, sem aspas e sem formatação extra.`;
   } catch (error: any) {
     console.error("Groq API error:", error);
     return NextResponse.json({ tip: FALLBACK_TIP });
+  } finally {
+    if (aiSlot && !aiSettled) await aiSlot.release();
   }
 }
