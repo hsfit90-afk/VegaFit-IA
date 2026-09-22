@@ -13,10 +13,18 @@ const NOW = 1_700_000_000_000;
 /** Linha da janela: `ageSec` segundos atrás, custando `cost` tokens. */
 const row = (ageSec: number, cost: number) => ({ at: NOW - ageSec * 1000, cost });
 
+/**
+ * Custo como fração do orçamento. Os casos abaixo são escritos em relação ao teto e não em
+ * números absolutos porque o orçamento muda com o tier do provedor — era 6400 no free tier do
+ * Groq e é 200.000 no Gemini. O que precisa continuar valendo é a regra, não a escala.
+ */
+const pct = (fracao: number) => Math.floor(SAFE_TPM_BUDGET * fracao);
+
 describe('SAFE_TPM_BUDGET', () => {
   it('reserva ~20% do teto da conta como folga', () => {
-    // 8000 é o free tier do Groq; o valor real vem de GROQ_TPM_LIMIT no ambiente.
-    expect(SAFE_TPM_BUDGET).toBe(Math.floor((Number(process.env.GROQ_TPM_LIMIT) || 8000) * 0.8));
+    // 250.000 é o free tier documentado da família Flash do Gemini; o valor real da conta
+    // vem de AI_TPM_LIMIT no ambiente.
+    expect(SAFE_TPM_BUDGET).toBe(Math.floor((Number(process.env.AI_TPM_LIMIT) || 250_000) * 0.8));
   });
 });
 
@@ -47,16 +55,16 @@ describe('msUntilCapacity', () => {
 
   it('só espera o necessário: a expiração da mais antiga já basta', () => {
     // Duas linhas; liberar a de 50s atrás (expira em 10s) já abre espaço.
-    const rows = [row(50, 3000), row(5, 2000)];
-    const wait = msUntilCapacity(rows, 3000, NOW);
+    const rows = [row(50, pct(0.4)), row(5, pct(0.3))];
+    const wait = msUntilCapacity(rows, pct(0.5), NOW);
     expect(wait).toBeGreaterThanOrEqual(10 * 1000);
     expect(wait).toBeLessThan(11 * 1000);
   });
 
   it('espera a segunda expiração quando liberar só a primeira não basta', () => {
     // Precisa que as de 50s E 45s saiam para caber; a segunda expira em 15s.
-    const rows = [row(50, 2000), row(45, 2000), row(5, 2000)];
-    const wait = msUntilCapacity(rows, 3000, NOW);
+    const rows = [row(50, pct(0.3)), row(45, pct(0.3)), row(5, pct(0.3))];
+    const wait = msUntilCapacity(rows, pct(0.5), NOW);
     expect(wait).toBeGreaterThanOrEqual(15 * 1000);
     expect(wait).toBeLessThan(16 * 1000);
   });
@@ -66,7 +74,7 @@ describe('msUntilCapacity', () => {
   });
 
   it('espera a janela limpar quando a chamada sozinha estoura o orçamento', () => {
-    // Recusar para sempre seria pior: espera a janela esvaziar e deixa o Groq decidir.
+    // Recusar para sempre seria pior: espera a janela esvaziar e deixa o provedor decidir.
     const rows = [row(30, 1000)];
     const wait = msUntilCapacity(rows, SAFE_TPM_BUDGET + 5000, NOW);
     expect(wait).toBeGreaterThanOrEqual(30 * 1000);
@@ -74,13 +82,17 @@ describe('msUntilCapacity', () => {
   });
 
   it('a regressão que motivou a correção: 2 treinos no mesmo minuto', () => {
-    // Com a estimativa fixa de 5000, o 2º treino era sempre recusado (5000 + 5000 > 6400).
-    const comEstimativaFixa = msUntilCapacity([row(5, 5000)], 5000, NOW);
-    expect(comEstimativaFixa).toBeGreaterThan(0);
+    // Relativo ao orçamento, e não a números fixos, porque o teto muda com o tier do provedor
+    // (era 8000 no free tier do Groq, hoje 250.000 no Gemini) — o que se testa aqui é a regra.
+    //
+    // Quando a reserva por chamada passa de metade do orçamento, a 2ª do minuto NUNCA cabe.
+    // Era exatamente o caso antigo: 5000 reservados contra 6400 de orçamento.
+    const reservaAlta = Math.floor(SAFE_TPM_BUDGET * 0.6);
+    expect(msUntilCapacity([row(5, reservaAlta)], reservaAlta, NOW)).toBeGreaterThan(0);
 
-    // Com consumo real medido (~1800), os mesmos dois treinos passam a caber.
-    const comConsumoReal = msUntilCapacity([row(5, 1800)], 1800, NOW);
-    expect(comConsumoReal).toBe(0);
+    // Com a reserva abaixo de metade do orçamento, as duas passam a caber no mesmo minuto.
+    const reservaReal = Math.floor(SAFE_TPM_BUDGET * 0.3);
+    expect(msUntilCapacity([row(5, reservaReal)], reservaReal, NOW)).toBe(0);
   });
 });
 

@@ -8,7 +8,7 @@ interface RateLimitOptions {
 
 /** Reserva de capacidade devolvida quando a chamada está liberada para seguir. */
 export interface AiReservation {
-  /** Reconcilia a reserva com o consumo REAL (response.usage.total_tokens). */
+  /** Reconcilia a reserva com o consumo REAL (usageMetadata.totalTokenCount). */
   settle: (tokens?: number | null) => Promise<void>;
   /** Devolve o orçamento quando a chamada falha antes de consumir tokens. */
   release: () => Promise<void>;
@@ -18,16 +18,17 @@ export type AiCapacityResult =
   | { error: NextResponse; slot: null }
   | { error: null; slot: AiReservation };
 
-/** Janela do teto de tokens por minuto do Groq. */
+/** Janela do teto de tokens por minuto do provedor de IA. */
 const WINDOW_MS = 60_000;
 
 // Custo ESTIMADO por chamada, usado só como reserva inicial — o valor real substitui esse
-// número assim que o Groq responde (ver settle). Não precisa ser exato, mas não pode
+// número assim que o modelo responde (ver settle). Não precisa ser exato, mas não pode
 // subestimar muito, senão duas chamadas simultâneas passam juntas e estouram o teto.
-const GROQ_ESTIMATED_TOKENS_PER_CALL: Record<string, number> = {
-  // MEDIDO em 22/09/2026, com o catálogo de 882 exercícios: duas gerações de 3 dias custaram
-  // 6969 e 6803 tokens. O valor anterior (5000) subestimava em ~2000 — e subestimar é o erro
-  // caro: o app libera a chamada achando que cabe e quem recusa passa a ser o Groq.
+const ESTIMATED_TOKENS_PER_CALL: Record<string, number> = {
+  // MEDIDO em 22/09/2026 com o catálogo de 882 exercícios, no Groq (6969/6803) e depois no
+  // Gemini (6818/7027) — o custo ficou praticamente igual na troca de provedor. O valor antigo
+  // (5000) subestimava, e subestimar é o erro caro: o app libera a chamada achando que cabe e
+  // quem recusa passa a ser o provedor.
   // As demais rotas continuam sendo chute; a calibração automática corrige cada uma assim que
   // houver 3 chamadas reais medidas.
   treino: 7000,
@@ -40,20 +41,28 @@ const GROQ_ESTIMATED_TOKENS_PER_CALL: Record<string, number> = {
 
 const DEFAULT_ESTIMATE = 2000;
 
-// Teto de tokens/minuto da CONTA Groq. Vem do ambiente para que um upgrade de tier seja uma
-// variável de ambiente, e não uma alteração de código: o valor estava chumbado em 8000 (free
-// tier) e por isso o app inteiro servia ~1 geração de treino por minuto.
-// Confira o seu em console.groq.com/settings/limits.
-const GROQ_TPM_LIMIT = Number(process.env.GROQ_TPM_LIMIT) || 8000;
-const GROQ_SAFE_TPM_BUDGET = Math.floor(GROQ_TPM_LIMIT * 0.8); // ~20% de folga pro erro de estimativa
+// Teto de tokens/minuto da CONTA do provedor. Vem do ambiente para que um upgrade de tier seja
+// uma variável de ambiente, e não uma alteração de código.
+//
+// O padrão era 8000, o free tier do Groq — e com ~7000 tokens por geração isso fazia o app
+// inteiro servir UMA geração de treino por minuto, que era a origem do "Muita gente usando a
+// IA ao mesmo tempo agora". Com a migração para o Gemini (22/09/2026) o padrão passa a 250.000,
+// o free tier documentado da família Flash.
+//
+// CONFIRME o limite real da sua conta em aistudio.google.com/rate-limit e ajuste esta variável
+// se for diferente. Vale lembrar que o Gemini também limita REQUISIÇÕES por minuto (~15 RPM no
+// free tier do Flash-Lite), e esse teto não é modelado aqui: com ~7000 tokens por chamada, o
+// RPM estoura antes do TPM. Um 429 real do provedor é tratado com retry em lib/geminiClient.ts.
+const AI_TPM_LIMIT = Number(process.env.AI_TPM_LIMIT) || 250_000;
+const SAFE_BUDGET = Math.floor(AI_TPM_LIMIT * 0.8); // ~20% de folga pro erro de estimativa
 
 // Quanto tempo a requisição pode ESPERAR por capacidade antes de desistir e devolver 429.
 // Esperar entrega o treino; recusar devolve um erro e nenhum treino. O teto existe porque a
-// função ainda precisa caber no timeout do host (Vercel) junto com a chamada ao Groq.
+// função ainda precisa caber no timeout do host (Vercel) junto com a chamada ao modelo.
 const MAX_QUEUE_WAIT_MS = Number(process.env.AI_MAX_QUEUE_WAIT_MS) || 10_000;
 
 function estimateFor(endpoint: string): number {
-  return GROQ_ESTIMATED_TOKENS_PER_CALL[endpoint] || DEFAULT_ESTIMATE;
+  return ESTIMATED_TOKENS_PER_CALL[endpoint] || DEFAULT_ESTIMATE;
 }
 
 /** Quantas chamadas passadas alimentam a reserva adaptativa. */
@@ -79,11 +88,11 @@ export function percentile(values: number[], p: number): number {
 /**
  * Quanto reservar para esta chamada.
  *
- * As estimativas fixas acima são chutes de quando não havia medição — treino está em 5000, e
- * é justamente esse número que tornava a 2ª geração do minuto impossível (5000 + 5000 > 6400).
- * Agora que settle() grava o consumo verdadeiro, a reserva passa a sair do p75 das últimas
- * chamadas reais daquela rota. Se um treino custa 1800 de verdade, a reserva cai para perto
- * disso e três cabem no mesmo minuto, em vez de uma.
+ * As estimativas fixas acima servem só como piso: treino já esteve em 5000, e era justamente
+ * esse número subestimado que fazia o app liberar uma chamada achando que cabia quando na
+ * verdade não cabia. Agora que settle() grava o consumo verdadeiro, a reserva sai do p75 das
+ * últimas chamadas reais daquela rota, então ela acompanha sozinha mudanças no prompt, no
+ * catálogo de exercícios ou até uma troca de modelo — sem ninguém recalibrar à mão.
  *
  * A estimativa fixa continua valendo como piso de segurança enquanto não houver amostra
  * suficiente — é melhor reservar demais do que estourar o teto da conta.
@@ -125,7 +134,7 @@ async function reserveCostFor(
   if (samples.length < MIN_SAMPLES_TO_CALIBRATE) return fallback;
 
   // Teto no orçamento: uma reserva maior que o próprio budget recusaria tudo para sempre.
-  const calibrated = Math.min(Math.ceil(percentile(samples, 0.75)), GROQ_SAFE_TPM_BUDGET);
+  const calibrated = Math.min(Math.ceil(percentile(samples, 0.75)), SAFE_BUDGET);
   calibrationCache.set(endpoint, { value: calibrated, expiresAt: Date.now() + CALIBRATION_TTL_MS });
   return calibrated;
 }
@@ -148,7 +157,7 @@ export interface WindowRow {
 }
 
 /** Exportado para os testes: o orçamento efetivo derivado do teto da conta. */
-export const SAFE_TPM_BUDGET = GROQ_SAFE_TPM_BUDGET;
+export const SAFE_TPM_BUDGET = SAFE_BUDGET;
 
 /**
  * Em quantos ms haverá orçamento para uma chamada de `thisCallCost`.
@@ -159,7 +168,7 @@ export const SAFE_TPM_BUDGET = GROQ_SAFE_TPM_BUDGET;
  */
 export function msUntilCapacity(rows: WindowRow[], thisCallCost: number, now: number): number {
   let total = rows.reduce((sum, r) => sum + r.cost, 0);
-  if (total + thisCallCost <= GROQ_SAFE_TPM_BUDGET) return 0;
+  if (total + thisCallCost <= SAFE_BUDGET) return 0;
 
   // Da mais antiga para a mais nova: são as primeiras a expirar e liberar orçamento.
   const byAge = [...rows].sort((a, b) => a.at - b.at);
@@ -167,14 +176,14 @@ export function msUntilCapacity(rows: WindowRow[], thisCallCost: number, now: nu
 
   for (const row of byAge) {
     total -= row.cost;
-    if (total + thisCallCost <= GROQ_SAFE_TPM_BUDGET) {
+    if (total + thisCallCost <= SAFE_BUDGET) {
       return Math.max(0, row.at + WINDOW_MS - now) + margin;
     }
   }
 
   // Nem com a janela vazia a chamada cabe no orçamento: ela sozinha é maior que o teto.
   // Espera a janela limpar e segue assim mesmo — recusar para sempre seria pior, e um 429
-  // real do Groq ainda é tratado por createGroqCompletionWithRetry (lib/groqRetry.ts).
+  // real do provedor ainda é tratado por generateWithRetry (lib/geminiClient.ts).
   const last = byAge[byAge.length - 1];
   return last ? Math.max(0, last.at + WINDOW_MS - now) + margin : 0;
 }
@@ -209,13 +218,13 @@ async function loadWindow(
  *
  *   1. Cota POR USUÁRIO — impede que um único usuário autenticado consuma a chave paga do
  *      servidor sem limite.
- *   2. Teto GLOBAL de tokens/minuto da conta Groq — impede que vários usuários, cada um
+ *   2. Teto GLOBAL de tokens/minuto da conta do provedor — impede que vários usuários, cada um
  *      dentro da própria cota, estourem juntos o limite da conta.
  *
  * Sobre a trava global, duas diferenças em relação à versão anterior:
  *
  *   - A linha do log é uma RESERVA. Quem chama precisa fechá-la com `slot.settle(tokens)`
- *     depois da resposta do Groq, ou devolvê-la com `slot.release()` se a chamada falhar.
+ *     depois da resposta do modelo, ou devolvê-la com `slot.release()` se a chamada falhar.
  *     Antes a linha era gravada antes da chamada e nunca removida, então requisições que
  *     falhavam (chave ausente, 401, JSON inválido) gastavam orçamento sem consumir tokens.
  *   - Sem capacidade, a requisição ESPERA o tempo exato que falta (até MAX_QUEUE_WAIT_MS)

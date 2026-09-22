@@ -1,4 +1,3 @@
-import Groq from "groq-sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
@@ -6,7 +5,7 @@ import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
 import { isMobilityOnly } from "@/lib/exerciseType";
 import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
-import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
+import { generateWithRetry } from "@/lib/geminiClient";
 import { computeUnlock, type MethodId } from "@/lib/trainingUnlock";
 
 // Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
@@ -32,14 +31,12 @@ export async function POST(req: NextRequest) {
 
     const { apiKey, profile, config } = await req.json();
 
-    const key = apiKey || process.env.GROQ_API_KEY;
+    const key = apiKey || process.env.GEMINI_API_KEY;
 
     if (!key) {
       return NextResponse.json({ error: "API key is required. Configure nas configurações." }, { status: 401 });
     }
 
-    const groq = new Groq({ apiKey: key });
-    
     // Fetch exercises using service_role to bypass RLS — garante acesso a todos os exercícios globais
     // para qualquer usuário, incluindo novos cadastros.
     const { createClient: createServiceClient } = await import('@supabase/supabase-js');
@@ -345,22 +342,22 @@ REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause, 
 1. Use o array "targetLabels" para nomear as séries (ex: ["S1", "S2", "Drop Set"]). O tamanho DEVE ser igual ao número de "sets". Para o método tradicional, use ["S1", "S2", "S3"].
 2. Você DEVE explicar brevemente como executar o método no campo "tips" de CADA exercício (ex: "No Drop Set, ao falhar, reduza 20% da carga e continue sem descanso").`;
 
-    const response = await createGroqCompletionWithRetry(groq, {
-      model: "openai/gpt-oss-120b",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      reasoning_effort: "low",
-      // BUG FIX: 2500 tokens era insuficiente para planos de 5-6 dias com muitos exercícios
-      // JSON truncado causava JSON.parse() falhar silenciosamente
-      max_tokens: 4096,
+    const response = await generateWithRetry(key, {
+      prompt,
+      json: true,
+      // Era 4096 no Groq, e o teto era batido em TODA geração — o modelo gastava ~692 tokens
+      // em reasoning dentro do mesmo orçamento e truncava o JSON, o que chegava ao aluno como
+      // "Treino C com 5 de 7 exercícios". O Gemini aceita até 65.536 e fecha o plano sozinho
+      // em ~3900; a folga aqui é para planos de 5-6 dias, não custo extra quando não usada.
+      maxOutputTokens: 16000,
     });
 
     // Troca a estimativa pelo consumo real antes de qualquer validação que possa falhar:
     // estes tokens foram gastos de fato, então o orçamento tem que refletir isso.
-    await aiSlot.settle(response?.usage?.total_tokens);
+    await aiSlot.settle(response.totalTokens);
     aiSettled = true;
 
-    const text = response.choices[0]?.message?.content;
+    const text = response.text;
 
     if (!text) {
       throw new Error("Empty response from AI");
@@ -438,7 +435,7 @@ REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause, 
     return NextResponse.json(json);
 
   } catch (error: any) {
-    console.error("Groq API error:", error);
+    console.error("Treino AI error:", error);
     return NextResponse.json({ error: error.message || "Failed to generate workout" }, { status: 500 });
   } finally {
     if (aiSlot && !aiSettled) await aiSlot.release();

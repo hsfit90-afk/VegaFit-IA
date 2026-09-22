@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
 import { createClient } from '@/utils/supabase/server';
 import { requireAuth } from '@/utils/supabase/auth-guard';
 import { reserveAiCapacity, type AiReservation } from '@/utils/rate-limit';
 import { fetchLatestAnamneseAnswers } from '@/lib/aiHealthContext';
-import { createGroqCompletionWithRetry } from '@/lib/groqRetry';
+import { generateWithRetry } from '@/lib/geminiClient';
 
 // Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
 // capacidade (utils/rate-limit.ts) pode somar até AI_MAX_QUEUE_WAIT_MS em cima disso. Sem esta
@@ -32,11 +31,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing current plan or profile' }, { status: 400 });
     }
 
-    const keyToUse = apiKey || process.env.GROQ_API_KEY;
+    const keyToUse = apiKey || process.env.GEMINI_API_KEY;
     if (!keyToUse) {
       return NextResponse.json({ error: 'API Key is missing. Configure nas configurações.' }, { status: 401 });
     }
-    const groq = new Groq({ apiKey: keyToUse, timeout: 25000, maxRetries: 1 });
 
     // BUG FIX: essa era a única rota de IA do app que nunca teve checagem de lesão/condição
     // médica da anamnese — mesmo risco de segurança já corrigido em treino/coach/swap/nutrition.
@@ -88,20 +86,18 @@ Exemplo do retorno:
   "sessions": [ ... ]
 }`;
 
-    const response = await createGroqCompletionWithRetry(groq, {
-      model: "openai/gpt-oss-120b",
-      messages: [{ role: "user", content: systemPrompt }],
-      response_format: { type: "json_object" },
-      reasoning_effort: "low",
-      max_tokens: 3500,
+    const response = await generateWithRetry(keyToUse, {
+      prompt: systemPrompt,
+      json: true,
+      maxOutputTokens: 8000,
     });
 
     // Troca a estimativa pelo consumo real antes de qualquer validação que possa falhar:
     // estes tokens foram gastos de fato, então o orçamento tem que refletir isso.
-    await aiSlot.settle(response?.usage?.total_tokens);
+    await aiSlot.settle(response.totalTokens);
     aiSettled = true;
 
-    const responseText = response.choices[0]?.message?.content;
+    const responseText = response.text;
     if (!responseText) throw new Error("Empty AI response");
 
     const newPlan = JSON.parse(responseText);

@@ -1,4 +1,3 @@
-import Groq from "groq-sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
@@ -6,7 +5,7 @@ import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
 import { isMobilityOnly } from "@/lib/exerciseType";
 import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
-import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
+import { generateWithRetry } from "@/lib/geminiClient";
 
 // Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
 // capacidade (utils/rate-limit.ts) pode somar até AI_MAX_QUEUE_WAIT_MS em cima disso. Sem esta
@@ -26,24 +25,23 @@ export async function POST(req: NextRequest) {
 
     // Limite DIÁRIO, não por hora: 30/hora permitia 480 trocas/dia por usuário — teto de custo
     // desnecessário (ninguém monta treino de verdade com mais de 20 trocas num dia). Com 100
-    // alunos, o pior caso cai de ~US$ 1.170/mês para o que o teto de gasto do Groq permitir.
+    // alunos, o pior caso cai de ~US$ 1.170/mês para o que o teto de gasto do provedor permitir.
     const capacity = await reserveAiCapacity(user.id, "swap", { limit: 20, windowMinutes: 1440 });
     if (capacity.error) return capacity.error;
     aiSlot = capacity.slot;
 
     const { apiKey, currentExerciseName, muscleGroup, equipment, libraryExercises } = await req.json();
-    const key = apiKey || process.env.GROQ_API_KEY;
+    const key = apiKey || process.env.GEMINI_API_KEY;
 
     if (!key) {
       return NextResponse.json({ error: "API key is required." }, { status: 401 });
     }
 
-    const groq = new Groq({ apiKey: key });
-
     // BUG FIX (achado testando de verdade): mandar a biblioteca inteira (500+ exercícios, ~19500
-    // tokens) sempre estourava o limite de 8000 tokens/min da Groq — o endpoint SEMPRE falhava com
-    // 413 e caía silenciosamente no sorteio aleatório local (o botão "trocar com IA" nunca usava
-    // IA de verdade, ninguém percebeu porque o fallback não quebra a UI). Filtra pelo grupo
+    // tokens) sempre estourava o limite de 8000 tokens/min que a conta Groq tinha na época — o
+    // endpoint SEMPRE falhava com 413 e caía no sorteio aleatório local (o botão "trocar com IA"
+    // nunca usava IA de verdade; ninguém percebeu porque o fallback não quebra a UI). O filtro
+    // segue valendo no Gemini: prompt menor é mais rápido e mais barato. Filtra pelo grupo
     // muscular do exercício atual ANTES de montar o prompt, igual já fazemos na geração.
     let candidates = (libraryExercises || []) as { id: string; name: string; muscleGroup: string }[];
 
@@ -113,26 +111,24 @@ Exemplo de retorno OBRIGATÓRIO:
     // reasoning_effort), 2x mais rápido (1000 tps) e bem mais barato. A troca responde por ~70% do
     // consumo de tokens do app (medido em ai_usage_log), então é aqui que o custo por aluno cai.
     // O 120B fica reservado pra geração de treino e coach chat, onde a qualidade pesa mais.
-    const response = await createGroqCompletionWithRetry(groq, {
-      model: "openai/gpt-oss-20b",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      reasoning_effort: "low",
-      max_tokens: 300,
+    const response = await generateWithRetry(key, {
+      prompt,
+      json: true,
+      maxOutputTokens: 800,
     });
 
     // Troca a estimativa pelo consumo real antes de qualquer validação que possa falhar:
     // estes tokens foram gastos de fato, então o orçamento tem que refletir isso.
-    await aiSlot.settle(response?.usage?.total_tokens);
+    await aiSlot.settle(response.totalTokens);
     aiSettled = true;
 
-    const text = response.choices[0]?.message?.content;
+    const text = response.text;
     if (!text) throw new Error("Empty response from AI");
 
     const json = JSON.parse(text);
     return NextResponse.json(json);
   } catch (error: any) {
-    console.error("Groq Swap API error:", error);
+    console.error("Swap AI error:", error);
     return NextResponse.json({ error: error.message || "Failed to swap exercise" }, { status: 500 });
   } finally {
     if (aiSlot && !aiSettled) await aiSlot.release();

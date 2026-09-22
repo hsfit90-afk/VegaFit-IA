@@ -1,10 +1,9 @@
-import Groq from "groq-sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
 import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
-import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
+import { generateWithRetry } from "@/lib/geminiClient";
 
 // Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
 // capacidade (utils/rate-limit.ts) pode somar até AI_MAX_QUEUE_WAIT_MS em cima disso. Sem esta
@@ -28,13 +27,11 @@ export async function POST(req: NextRequest) {
 
     const { apiKey, profile, message, history } = await req.json();
 
-    const key = apiKey || process.env.GROQ_API_KEY;
+    const key = apiKey || process.env.GEMINI_API_KEY;
 
     if (!key) {
       return NextResponse.json({ error: "API key is required" }, { status: 401 });
     }
-
-    const groq = new Groq({ apiKey: key });
 
     // BUG FIX: o Coach só recebia nome/objetivo/nível/peso/altura — não sabia o treino atual do
     // aluno, o histórico real de sessões, nem lesões/condições médicas da anamnese. Respostas
@@ -83,33 +80,27 @@ Use o plano atual e o histórico recente acima pra dar respostas específicas (e
 Sempre limite suas respostas a no máximo 2-3 parágrafos curtos para facilitar a leitura no celular.
 Use formatação leve (negrito com **texto**) para destacar os pontos principais.`;
 
-    const messages: Groq.Chat.ChatCompletionMessageParam[] = [
-      { role: "system", content: systemInstruction },
-      ...history.map((msg: any) => ({
-        role: msg.role === 'user' ? 'user' as const : 'assistant' as const,
-        content: msg.content,
+    const response = await generateWithRetry(key, {
+      system: systemInstruction,
+      history: (history || []).map((msg: any) => ({
+        role: msg.role === 'user' ? ('user' as const) : ('model' as const),
+        text: msg.content,
       })),
-      { role: "user", content: message },
-    ];
-
-    const response = await createGroqCompletionWithRetry(groq, {
-      model: "openai/gpt-oss-120b",
-      messages,
-      reasoning_effort: "low",
-      max_tokens: 512,
+      prompt: message,
+      maxOutputTokens: 1024,
     });
 
     // Troca a estimativa pelo consumo real antes de qualquer validação que possa falhar:
     // estes tokens foram gastos de fato, então o orçamento tem que refletir isso.
-    await aiSlot.settle(response?.usage?.total_tokens);
+    await aiSlot.settle(response.totalTokens);
     aiSettled = true;
 
-    const text = response.choices[0]?.message?.content;
+    const text = response.text;
 
     return NextResponse.json({ text });
 
   } catch (error: any) {
-    console.error("Groq API error:", error);
+    console.error("Coach chat AI error:", error);
     return NextResponse.json({ error: error.message || "Failed to respond" }, { status: 500 });
   } finally {
     if (aiSlot && !aiSettled) await aiSlot.release();

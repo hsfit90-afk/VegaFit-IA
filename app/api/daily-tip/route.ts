@@ -1,8 +1,7 @@
-import Groq from "groq-sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
 import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
-import { createGroqCompletionWithRetry } from "@/lib/groqRetry";
+import { generateWithRetry } from "@/lib/geminiClient";
 
 const FALLBACK_TIP = "Mantenha a constância. A hidratação e um bom descanso são tão importantes quanto o treino.";
 
@@ -29,13 +28,11 @@ export async function POST(req: NextRequest) {
     aiSlot = capacity.slot;
 
     const { apiKey, profile } = await req.json();
-    const key = apiKey || process.env.GROQ_API_KEY;
+    const key = apiKey || process.env.GEMINI_API_KEY;
 
     if (!key) {
       return NextResponse.json({ tip: FALLBACK_TIP });
     }
-
-    const groq = new Groq({ apiKey: key });
 
     const prompt = `Você é um coach de saúde e fitness.
 Gere UMA única dica curta (máximo 2 frases) de treino, nutrição ou recuperação para um aluno com o seguinte perfil:
@@ -46,19 +43,17 @@ Gere UMA única dica curta (máximo 2 frases) de treino, nutrição ou recupera�
 A dica deve ser motivadora, direta e mudar o foco (as vezes falar de água, outras de sono, outras de proteína, outras de carga, dependendo do perfil).
 Retorne apenas o texto da dica, sem aspas e sem formatação extra.`;
 
-    const response = await createGroqCompletionWithRetry(groq, {
-      model: "openai/gpt-oss-120b",
-      messages: [{ role: "user", content: prompt }],
-      reasoning_effort: "low",
-      max_tokens: 300,
+    const response = await generateWithRetry(key, {
+      prompt,
+      maxOutputTokens: 500,
     }, 1);
 
     // Troca a estimativa pelo consumo real antes de qualquer validação que possa falhar:
     // estes tokens foram gastos de fato, então o orçamento tem que refletir isso.
-    await aiSlot.settle(response?.usage?.total_tokens);
+    await aiSlot.settle(response.totalTokens);
     aiSettled = true;
 
-    const text = response.choices[0]?.message?.content;
+    const text = response.text;
 
     if (!text) {
       throw new Error("Empty response from AI");
@@ -67,7 +62,7 @@ Retorne apenas o texto da dica, sem aspas e sem formatação extra.`;
     return NextResponse.json({ tip: text.trim() });
 
   } catch (error: any) {
-    console.error("Groq API error:", error);
+    console.error("Daily tip AI error:", error);
     return NextResponse.json({ tip: FALLBACK_TIP });
   } finally {
     if (aiSlot && !aiSettled) await aiSlot.release();
