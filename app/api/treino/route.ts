@@ -4,7 +4,7 @@ import { requireAuth } from "@/utils/supabase/auth-guard";
 import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
 import { isMobilityOnly } from "@/lib/exerciseType";
-import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
+import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
 import { computeUnlock, type MethodId } from "@/lib/trainingUnlock";
 
@@ -31,7 +31,11 @@ export async function POST(req: NextRequest) {
 
     const { apiKey, profile, config } = await req.json();
 
-    const key = apiKey || process.env.GEMINI_API_KEY;
+    // M3: o apiKey vem do CORPO da requisicao e acaba virando um header HTTP. Uma chave do
+    // Gemini nao tem espaco nem quebra de linha; uma que tenha veio colada errada ou forjada.
+    // Nos dois casos, ignorar e usar a do servidor.
+    const chaveDoCorpo = typeof apiKey === 'string' ? apiKey.trim() : '';
+    const key = /^[A-Za-z0-9._-]+$/.test(chaveDoCorpo) ? chaveDoCorpo : process.env.GEMINI_API_KEY;
 
     if (!key) {
       return NextResponse.json({ error: "API key is required. Configure nas configurações." }, { status: 401 });
@@ -270,10 +274,11 @@ export async function POST(req: NextRequest) {
       ? `
 
 INFORMAÇÕES DE SAÚDE DO ALUNO (extraídas da anamnese oficial, aplique SEMPRE — independem do texto de "Preferências e Limitações" acima):
-- Lesões atuais ou histórico: ${latestAnswers.lesoes?.trim() || 'Nenhuma relatada'}
-- Condições médicas relevantes: ${latestAnswers.condicoes?.trim() || 'Nenhuma relatada'}
-- Medicamentos contínuos: ${latestAnswers.medicamentos?.trim() || 'Nenhum relatado'}
-- Liberação médica para treinar: ${latestAnswers.liberacao || 'Não informado'}
+- Lesões atuais ou histórico: ${campoAnamneseParaPrompt(latestAnswers.lesoes, 'Nenhuma relatada')}
+- Condições médicas relevantes: ${campoAnamneseParaPrompt(latestAnswers.condicoes, 'Nenhuma relatada')}
+- Medicamentos contínuos: ${campoAnamneseParaPrompt(latestAnswers.medicamentos, 'Nenhum relatado')}
+- Liberação médica para treinar: ${campoAnamneseParaPrompt(latestAnswers.liberacao, 'Não informado')}
+${AVISO_CONTEUDO_DO_ALUNO}
 
 REGRA CRÍTICA DE SEGURANÇA (PRIORIDADE MÁXIMA, INEGOCIÁVEL): NUNCA selecione exercícios que agravem as lesões ou condições médicas listadas acima, mesmo que o aluno não as repita no campo de preferências. Se a liberação médica for "Não" ou "Não verifiquei", priorize exercícios de baixo impacto e adicione um aviso breve no campo "tips" do primeiro exercício da primeira sessão recomendando confirmar a liberação médica antes de treinar.`
       : '';
@@ -502,7 +507,10 @@ REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause, 
 
   } catch (error: any) {
     console.error("Treino AI error:", error);
-    return NextResponse.json({ error: error.message || "Failed to generate workout" }, { status: 500 });
+    // A2: a mensagem do SDK pode conter a CHAVE DE API -- foi o que apareceu na tela do
+    // aluno em 23/09/2026 ("Headers.append: AQ.Ab8... is an invalid header value"). O erro
+    // inteiro vai para o log do servidor; o navegador recebe texto generico.
+    return NextResponse.json({ error: "Nao conseguimos gerar o treino agora. Tente novamente." }, { status: 500 });
   } finally {
     if (aiSlot && !aiSettled) await aiSlot.release();
   }

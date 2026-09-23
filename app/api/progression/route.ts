@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { requireAuth } from '@/utils/supabase/auth-guard';
 import { reserveAiCapacity, type AiReservation } from '@/utils/rate-limit';
-import { fetchLatestAnamneseAnswers } from '@/lib/aiHealthContext';
+import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from '@/lib/aiHealthContext';
 import { generateWithRetry } from '@/lib/geminiClient';
 
 // Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
@@ -31,7 +31,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing current plan or profile' }, { status: 400 });
     }
 
-    const keyToUse = apiKey || process.env.GEMINI_API_KEY;
+    // M3: o apiKey vem do CORPO da requisicao e acaba virando um header HTTP. Uma chave do
+    // Gemini nao tem espaco nem quebra de linha; uma que tenha veio colada errada ou forjada.
+    // Nos dois casos, ignorar e usar a do servidor.
+    const chaveDoCorpo = typeof apiKey === 'string' ? apiKey.trim() : '';
+    const keyToUse = /^[A-Za-z0-9._-]+$/.test(chaveDoCorpo) ? chaveDoCorpo : process.env.GEMINI_API_KEY;
     if (!keyToUse) {
       return NextResponse.json({ error: 'API Key is missing. Configure nas configurações.' }, { status: 401 });
     }
@@ -45,7 +49,7 @@ export async function POST(req: Request) {
     const lesoes = latestAnswers?.lesoes?.trim();
     const condicoes = latestAnswers?.condicoes?.trim();
     const healthBlock = (lesoes || condicoes)
-      ? `\nDADOS DE SAÚDE DO ALUNO (aplique SEMPRE): Lesões: ${lesoes || 'Nenhuma relatada'}. Condições médicas: ${condicoes || 'Nenhuma relatada'}. REGRA CRÍTICA DE SEGURANÇA: NUNCA aumente carga/volume de um exercício que possa agravar essas lesões/condições — nesse caso, mantenha ou reduza, mesmo que a regra de progressão pediria aumento.`
+      ? `\nDADOS DE SAÚDE DO ALUNO (aplique SEMPRE): Lesões: ${campoAnamneseParaPrompt(lesoes, 'Nenhuma relatada')}. Condições médicas: ${campoAnamneseParaPrompt(condicoes, 'Nenhuma relatada')}. ${AVISO_CONTEUDO_DO_ALUNO} REGRA CRÍTICA DE SEGURANÇA: NUNCA aumente carga/volume de um exercício que possa agravar essas lesões/condições — nesse caso, mantenha ou reduza, mesmo que a regra de progressão pediria aumento.`
       : '';
 
     const systemPrompt = `Você é um Personal Trainer especialista em Periodização, Hipertrofia e Sobrecarga Progressiva.
@@ -108,7 +112,10 @@ Exemplo do retorno:
     return NextResponse.json({ plan: newPlan });
   } catch (error: any) {
     console.error('Progression API Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // A2: a mensagem do SDK pode conter a CHAVE DE API -- foi o que apareceu na tela do
+    // aluno em 23/09/2026 ("Headers.append: AQ.Ab8... is an invalid header value"). O erro
+    // inteiro vai para o log do servidor; o navegador recebe texto generico.
+    return NextResponse.json({ error: "Nao conseguimos calcular a progressao agora. Tente novamente." }, { status: 500 });
   } finally {
     if (aiSlot && !aiSettled) await aiSlot.release();
   }

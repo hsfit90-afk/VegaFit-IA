@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
 import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
-import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
+import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
 
 // Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
@@ -27,7 +27,11 @@ export async function POST(req: NextRequest) {
 
     const { apiKey, profile, message, history } = await req.json();
 
-    const key = apiKey || process.env.GEMINI_API_KEY;
+    // M3: o apiKey vem do CORPO da requisicao e acaba virando um header HTTP. Uma chave do
+    // Gemini nao tem espaco nem quebra de linha; uma que tenha veio colada errada ou forjada.
+    // Nos dois casos, ignorar e usar a do servidor.
+    const chaveDoCorpo = typeof apiKey === 'string' ? apiKey.trim() : '';
+    const key = /^[A-Za-z0-9._-]+$/.test(chaveDoCorpo) ? chaveDoCorpo : process.env.GEMINI_API_KEY;
 
     if (!key) {
       return NextResponse.json({ error: "API key is required" }, { status: 401 });
@@ -55,7 +59,7 @@ export async function POST(req: NextRequest) {
       : 'Nenhum treino registrado ainda.';
 
     const healthSummary = latestAnswers
-      ? `- Lesões atuais ou histórico: ${latestAnswers.lesoes?.trim() || 'Nenhuma relatada'}\n- Condições médicas relevantes: ${latestAnswers.condicoes?.trim() || 'Nenhuma relatada'}\n- Liberação médica para treinar: ${latestAnswers.liberacao || 'Não informado'}`
+      ? `- Lesões atuais ou histórico: ${campoAnamneseParaPrompt(latestAnswers.lesoes, 'Nenhuma relatada')}\n- Condições médicas relevantes: ${campoAnamneseParaPrompt(latestAnswers.condicoes, 'Nenhuma relatada')}\n- Liberação médica para treinar: ${campoAnamneseParaPrompt(latestAnswers.liberacao, 'Não informado')}\n${AVISO_CONTEUDO_DO_ALUNO}`
       : 'Aluno ainda não preencheu a anamnese.';
 
     const systemInstruction = `Você é o VegaFit Coach, um personal trainer especialista em musculação, nutrição esportiva e biomecânica.
@@ -101,7 +105,10 @@ Use formatação leve (negrito com **texto**) para destacar os pontos principais
 
   } catch (error: any) {
     console.error("Coach chat AI error:", error);
-    return NextResponse.json({ error: error.message || "Failed to respond" }, { status: 500 });
+    // A2: a mensagem do SDK pode conter a CHAVE DE API -- foi o que apareceu na tela do
+    // aluno em 23/09/2026 ("Headers.append: AQ.Ab8... is an invalid header value"). O erro
+    // inteiro vai para o log do servidor; o navegador recebe texto generico.
+    return NextResponse.json({ error: "O coach nao conseguiu responder agora. Tente novamente." }, { status: 500 });
   } finally {
     if (aiSlot && !aiSettled) await aiSlot.release();
   }

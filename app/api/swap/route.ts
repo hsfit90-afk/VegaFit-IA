@@ -4,7 +4,7 @@ import { requireAuth } from "@/utils/supabase/auth-guard";
 import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
 import { isMobilityOnly } from "@/lib/exerciseType";
-import { fetchLatestAnamneseAnswers } from "@/lib/aiHealthContext";
+import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
 
 // Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
@@ -31,7 +31,11 @@ export async function POST(req: NextRequest) {
     aiSlot = capacity.slot;
 
     const { apiKey, currentExerciseName, muscleGroup, equipment, libraryExercises } = await req.json();
-    const key = apiKey || process.env.GEMINI_API_KEY;
+    // M3: o apiKey vem do CORPO da requisicao e acaba virando um header HTTP. Uma chave do
+    // Gemini nao tem espaco nem quebra de linha; uma que tenha veio colada errada ou forjada.
+    // Nos dois casos, ignorar e usar a do servidor.
+    const chaveDoCorpo = typeof apiKey === 'string' ? apiKey.trim() : '';
+    const key = /^[A-Za-z0-9._-]+$/.test(chaveDoCorpo) ? chaveDoCorpo : process.env.GEMINI_API_KEY;
 
     if (!key) {
       return NextResponse.json({ error: "API key is required." }, { status: 401 });
@@ -85,7 +89,7 @@ export async function POST(req: NextRequest) {
     const lesoes = latestAnswers?.lesoes?.trim();
     const condicoes = latestAnswers?.condicoes?.trim();
     const healthBlock = (lesoes || condicoes)
-      ? `\n\nDADOS DE SAÚDE DO ALUNO (aplique SEMPRE): Lesões: ${lesoes || 'Nenhuma relatada'}. Condições médicas: ${condicoes || 'Nenhuma relatada'}. REGRA CRÍTICA DE SEGURANÇA: NUNCA escolha um substituto que possa agravar essas lesões/condições, mesmo que ele pareça biomecanicamente parecido com o original.`
+      ? `\n\nDADOS DE SAÚDE DO ALUNO (aplique SEMPRE): Lesões: ${campoAnamneseParaPrompt(lesoes, 'Nenhuma relatada')}. Condições médicas: ${campoAnamneseParaPrompt(condicoes, 'Nenhuma relatada')}. ${AVISO_CONTEUDO_DO_ALUNO} REGRA CRÍTICA DE SEGURANÇA: NUNCA escolha um substituto que possa agravar essas lesões/condições, mesmo que ele pareça biomecanicamente parecido com o original.`
       : '';
 
     const libraryStr = candidates.map((e) => `${e.id}: ${e.name} (${e.muscleGroup})`).join('\n');
@@ -129,7 +133,10 @@ Exemplo de retorno OBRIGATÓRIO:
     return NextResponse.json(json);
   } catch (error: any) {
     console.error("Swap AI error:", error);
-    return NextResponse.json({ error: error.message || "Failed to swap exercise" }, { status: 500 });
+    // A2: a mensagem do SDK pode conter a CHAVE DE API -- foi o que apareceu na tela do
+    // aluno em 23/09/2026 ("Headers.append: AQ.Ab8... is an invalid header value"). O erro
+    // inteiro vai para o log do servidor; o navegador recebe texto generico.
+    return NextResponse.json({ error: "Nao conseguimos trocar o exercicio agora. Tente novamente." }, { status: 500 });
   } finally {
     if (aiSlot && !aiSettled) await aiSlot.release();
   }

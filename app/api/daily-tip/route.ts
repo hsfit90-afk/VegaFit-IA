@@ -28,7 +28,11 @@ export async function POST(req: NextRequest) {
     aiSlot = capacity.slot;
 
     const { apiKey, profile } = await req.json();
-    const key = apiKey || process.env.GEMINI_API_KEY;
+    // M3: o apiKey vem do CORPO da requisicao e acaba virando um header HTTP. Uma chave do
+    // Gemini nao tem espaco nem quebra de linha; uma que tenha veio colada errada ou forjada.
+    // Nos dois casos, ignorar e usar a do servidor.
+    const chaveDoCorpo = typeof apiKey === 'string' ? apiKey.trim() : '';
+    const key = /^[A-Za-z0-9._-]+$/.test(chaveDoCorpo) ? chaveDoCorpo : process.env.GEMINI_API_KEY;
 
     if (!key) {
       return NextResponse.json({ tip: FALLBACK_TIP });

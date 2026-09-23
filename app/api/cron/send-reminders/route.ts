@@ -1,10 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import webpush from "web-push";
 import { INACTIVITY_RESET_DAYS } from "@/lib/periodization";
 
+/**
+ * M7: comparação em tempo constante do segredo do cron.
+ *
+ * O `!==` de string sai no primeiro byte diferente, então o tempo de resposta revela quantos
+ * caracteres iniciais estavam certos. Esta rota não tem rate limit e lê as inscrições de push
+ * de TODOS os usuários com service_role, então vale fechar o canal.
+ *
+ * timingSafeEqual exige buffers do mesmo tamanho — por isso o tamanho é comparado antes, o que
+ * vaza apenas o comprimento do segredo, não o conteúdo.
+ */
+function segredoConfere(recebido: string | null, esperado: string | undefined): boolean {
+  if (!recebido || !esperado) return false;
+  const a = Buffer.from(recebido);
+  const b = Buffer.from(`Bearer ${esperado}`);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!segredoConfere(req.headers.get("authorization"), process.env.CRON_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

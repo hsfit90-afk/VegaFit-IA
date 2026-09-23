@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { requireAuth } from '@/utils/supabase/auth-guard';
 import { reserveAiCapacity, type AiReservation } from '@/utils/rate-limit';
-import { fetchLatestAnamneseAnswers } from '@/lib/aiHealthContext';
+import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from '@/lib/aiHealthContext';
 import { generateWithRetry } from '@/lib/geminiClient';
 
 // Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     const restricoes = latestAnswers?.restricoes?.trim();
     const condicoes = latestAnswers?.condicoes?.trim();
     const healthBlock = (restricoes || condicoes)
-      ? `\nRestrições alimentares/alergias: ${restricoes || 'Nenhuma relatada'}\nCondições médicas relevantes: ${condicoes || 'Nenhuma relatada'}\nREGRA CRÍTICA DE SEGURANÇA: NUNCA inclua nas refeições sugeridas nenhum alimento que conflite com as restrições/alergias acima.`
+      ? `\nRestrições alimentares/alergias: ${campoAnamneseParaPrompt(restricoes, 'Nenhuma relatada')}\nCondições médicas relevantes: ${campoAnamneseParaPrompt(condicoes, 'Nenhuma relatada')}\n${AVISO_CONTEUDO_DO_ALUNO}\nREGRA CRÍTICA DE SEGURANÇA: NUNCA inclua nas refeições sugeridas nenhum alimento que conflite com as restrições/alergias acima.`
       : '';
 
     const systemPrompt = `Você é um Nutricionista Esportivo de alto nível.
@@ -97,7 +97,10 @@ RETORNE APENAS UM JSON VÁLIDO no seguinte formato exato, sem NENHUM markdown:
     return NextResponse.json(nutritionPlan);
   } catch (error: any) {
     console.error('Nutrition API Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // A2: a mensagem do SDK pode conter a CHAVE DE API -- foi o que apareceu na tela do
+    // aluno em 23/09/2026 ("Headers.append: AQ.Ab8... is an invalid header value"). O erro
+    // inteiro vai para o log do servidor; o navegador recebe texto generico.
+    return NextResponse.json({ error: "Nao conseguimos montar o plano alimentar agora. Tente novamente." }, { status: 500 });
   } finally {
     if (aiSlot && !aiSettled) await aiSlot.release();
   }
