@@ -47,6 +47,14 @@ export interface GeminiResult {
   truncated: boolean;
 }
 
+/** Erro de JSON invalido, separado para o laco de retry reconhece-lo. */
+class RespostaJsonInvalida extends Error {
+  constructor(causa: string) {
+    super(`A IA devolveu JSON invalido: ${causa}`);
+    this.name = 'RespostaJsonInvalida';
+  }
+}
+
 function client(apiKey: string) {
   return new GoogleGenAI({ apiKey });
 }
@@ -63,9 +71,16 @@ function client(apiKey: string) {
  *
  * Um 400 (prompt inválido) NÃO é repetido — repetir só gastaria cota para falhar igual.
  *
- * O retry de JSON malformado que existia no Groq saiu: `responseMimeType: 'application/json'`
- * faz o próprio Gemini garantir JSON sintaticamente válido, então o modo de falha que o
- * groqRetry cobria (json_validate_failed) não existe mais.
+ * O retry de JSON malformado CONTINUA valendo. Na migração eu assumi que
+ * `responseMimeType: 'application/json'` garantia JSON sintaticamente válido e removi essa
+ * proteção — errado. Sem um `responseSchema` declarado, o responseMimeType é esforço-melhor,
+ * não garantia: em produção, a segunda geração de treino voltou com
+ * `"youtubeSearchTerm": inverso cr...` — um valor de texto sem aspas — e o JSON.parse da rota
+ * estourou com 500 na cara do aluno. Funcionara nas 4 tentativas locais antes disso.
+ *
+ * Agora o parse acontece AQUI, e uma resposta impossível de parsear conta como falha
+ * transitória: a mesma chamada repetida quase sempre volta bem, que era exatamente a
+ * observação registrada no antigo lib/groqRetry.ts.
  */
 export async function generateWithRetry(
   apiKey: string,
@@ -101,6 +116,17 @@ export async function generateWithRetry(
 
       if (!text) throw new Error('Resposta vazia da IA');
 
+      // Valida o JSON aqui, antes de devolver, para um JSON quebrado virar retry em vez de
+      // 500 na rota. Truncamento por teto de tokens NAO e transitorio — repetir daria o
+      // mesmo resultado —, entao esse caso passa direto e quem chama decide o que fazer.
+      if (req.json && finishReason !== 'MAX_TOKENS') {
+        try {
+          JSON.parse(text);
+        } catch (parseErr: any) {
+          throw new RespostaJsonInvalida(String(parseErr?.message || parseErr).slice(0, 120));
+        }
+      }
+
       return {
         text,
         totalTokens: response.usageMetadata?.totalTokenCount,
@@ -112,6 +138,7 @@ export async function generateWithRetry(
       const status = err?.status ?? err?.code;
       const msg = String(err?.message || '');
       const transitorio =
+        err instanceof RespostaJsonInvalida ||
         status === 429 ||
         status === 503 ||
         status === 500 ||
