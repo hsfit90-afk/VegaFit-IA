@@ -129,7 +129,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Load History
-      const { data: historyData } = await supabase.from('workout_history').select('*').eq('user_id', user.id).order('date', { ascending: false });
+      // D2: sem limite, isto baixava o histórico INTEIRO a cada abertura de qualquer tela —
+      // o AppContext envolve o app todo. Hoje são poucas sessões; com dois anos de treino são
+      // ~300, cada uma com o jsonb `exercises` cheio de séries. Degradação silenciosa que pega
+      // justamente quem mais usa o app.
+      //
+      // 90 cobre tudo que o contexto precisa: streak (dias consecutivos), fadiga das últimas
+      // 24h e os gráficos da home. A tela de histórico completo busca por conta própria.
+      const HISTORICO_NO_CONTEXTO = 90;
+      const { data: historyData } = await supabase
+        .from('workout_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+        .limit(HISTORICO_NO_CONTEXTO);
       if (historyData && mounted) {
         const parsedHistory = historyData.map(h => ({
           id: h.id,

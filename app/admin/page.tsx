@@ -24,7 +24,15 @@ export default function AdminDashboard() {
     }
 
     async function loadUsers() {
-      const { data, error } = await supabase.from('profiles').select('*');
+      // D1: era select('*'), que trazia TODA coluna de TODO perfil sem limite — incluindo
+      // gemini_api_key (chave de API em texto puro), peso, altura, cintura e quadril. A tela
+      // usa cinco campos; pedir o resto é vazamento gratuito, e sem limite é extração em massa
+      // numa requisição. O teto de 200 é folgado para o tamanho atual e impede o pior caso.
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, role, max_clients, trainer_id')
+        .order('created_at', { ascending: false })
+        .limit(200);
       if (data) {
         setUsers(data);
       }
