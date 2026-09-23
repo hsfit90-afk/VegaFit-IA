@@ -42,6 +42,11 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/register') &&
     !request.nextUrl.pathname.startsWith('/auth/callback') &&
     !request.nextUrl.pathname.startsWith('/forgot-password') &&
+    // A política de privacidade PRECISA ser pública. Ela estava atrás do login, então quem
+    // ainda não tem conta — justamente quem precisa decidir se aceita o tratamento dos dados,
+    // incluindo os de saúde — era redirecionado para /login ao tentar lê-la. O art. 9 da LGPD
+    // dá ao titular o direito de informação clara sobre o tratamento ANTES de consentir.
+    !request.nextUrl.pathname.startsWith('/privacy') &&
     !request.nextUrl.pathname.startsWith('/api/cron/')
   ) {
     // no user, potentially respond by redirecting the user to the login page

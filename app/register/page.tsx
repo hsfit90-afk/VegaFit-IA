@@ -92,6 +92,18 @@ export default function Register() {
             Fazer login
           </Link>
         </p>
+
+        {/* O cadastro não linkava a política em lugar nenhum, e ela ainda estava atrás do
+            login — a pessoa criava conta sem ter como saber quais dados seriam tratados.
+            O app coleta dado de saúde na anamnese, então a informação prévia não é cortesia:
+            é o art. 9 da LGPD, e o consentimento do art. 11, I depende dela. */}
+        <p className="text-center text-gray-500 text-xs mt-6">
+          Ao criar sua conta você concorda com nossa{' '}
+          <Link href="/privacy" className="text-gray-400 hover:text-[var(--color-accent)] underline">
+            Política de Privacidade
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );
