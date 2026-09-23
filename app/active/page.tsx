@@ -864,29 +864,40 @@ export default function ActiveWorkout() {
             
             {/* Mídia no TOPO (Header do Card).
 
-                A altura era h-56 md:h-72 lg:h-80 — definida por breakpoint de LARGURA, mas o
-                incômodo é de ALTURA de tela. Um notebook é largo (dispara o lg:) e baixo: com
-                ~650px úteis, uma caixa de 320px comia metade da tela antes de aparecer o
-                primeiro campo de série, e o aluno tinha que rolar para treinar.
+                O problema que isto resolve: o aluno não via os pés do movimento. A caixa era
+                larga e baixa (h-56 md:h-72 lg:h-80, ou seja ~768x320 = quase 2.4:1) e o vídeo
+                usava `object-cover`, que PREENCHE cortando o que não cabe.
 
-                O max-h em vh resolve: a mídia nunca passa de ~38% da altura visível, seja qual
-                for a largura da janela. Os dois ramos do ternário usam a mesma altura para o
-                card não pular de tamanho entre um exercício com vídeo e outro sem. */}
+                Só que TODAS as 60 mídias do catálogo são QUADRADAS — medidas no container mp4,
+                são 480x480 ou 360x360, proporção exata 1.00. Encaixar um quadrado numa caixa
+                2.4:1 com cover corta topo e base, que é justamente onde estão pés e cabeça.
+
+                A correção tem duas partes, e uma sozinha não bastaria:
+                  - a caixa passa a ser quadrada (aspect-square), acompanhando a mídia;
+                  - o vídeo passa a `object-contain`, para caber inteiro em vez de preencher.
+
+                O tamanho é limitado pela LARGURA (max-w) e não pela altura: como a caixa é
+                quadrada, limitar a largura já limita a altura, e a mídia nunca domina a tela
+                nem no notebook, que é largo e baixo. */}
             <div className="w-full bg-black/50 border-b border-border/50">
               {customMediaUrl ? (
-                <div className="w-full h-48 md:h-56 lg:h-64 max-h-[38vh] relative flex items-center justify-center bg-black">
-                  {customMediaUrl.endsWith('.mp4') ? (
-                    <video src={customMediaUrl} autoPlay loop muted playsInline className="w-full h-full object-cover opacity-90" />
-                  ) : (
-                    <img src={customMediaUrl} alt={ex.name} className="w-full h-full object-contain" />
-                  )}
-                  <div className="absolute bottom-2 left-3 px-2 py-1 bg-black/60 rounded-md backdrop-blur-md flex items-center gap-1.5 border border-white/10">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                    <span className="text-[10px] text-primary font-bold uppercase tracking-wider">Verificado</span>
+                <div className="w-full flex items-center justify-center bg-black py-3">
+                  <div className="relative aspect-square w-full max-w-[17rem] sm:max-w-[20rem]">
+                    {customMediaUrl.endsWith('.mp4') ? (
+                      <video src={customMediaUrl} autoPlay loop muted playsInline className="w-full h-full object-contain opacity-90" />
+                    ) : (
+                      <img src={customMediaUrl} alt={ex.name} className="w-full h-full object-contain" />
+                    )}
+                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded-md backdrop-blur-md flex items-center gap-1.5 border border-white/10">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                      <span className="text-[10px] text-primary font-bold uppercase tracking-wider">Verificado</span>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="w-full bg-surface-light border-b border-border/50 h-48 md:h-56 lg:h-64 max-h-[38vh] flex flex-col items-center justify-center p-6 text-center">
+                /* Mesma altura aproximada da caixa com mídia (17rem + o py-3), para o card não
+                   pular de tamanho entre um exercício que tem vídeo e outro que não tem. */
+                <div className="w-full bg-surface-light border-b border-border/50 h-[18.5rem] sm:h-[21.5rem] flex flex-col items-center justify-center p-6 text-center">
                   <div className="w-16 h-16 rounded-full bg-black/30 flex items-center justify-center mb-4 border border-white/5">
                     <ImageOff className="w-8 h-8 text-foreground-muted/50" />
                   </div>

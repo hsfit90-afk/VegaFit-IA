@@ -598,24 +598,33 @@ export default function Library() {
                 </button>
               </div>
   
-              <div className="aspect-video bg-black/50 rounded-xl mb-6 overflow-hidden relative group border border-border flex items-center justify-center">
+              {/* aspect-video (16:9) com object-cover cortava topo e base do vídeo: as 60 mídias
+                  do catálogo são QUADRADAS (480x480 ou 360x360), então encaixá-las num 16:9
+                  preenchendo removia justamente pés e cabeça do movimento.
+                  O iframe do YouTube continua em 16:9, que é o formato dele — por isso o aspect
+                  fica no elemento de dentro, e não nesta caixa. */}
+              <div className="bg-black/50 rounded-xl mb-6 overflow-hidden relative group border border-border flex items-center justify-center">
                 {selectedExercise.mediaUrl ? (
                   selectedExercise.mediaUrl.endsWith('.mp4') ? (
-                    <video src={selectedExercise.mediaUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                    <video src={selectedExercise.mediaUrl} autoPlay loop muted playsInline className="aspect-square w-full max-w-[20rem] object-contain" />
                   ) : (
-                    <img src={selectedExercise.mediaUrl} alt={selectedExercise.name} className="w-full h-full object-contain" />
+                    <img src={selectedExercise.mediaUrl} alt={selectedExercise.name} className="aspect-square w-full max-w-[20rem] object-contain" />
                   )
                 ) : selectedExercise.youtubeId ? (
-                  <iframe 
-                    width="100%" height="100%" 
-                    src={`https://www.youtube.com/embed/${selectedExercise.youtubeId}?autoplay=1&mute=1`} 
-                    title={selectedExercise.name} 
-                    frameBorder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowFullScreen
-                  ></iframe>
+                  /* O YouTube é 16:9 de verdade, então este ramo mantém aspect-video — que
+                     saiu do container justamente para não impor 16:9 às mídias quadradas. */
+                  <div className="w-full aspect-video">
+                    <iframe
+                      width="100%" height="100%"
+                      src={`https://www.youtube.com/embed/${selectedExercise.youtubeId}?autoplay=1&mute=1`}
+                      title={selectedExercise.name}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
                 ) : (
-                  <div className="text-foreground-muted flex flex-col items-center">
+                  <div className="text-foreground-muted flex flex-col items-center py-16">
                     <ImageIcon className="w-12 h-12 opacity-20 mb-2" />
                     <span className="text-sm">Nenhuma mídia cadastrada</span>
                   </div>
