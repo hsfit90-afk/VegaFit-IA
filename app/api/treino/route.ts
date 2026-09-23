@@ -4,7 +4,7 @@ import { requireAuth } from "@/utils/supabase/auth-guard";
 import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
 import { isMobilityOnly } from "@/lib/exerciseType";
-import { classifyExerciseLevel, normalizarNivel, NIVEIS_PERMITIDOS } from "@/lib/exerciseLevel";
+import { classifyExerciseLevel, normalizarNivel, NIVEIS_PERMITIDOS, GRUPOS_SEM_FILTRO_DE_NIVEL } from "@/lib/exerciseLevel";
 import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
 import { computeUnlock, type MethodId } from "@/lib/trainingUnlock";
@@ -132,6 +132,8 @@ export async function POST(req: NextRequest) {
     const nivelAluno = normalizarNivel(config.level || profile?.level);
     const niveisPermitidos = NIVEIS_PERMITIDOS[nivelAluno];
     const porNivel = availableExercises.filter((ex: any) =>
+      // Alguns grupos passam inteiros, sem filtro de nível — ver GRUPOS_SEM_FILTRO_DE_NIVEL.
+      GRUPOS_SEM_FILTRO_DE_NIVEL.includes(ex.muscle_group) ||
       niveisPermitidos.includes(classifyExerciseLevel(ex.name))
     );
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { classifyExerciseLevel, normalizarNivel, NIVEIS_PERMITIDOS } from '@/lib/exerciseLevel';
+import { classifyExerciseLevel, normalizarNivel, NIVEIS_PERMITIDOS, GRUPOS_SEM_FILTRO_DE_NIVEL } from '@/lib/exerciseLevel';
 
 /**
  * A queixa que originou isto: "achei muito complexo para o nível iniciante".
@@ -105,6 +105,22 @@ describe('NIVEIS_PERMITIDOS — é cumulativo', () => {
     expect(NIVEIS_PERMITIDOS.avancado).toContain('iniciante');
     expect(NIVEIS_PERMITIDOS.avancado).toContain('intermediario');
     expect(NIVEIS_PERMITIDOS.avancado).toContain('avancado');
+  });
+});
+
+describe('GRUPOS_SEM_FILTRO_DE_NIVEL', () => {
+  it('Ombro passa inteiro, por decisão de produto', () => {
+    // O filtro barrava 29 dos 126 exercícios de ombro, e a maior parte era trabalho padrão
+    // (remada alta, desenvolvimento Arnold, cubano, com barra). Restringir empobrecia o
+    // treino de ombro sem ganho real de segurança.
+    expect(GRUPOS_SEM_FILTRO_DE_NIVEL).toContain('Ombro');
+  });
+
+  it('a classificação em si continua valendo — a isenção é aplicada na rota', () => {
+    // A função não muda: quem decide ignorar o nível é quem monta o pool. Assim o mesmo
+    // classificador segue servindo a /api/swap, que pode querer outra política.
+    expect(classifyExerciseLevel('Caminhada na Parada de Mão')).toBe('avancado');
+    expect(classifyExerciseLevel('Desenvolvimento Arnold')).toBe('intermediario');
   });
 });
 

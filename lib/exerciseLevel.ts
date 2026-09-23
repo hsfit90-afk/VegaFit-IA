@@ -107,6 +107,23 @@ export const NIVEIS_PERMITIDOS: Record<ExerciseLevel, ExerciseLevel[]> = {
 };
 
 /**
+ * Grupos musculares que NÃO passam pelo filtro de nível — todo aluno recebe o catálogo inteiro
+ * desses grupos, independentemente do nível.
+ *
+ * Ombro entrou a pedido do dono do produto (23/09/2026). O filtro estava barrando 29 dos 126
+ * exercícios de ombro, e a maior parte era trabalho padrão que qualquer aluno faz: remada alta,
+ * desenvolvimento Arnold, desenvolvimento cubano, desenvolvimento com barra. Restringir isso
+ * empobrecia o treino de ombro sem ganho de segurança real.
+ *
+ * A ressalva registrada na época: 3 dos 29 são calistenia de alto nível — "Flexão com parada de
+ * mãos", "Caminhada na Parada de Mão" e "Planche com Flexão de Braço". Um iniciante não executa
+ * esses movimentos, e tentar parada de mão sem base é risco de queda sobre a cabeça. Ficaram
+ * liberados por decisão explícita; se aparecerem em treino de iniciante e incomodarem, o
+ * caminho é mover esses três para uma lista de exceção em vez de refiltrar o grupo inteiro.
+ */
+export const GRUPOS_SEM_FILTRO_DE_NIVEL = ['Ombro'];
+
+/**
  * Normaliza o texto de nível que vem do perfil ou do formulário ("Iniciante", "intermediário",
  * "Avançado") para a chave interna. Desconhecido cai em iniciante: na dúvida, prescrever a
  * opção mais segura.
