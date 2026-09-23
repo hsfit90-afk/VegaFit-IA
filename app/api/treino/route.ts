@@ -4,6 +4,7 @@ import { requireAuth } from "@/utils/supabase/auth-guard";
 import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
 import { isMobilityOnly } from "@/lib/exerciseType";
+import { classifyExerciseLevel, normalizarNivel, NIVEIS_PERMITIDOS } from "@/lib/exerciseLevel";
 import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
 import { computeUnlock, type MethodId } from "@/lib/trainingUnlock";
@@ -116,6 +117,41 @@ export async function POST(req: NextRequest) {
     // Aeróbico agora tem sessão própria, prescrita por tempo (ver cardioPool abaixo).
     const cardioPool = availableExercises.filter((ex: any) => ex.muscle_group === 'Cardio');
     availableExercises = availableExercises.filter((ex: any) => ex.muscle_group !== 'Cardio');
+
+    // Restringe o catálogo pela EXIGÊNCIA TÉCNICA, pelo mesmo princípio do filtro de equipamento
+    // logo abaixo: o que não entra na lista, a IA não tem como escolher.
+    //
+    // Antes disto o nível do aluno mexia só na QUANTIDADE de exercícios por sessão (3 a 8) e nas
+    // faixas de série/repetição — o pool era idêntico para todo mundo. Um iniciante disputava os
+    // mesmos 882 exercícios que um avançado, muscle up e agachamento búlgaro incluídos, e foi
+    // exatamente essa a queixa: "muito complexo para o nível iniciante".
+    //
+    // O campo `difficulty` da tabela não serve: os 882 exercícios têm difficulty = 1, nunca foi
+    // preenchido. Classificamos pelo NOME (ver lib/exerciseLevel.ts), como já é feito com
+    // equipamento e com composto/isolado.
+    const nivelAluno = normalizarNivel(config.level || profile?.level);
+    const niveisPermitidos = NIVEIS_PERMITIDOS[nivelAluno];
+    const porNivel = availableExercises.filter((ex: any) =>
+      niveisPermitidos.includes(classifyExerciseLevel(ex.name))
+    );
+
+    // Mesma salvaguarda do filtro de equipamento: se o corte zerar um grupo muscular inteiro,
+    // esse grupo volta sem filtro. Prefere um exercício fora do ideal a deixar a IA sem opção
+    // nenhuma para aquele músculo. Medido em 23/09/2026 nenhum grupo zerava, mas o catálogo
+    // muda e a salvaguarda é barata.
+    const gruposComOpcao = new Set(porNivel.map((ex: any) => ex.muscle_group));
+    const gruposZerados = [...new Set(availableExercises.map((ex: any) => ex.muscle_group))]
+      .filter(g => !gruposComOpcao.has(g));
+
+    if (gruposZerados.length > 0) {
+      console.warn(`[treino] Filtro de nível ("${nivelAluno}") zerou ${gruposZerados.join(', ')} — liberando sem filtro só pra esses grupos.`);
+      availableExercises = [
+        ...porNivel,
+        ...availableExercises.filter((ex: any) => gruposZerados.includes(ex.muscle_group)),
+      ];
+    } else {
+      availableExercises = porNivel;
+    }
 
     // Restringe o catálogo pelo local de treino, ANTES de montar o prompt — não basta pedir pra
     // IA "respeitar o equipamento" no texto (já vimos hoje que enforcement só por prompt falha:
@@ -301,6 +337,11 @@ ${scientificBasis}
 Crie um plano de treino estruturado em JSON para um aluno com o seguinte perfil:
 - Objetivo: ${userGoal}
 - Nível de experiência: ${config.level || profile?.level || 'Iniciante'}
+${nivelAluno === 'iniciante'
+  ? 'REGRA DE NÍVEL: este aluno é INICIANTE. A lista de exercícios abaixo já foi filtrada para conter apenas movimentos compatíveis — não tente contornar pedindo variação mais difícil de um exercício da lista. Prefira movimentos guiados (máquina, polia) e padrões simples, e escreva as dicas de execução assumindo que ele nunca fez o exercício antes.'
+  : nivelAluno === 'intermediario'
+  ? 'REGRA DE NÍVEL: este aluno é INTERMEDIÁRIO. A lista abaixo já inclui compostos livres (agachamento, terra, supino, remada), mas não movimentos de alta exigência técnica. As dicas podem assumir familiaridade com o básico.'
+  : 'REGRA DE NÍVEL: este aluno é AVANÇADO e a lista abaixo contém o catálogo completo. Ainda assim, não encha a sessão de movimento exótico: o grosso do volume deve vir de compostos, com o avançado entrando como complemento onde faz sentido.'}
 - Dias por semana: ${config.daysPerWeek}
 - Duração por sessão: ${config.duration} minutos
 - Equipamentos disponíveis: ${config.equipment}
