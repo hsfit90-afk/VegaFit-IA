@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { Calendar, Clock, Dumbbell } from 'lucide-react';
+import { Calendar, Clock, Dumbbell , Timer } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { ChartSkeleton } from '@/components/charts/ChartSkeleton';
 
@@ -20,8 +20,11 @@ export default function History() {
   const { history } = useAppContext();
 
   // Prepare chart data (Volume per workout)
+  // Aerobico fica FORA deste grafico: ele e registrado com totalVolume 0 (nao existe carga em kg
+  // numa esteira), e um ponto zerado no meio da linha pareceria queda de desempenho.
+  // O tempo do aerobico continua no historico, em durationSeconds.
   const fullChartData = useMemo(() => {
-    return [...history].reverse().map((h, i) => {
+    return [...history].reverse().filter(h => h.sessionId !== 'cardio').map((h, i) => {
       const date = new Date(h.date);
       return {
         index: i,
@@ -129,7 +132,13 @@ export default function History() {
                   <div className="flex gap-4 mt-3 md:mt-0 text-sm font-medium text-foreground-muted">
                     <span className="flex items-center gap-1"><Calendar className="w-4 h-4 text-accent"/> {new Date(h.date).toLocaleDateString()}</span>
                     <span className="flex items-center gap-1"><Clock className="w-4 h-4 text-blue-400"/> {formatDuration(h.durationSeconds)}</span>
-                    <span className="flex items-center gap-1"><Dumbbell className="w-4 h-4 text-primary"/> {h.totalVolume} kg</span>
+                    {/* Aeróbico não tem carga: mostrar "0 kg" numa esteira seria informação errada,
+                        não informação neutra. O que essa sessão entregou é tempo, já na coluna ao lado. */}
+                    {h.sessionId === 'cardio' ? (
+                      <span className="flex items-center gap-1 text-primary"><Timer className="w-4 h-4"/> Aeróbico</span>
+                    ) : (
+                      <span className="flex items-center gap-1"><Dumbbell className="w-4 h-4 text-primary"/> {h.totalVolume} kg</span>
+                    )}
                   </div>
                 </summary>
                 <div className="p-5 border-t border-border bg-black/20">

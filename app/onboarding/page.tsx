@@ -139,7 +139,8 @@ export default function Onboarding() {
           user_id: userId,
           name: plan.name,
           split: plan.split,
-          sessions: plan.sessions
+          sessions: plan.sessions,
+          cardio_session: plan.cardioSession || null
         });
       }
     } catch (e) {

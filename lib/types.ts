@@ -39,11 +39,32 @@ export interface WorkoutSession {
   exercises: WorkoutExercise[];
 }
 
+/**
+ * Aeróbico do plano. Fica FORA de `sessions` de propósito: o rodízio A/B/C é aritmética de
+ * módulo sobre sessions.length em quatro lugares, e um quarto item entraria no rodízio por
+ * padrão. Aqui ele é avulso — o aluno faz em dia livre ou depois do treino.
+ *
+ * É prescrito por TEMPO TOTAL da sessão, não por exercício: "30 minutos, escolha o aparelho".
+ * Por isso não tem sets, reps nem carga — as três grandezas não significam nada numa esteira.
+ */
+export interface CardioSession {
+  name: string;
+  /** Tempo total da sessão. É a única grandeza prescrita. */
+  durationMinutes: number;
+  /** Como o aluno percebe o esforço, em linguagem de aluno (não em bpm nem %FCmax). */
+  intensity: string;
+  /** Aparelhos ou modalidades sugeridos. O aluno escolhe um. */
+  options: string[];
+  notes?: string;
+}
+
 export interface WorkoutPlan {
   id: string;
   name: string;
   split: string;
   sessions: WorkoutSession[];
+  /** Ver CardioSession. Ausente em planos gerados antes da migração 28. */
+  cardioSession?: CardioSession | null;
   createdAt: number;
   cycleStartedAt?: number | null; // timestamp do início do ciclo de periodização atual (ver lib/periodization.ts)
   trainingMethod?: string; // tradicional | superset | drop_set | piramide | rest_pause | circuito

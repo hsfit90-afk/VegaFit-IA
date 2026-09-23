@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { Dumbbell, Flame, Trophy, Calendar, Lightbulb, ChevronRight, Activity, Zap, Star, LayoutList, Trash2, CheckCircle2, PlayCircle } from 'lucide-react';
+import { Dumbbell, Flame, Trophy, Calendar, Lightbulb, ChevronRight, Activity, Zap, Star, LayoutList, Trash2, CheckCircle2, PlayCircle, Timer } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
@@ -366,6 +366,32 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+
+          {/* Aeróbico — avulso de propósito: fica FORA do rodízio A/B/C, como um card separado,
+              para o aluno fazer em dia livre ou depois do treino. Ver database/28_cardio_session.sql. */}
+          {activePlan?.cardioSession && (
+            <button
+              onClick={() => router.push('/cardio')}
+              className="block w-full text-left mt-4"
+            >
+              <Card variant="neon-hover" className="p-4 flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <Timer className="w-5 h-5 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-foreground-muted uppercase tracking-wider font-semibold">
+                    Sessão avulsa
+                  </p>
+                  <p className="font-bold text-white truncate">{activePlan.cardioSession.name}</p>
+                  <p className="text-xs text-foreground-muted truncate">
+                    {activePlan.cardioSession.durationMinutes} min ·{' '}
+                    {activePlan.cardioSession.options?.slice(0, 2).join(', ') || 'escolha o aparelho'}
+                  </p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-foreground-muted shrink-0" />
+              </Card>
+            </button>
+          )}
 
           {/* Box de Conquistas (Gamification) */}
         </motion.div>

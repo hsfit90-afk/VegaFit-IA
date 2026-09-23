@@ -102,6 +102,17 @@ export async function POST(req: NextRequest) {
     // sobra com exercícios de força reais o suficiente (ver lib/exerciseType.ts).
     availableExercises = availableExercises.filter((ex: any) => !isMobilityOnly(ex.name));
 
+    // Mesma lógica para o CARDIO, e pelo mesmo motivo. Os 49 exercícios do grupo "Cardio"
+    // disputavam vaga com supino e agachamento no mesmo pool, e o resultado apareceu nos planos
+    // já gerados: "Esteira com Inclinação -> 4x12-15" e "Airbike -> 4x12-15". Séries e
+    // repetições não significam nada numa esteira. Quando a IA acertava, ela contornava
+    // escrevendo "5 min" no campo de repetições — o que quebra depois, porque a tela de treino
+    // faz parseInt nesse campo (app/active/page.tsx:137) e vira "5 repetições com carga alvo".
+    //
+    // Aeróbico agora tem sessão própria, prescrita por tempo (ver cardioPool abaixo).
+    const cardioPool = availableExercises.filter((ex: any) => ex.muscle_group === 'Cardio');
+    availableExercises = availableExercises.filter((ex: any) => ex.muscle_group !== 'Cardio');
+
     // Restringe o catálogo pelo local de treino, ANTES de montar o prompt — não basta pedir pra
     // IA "respeitar o equipamento" no texto (já vimos hoje que enforcement só por prompt falha:
     // reps repetidos, contagem de exercício errada). Aqui a IA simplesmente nunca vê exercício de
@@ -216,9 +227,23 @@ export async function POST(req: NextRequest) {
 
     // Dynamic rules based on goal
     const isWeightLoss = userGoal.toLowerCase().includes('emagrec') || userGoal.toLowerCase().includes('perder peso');
-    const ruleTitle = isWeightLoss 
-      ? "REGRA CRÍTICA SOBRE VOLUME E INTENSIDADE (EASO / ACSM - EMAGRECIMENTO):" 
+    const ruleTitle = isWeightLoss
+      ? "REGRA CRÍTICA SOBRE VOLUME E INTENSIDADE (EASO / ACSM - EMAGRECIMENTO):"
       : "REGRA CRÍTICA SOBRE QUANTIDADE DE EXERCÍCIOS E VOLUME (SCHOENFELD, 2021 - HIPERTROFIA):";
+
+    // Duração do aeróbico conforme o objetivo. Quem quer emagrecer se beneficia de sessão mais
+    // longa; quem quer hipertrofia precisa que o aeróbico não roube recuperação do treino de
+    // força (efeito de interferência), então sessão curta.
+    const cardioGuidance = isWeightLoss
+      ? 'Para EMAGRECIMENTO, use entre 30 e 45 minutos.'
+      : 'Para HIPERTROFIA ou GANHO DE FORÇA, use entre 15 e 25 minutos: aeróbico longo demais compete com a recuperação do treino de força (efeito de interferência).';
+
+    // Lista de aparelhos vem do catálogo real, não da imaginação da IA — mesmo princípio já
+    // aplicado aos exercícios de força. Cortada em 12 para não inflar o prompt: o aluno escolhe
+    // um aparelho, não precisa dos 49.
+    const cardioListStr = cardioPool.length > 0
+      ? cardioPool.slice(0, 12).map((ex: any) => `- ${ex.name}`).join('\n')
+      : '- Esteira\n- Bicicleta ergométrica\n- Elíptico';
     
     // Faixas de reps E séries iniciais diferentes por tipo de exercício — sem isso a IA tende a
     // copiar o mesmo número de exemplo do schema JSON pra todos os exercícios (agachamento e rosca
@@ -329,8 +354,24 @@ Formato OBRIGATÓRIO do JSON:
         }
       ]
     }
-  ]
+  ],
+  "cardioSession": {
+    "name": "Aeróbico",
+    "durationMinutes": 30,
+    "intensity": "Moderada — consegue conversar em frases curtas, mas não cantar",
+    "options": ["Esteira", "Bicicleta ergométrica", "Elíptico"],
+    "notes": "Comece com 5 minutos leves para aquecer antes de subir o ritmo."
+  }
 }
+
+REGRAS DO CAMPO "cardioSession":
+Ele é uma sessão AVULSA de aeróbico, fora do rodízio dos treinos acima — o aluno faz em dia livre ou depois do treino, quando quiser.
+1. É prescrita por TEMPO TOTAL da sessão. NÃO tem "exercises", NÃO tem séries, NÃO tem repetições e NÃO tem carga — essas grandezas não significam nada numa esteira.
+2. "durationMinutes": um número inteiro, coerente com o objetivo e o nível. ${cardioGuidance}
+3. "intensity": descreva o esforço em linguagem de aluno, pelo que ele sente (respiração, capacidade de conversar). NÃO use batimentos por minuto nem percentual de FC máxima — o aluno não tem como medir isso na academia.
+4. "options": de 2 a 4 aparelhos ou modalidades entre os listados abaixo, que o aluno escolhe na hora. Use o NOME EXATO da lista.
+${cardioListStr}
+5. "notes": uma orientação curta e prática, ou omita o campo.
 
 Certifique-se de que a quantidade de sessões (sessions) corresponde a "Dias por semana" informados (${config.daysPerWeek}).
 OBRIGATÓRIO: Cada sessão deve ter EXATAMENTE ${exercisesPerSession} exercícios — nem a mais, nem a menos.
@@ -430,6 +471,31 @@ REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause, 
           usedExerciseNames.add(candidate.name);
         }
       }
+    }
+
+    // Sanitiza o aeróbico. Ao contrário das sessões de força, um cardio inválido NÃO derruba a
+    // geração: o plano de treino é o essencial, e perder o aeróbico é bem menos grave que o
+    // aluno ficar sem plano nenhum. Se vier torto, simplesmente não vai.
+    const cardio = json.cardioSession;
+    const duracao = Number(cardio?.durationMinutes);
+
+    if (cardio && Number.isFinite(duracao) && duracao > 0) {
+      json.cardioSession = {
+        name: typeof cardio.name === 'string' && cardio.name.trim() ? cardio.name.trim() : 'Aeróbico',
+        // Teto de 90min e piso de 5min: fora disso é alucinação, não prescrição.
+        durationMinutes: Math.min(90, Math.max(5, Math.round(duracao))),
+        intensity: typeof cardio.intensity === 'string' ? cardio.intensity : 'Moderada — consegue conversar em frases curtas.',
+        options: Array.isArray(cardio.options)
+          ? cardio.options.filter((o: any) => typeof o === 'string' && o.trim()).slice(0, 4)
+          : [],
+        ...(typeof cardio.notes === 'string' && cardio.notes.trim() ? { notes: cardio.notes.trim() } : {}),
+      };
+      if (json.cardioSession.options.length === 0) {
+        json.cardioSession.options = cardioPool.slice(0, 3).map((ex: any) => ex.name);
+      }
+    } else {
+      if (cardio) console.warn('[treino] cardioSession veio inválido, descartado:', JSON.stringify(cardio).slice(0, 160));
+      json.cardioSession = null;
     }
 
     return NextResponse.json(json);

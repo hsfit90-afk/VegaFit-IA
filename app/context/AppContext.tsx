@@ -116,6 +116,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           cycleStartedAt: p.cycle_started_at ? new Date(p.cycle_started_at).getTime() : null,
           trainingMethod: p.training_method || undefined,
           equipment: p.equipment || undefined,
+          cardioSession: p.cardio_session || null,
         }));
         setWorkoutPlans(parsedPlans);
         
@@ -240,6 +241,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       sessions: plan.sessions,
       training_method: plan.trainingMethod || null,
       equipment: plan.equipment || null,
+      cardio_session: plan.cardioSession || null,
     });
 
     await supabase.from('user_session_index').upsert({
