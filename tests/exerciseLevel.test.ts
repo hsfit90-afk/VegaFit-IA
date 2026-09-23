@@ -73,15 +73,42 @@ describe('classifyExerciseLevel — guiado e básico são de iniciante', () => {
     expect(classifyExerciseLevel('Cross over polia Alta')).toBe('iniciante');
   });
 
-  it('o guiado vence o composto livre', () => {
-    // Agachamento livre exige estabilizar; no Smith, não.
-    expect(classifyExerciseLevel('Agachamento no Smith')).toBe('iniciante');
+  it('a máquina de verdade vence o composto livre', () => {
+    // Na máquina o aluno senta e empurra: o equipamento dita o movimento inteiro.
+    expect(classifyExerciseLevel('Supino na máquina articulada')).toBe('iniciante');
+    expect(classifyExerciseLevel('Remada na máquina')).toBe('iniciante');
   });
 
   it('isolamento e peso corporal básico são de iniciante', () => {
     expect(classifyExerciseLevel('Rosca direta com barra W')).toBe('iniciante');
     expect(classifyExerciseLevel('Prancha isométrica')).toBe('iniciante');
     expect(classifyExerciseLevel('Elevação lateral com halteres')).toBe('iniciante');
+  });
+});
+
+describe('classifyExerciseLevel — Smith não é máquina', () => {
+  it('composto no Smith é intermediário, não de iniciante', () => {
+    // Achado no uso real: um aluno iniciante recebeu "supino no Smith". O Smith estabiliza a
+    // trajetória, mas o aluno ainda destrava uma barra carregada e executa o mesmo padrão do
+    // supino livre — diferente de uma cadeira extensora, em que ele senta e empurra.
+    expect(classifyExerciseLevel('Supino na máquina Smith')).toBe('intermediario');
+    expect(classifyExerciseLevel('Supino no smith com o triângulo')).toBe('intermediario');
+    expect(classifyExerciseLevel('Agachamento no Smith')).toBe('intermediario');
+    expect(classifyExerciseLevel('Remada Curvada no Smith')).toBe('intermediario');
+    expect(classifyExerciseLevel('Desenvolvimento de ombros na máquina Smith')).toBe('intermediario');
+  });
+
+  it('isolado no Smith continua de iniciante', () => {
+    // Aqui o Smith de fato só segura a barra: não há padrão composto para aprender.
+    expect(classifyExerciseLevel('Encolhimento de Ombros na Máquina Smith')).toBe('iniciante');
+    expect(classifyExerciseLevel('Elevação de Panturrilha no Smith')).toBe('iniciante');
+    expect(classifyExerciseLevel('Elevação Pélvica na Máquina Smith')).toBe('iniciante');
+  });
+
+  it('o Smith ainda estabiliza uma variação técnica', () => {
+    // O Smith reduz a exigência de uma variação difícil sem apagar o padrão composto:
+    // agachamento frontal no Smith cai de avançado para intermediário, não para iniciante.
+    expect(classifyExerciseLevel('Agachamento Frontal com Barra no Smith')).toBe('intermediario');
   });
 });
 

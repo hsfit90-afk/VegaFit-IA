@@ -66,29 +66,57 @@ const INTERMEDIARIO_KEYWORDS = [
  * É por onde um iniciante deve começar.
  */
 const GUIADO_KEYWORDS = [
-  'máquina', 'maquina', 'polia', 'cabo', 'smith', 'leg press', 'hack',
+  'máquina', 'maquina', 'polia', 'cabo', 'leg press', 'hack',
   'cadeira extensora', 'cadeira flexora', 'cadeira adutora', 'cadeira abdutora',
   'mesa flexora', 'mesa extensora', 'voador', 'pec deck', 'graviton', 'cross over', 'crossover',
 ];
 
+/**
+ * O Smith tem tratamento próprio — não é máquina nem peso livre.
+ *
+ * A primeira versão o colocava junto com as máquinas, e o resultado apareceu no uso: um aluno
+ * iniciante recebeu "supino no Smith". A diferença que faltava: numa cadeira extensora o aluno
+ * senta e empurra, e o equipamento dita o movimento inteiro. No Smith ele destrava uma barra
+ * carregada e executa o mesmo padrão do supino livre — o que muda é a trajetória ser fixa.
+ *
+ * Então o Smith ESTABILIZA (reduz a exigência de uma variação técnica difícil) mas não
+ * SIMPLIFICA o padrão: supino no Smith continua sendo supino. Na prática:
+ *
+ *   composto no Smith (supino, agachamento, remada, desenvolvimento) -> intermediário
+ *   isolado no Smith (encolhimento, panturrilha, elevação pélvica)   -> iniciante
+ *
+ * São 18 exercícios no catálogo, 11 compostos e 7 isolados.
+ */
+const SMITH = 'smith';
+
 export function classifyExerciseLevel(name: string): ExerciseLevel {
   const n = name.toLowerCase();
   const guiado = GUIADO_KEYWORDS.some(k => n.includes(k));
+  const noSmith = n.includes(SMITH);
+  const composto = INTERMEDIARIO_KEYWORDS.some(k => n.includes(k));
 
-  // Padrão avançado em si: vence tudo, inclusive o guiado. "Agachamento búlgaro com salto"
-  // é avançado mesmo contendo "agachamento", e não existe muscle up em máquina.
+  // Tanto a máquina quanto o Smith tiram do aluno o trabalho de estabilizar — é isso que
+  // torna uma variação técnica menos exigente. Os dois contam aqui.
+  const estabilizado = guiado || noSmith;
+
+  // Padrão avançado em si: vence tudo. "Agachamento búlgaro com salto" é avançado mesmo
+  // contendo "agachamento", e não existe muscle up guiado.
   if (SEMPRE_AVANCADO_KEYWORDS.some(k => n.includes(k))) return 'avancado';
 
-  // Variação técnica: avançada em peso livre, intermediária quando a máquina estabiliza.
+  // Variação técnica: avançada em peso livre, intermediária quando algo estabiliza.
   if (TECNICO_EM_PESO_LIVRE_KEYWORDS.some(k => n.includes(k))) {
-    return guiado ? 'intermediario' : 'avancado';
+    return estabilizado ? 'intermediario' : 'avancado';
   }
 
-  // Guiado vence intermediário: a máquina impõe a trajetória e carrega a estabilização que
-  // torna o movimento livre exigente.
+  // Smith vem ANTES do guiado porque muitos desses exercícios se chamam "máquina Smith" e
+  // cairiam na regra de máquina por engano. Ver o comentário de SMITH: ele estabiliza, mas
+  // não simplifica o padrão — supino no Smith continua sendo supino.
+  if (noSmith) return composto ? 'intermediario' : 'iniciante';
+
+  // Máquina de verdade vence composto: o equipamento impõe a trajetória e o aluno só empurra.
   if (guiado) return 'iniciante';
 
-  if (INTERMEDIARIO_KEYWORDS.some(k => n.includes(k))) return 'intermediario';
+  if (composto) return 'intermediario';
 
   // O resto é isolamento simples (rosca, elevação, extensão) ou peso corporal básico
   // (flexão, prancha, ponte): seguro para quem está começando.
