@@ -168,7 +168,7 @@ export default function ProgressPage() {
   if (!profile) return null;
 
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto animate-fade-in pb-32">
+    <div className="p-5 md:p-8 max-w-5xl mx-auto animate-fade-in pb-28 md:pb-12">
       <header className="mb-8">
         <h1 className="text-3xl md:text-4xl font-outfit font-bold flex items-center gap-3">
           <div className="p-3 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl backdrop-blur-md border border-border">

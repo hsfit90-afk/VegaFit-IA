@@ -130,7 +130,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-2xl mx-auto animate-fade-in pb-32">
+    <div className="p-5 md:p-8 max-w-3xl mx-auto animate-fade-in pb-28 md:pb-12">
       <PageHeader
         titulo="Perfil e Configurações"
         subtitulo="Gerencie sua conta e histórico físico"

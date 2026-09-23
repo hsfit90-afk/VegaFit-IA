@@ -53,7 +53,7 @@ export default function AnamneseHistoryPage() {
   const newestFirst = [...entries].reverse();
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-5 md:p-8 max-w-2xl mx-auto pb-32">
+    <div className="min-h-screen bg-background text-foreground p-5 md:p-8 max-w-3xl mx-auto pb-28 md:pb-12">
       <Link href="/settings" className="inline-flex items-center gap-2 text-foreground-muted hover:text-white text-sm mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4" /> Voltar para Configurações
       </Link>

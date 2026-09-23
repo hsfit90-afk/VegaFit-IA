@@ -255,7 +255,7 @@ export default function Library() {
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-6xl mx-auto animate-fade-in relative pb-32">
+    <div className="p-5 md:p-8 max-w-5xl mx-auto animate-fade-in relative pb-28 md:pb-12">
       <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 className="text-3xl md:text-4xl font-outfit font-bold mb-4">Biblioteca de Exercícios</h1>

@@ -91,7 +91,7 @@ export default function Coach() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] md:h-full w-full max-w-4xl mx-auto md:p-6 pb-24 md:pb-6 relative animate-fade-in">
+    <div className="flex flex-col h-[calc(100vh-80px)] md:h-full w-full max-w-3xl mx-auto p-5 md:p-8 pb-24 md:pb-8 relative animate-fade-in">
       <header className="p-4 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-10 md:rounded-t-[24px] md:border md:border-b-0">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-primary p-[2px]">

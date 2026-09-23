@@ -814,7 +814,7 @@ export default function ActiveWorkout() {
   const progressPercent = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
   return (
-    <div className="p-6 md:p-10 max-w-4xl mx-auto animate-fade-in pb-32">
+    <div className="p-5 md:p-8 max-w-3xl mx-auto animate-fade-in pb-28 md:pb-12">
       <header className="mb-8 sticky top-0 bg-background/80 backdrop-blur-xl z-40 py-4 border-b border-white/[0.08]">
         {/* FEATURE: Cronômetro ao vivo + nome da sessão */}
         <div className="flex items-center justify-between mb-2">
@@ -862,10 +862,19 @@ export default function ActiveWorkout() {
             {/* Glow effect in background */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[80px] -z-10 group-hover:bg-accent/20 transition-all duration-700 pointer-events-none"></div>
             
-            {/* Mídia no TOPO (Header do Card) */}
+            {/* Mídia no TOPO (Header do Card).
+
+                A altura era h-56 md:h-72 lg:h-80 — definida por breakpoint de LARGURA, mas o
+                incômodo é de ALTURA de tela. Um notebook é largo (dispara o lg:) e baixo: com
+                ~650px úteis, uma caixa de 320px comia metade da tela antes de aparecer o
+                primeiro campo de série, e o aluno tinha que rolar para treinar.
+
+                O max-h em vh resolve: a mídia nunca passa de ~38% da altura visível, seja qual
+                for a largura da janela. Os dois ramos do ternário usam a mesma altura para o
+                card não pular de tamanho entre um exercício com vídeo e outro sem. */}
             <div className="w-full bg-black/50 border-b border-border/50">
               {customMediaUrl ? (
-                <div className="w-full h-56 md:h-72 lg:h-80 relative flex items-center justify-center bg-black">
+                <div className="w-full h-48 md:h-56 lg:h-64 max-h-[38vh] relative flex items-center justify-center bg-black">
                   {customMediaUrl.endsWith('.mp4') ? (
                     <video src={customMediaUrl} autoPlay loop muted playsInline className="w-full h-full object-cover opacity-90" />
                   ) : (
@@ -877,7 +886,7 @@ export default function ActiveWorkout() {
                   </div>
                 </div>
               ) : (
-                <div className="w-full bg-surface-light border-b border-border/50 h-56 md:h-72 lg:h-80 flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-full bg-surface-light border-b border-border/50 h-48 md:h-56 lg:h-64 max-h-[38vh] flex flex-col items-center justify-center p-6 text-center">
                   <div className="w-16 h-16 rounded-full bg-black/30 flex items-center justify-center mb-4 border border-white/5">
                     <ImageOff className="w-8 h-8 text-foreground-muted/50" />
                   </div>

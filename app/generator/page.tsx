@@ -189,7 +189,7 @@ export default function Generator() {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-4xl mx-auto animate-fade-in pb-32">
+    <div className="p-5 md:p-8 max-w-3xl mx-auto animate-fade-in pb-28 md:pb-12">
       <header className="mb-10">
         <h1 className="text-3xl md:text-4xl font-outfit font-bold flex items-center gap-3">
           <div className="p-3 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl backdrop-blur-md border border-border">

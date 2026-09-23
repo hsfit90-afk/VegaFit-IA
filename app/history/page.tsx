@@ -83,7 +83,7 @@ export default function History() {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto animate-fade-in pb-32">
+    <div className="p-5 md:p-8 max-w-5xl mx-auto animate-fade-in pb-28 md:pb-12">
       <PageHeader
         titulo="Histórico de Treinos"
         subtitulo="Acompanhe sua evolução ao longo do tempo"

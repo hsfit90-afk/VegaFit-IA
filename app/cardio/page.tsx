@@ -48,7 +48,7 @@ export default function CardioPage() {
 
   if (!plano || !cardio) {
     return (
-      <div className="min-h-screen p-4 md:p-8 max-w-2xl mx-auto">
+      <div className="min-h-screen p-5 md:p-8 max-w-3xl mx-auto">
         <EmptyState
           icone={<Timer className="w-10 h-10" />}
           titulo="Nenhum aeróbico no seu plano"
@@ -108,7 +108,7 @@ export default function CardioPage() {
   const rodando = startTime > 0;
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-2xl mx-auto pb-28">
+    <div className="min-h-screen p-5 md:p-8 max-w-3xl mx-auto pb-28 md:pb-12">
       <button
         onClick={() => router.push('/')}
         className="flex items-center gap-1 text-sm text-foreground-muted hover:text-primary transition-colors mb-6"

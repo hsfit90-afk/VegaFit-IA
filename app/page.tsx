@@ -217,7 +217,7 @@ export default function Dashboard() {
 
   return (
     <motion.div 
-      className="p-5 md:p-8 max-w-7xl mx-auto min-h-screen pb-32"
+      className="p-5 md:p-8 max-w-5xl mx-auto min-h-screen pb-32"
       variants={containerVariants}
       initial="hidden"
       animate="show"

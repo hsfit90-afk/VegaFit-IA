@@ -74,7 +74,7 @@ export default function AdminDashboard() {
   const clients = users.filter(u => u.role === 'client' || !u.role);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8">
+    <div className="p-5 md:p-8 max-w-5xl mx-auto space-y-8">
       <div>
         <h1 className="text-3xl font-outfit font-bold text-white mb-2">Painel Master</h1>
         <p className="text-gray-400">Visão geral da plataforma VegaFit.</p>

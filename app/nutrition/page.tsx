@@ -70,7 +70,7 @@ export default function NutritionPage() {
   if (!profile) return null;
 
   return (
-    <div className="p-6 md:p-10 max-w-4xl mx-auto animate-fade-in pb-32">
+    <div className="p-5 md:p-8 max-w-3xl mx-auto animate-fade-in pb-28 md:pb-12">
       <header className="mb-10">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg">
