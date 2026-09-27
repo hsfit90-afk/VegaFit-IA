@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/utils/supabase/auth-guard';
+import { cobrancaAtiva } from "@/utils/supabase/subscription-guard";
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { criarAssinatura, mercadoPagoConfigurado, PLANOS, type PlanoId } from '@/lib/mercadopago';
@@ -15,6 +16,15 @@ export async function POST(req: NextRequest) {
   try {
     const { user, error: authError } = await requireAuth();
     if (authError) return authError;
+
+    // Cobrança desligada: o acesso está liberado para todos, então abrir checkout cobraria
+    // por algo que a pessoa já tem de graça — e isso vira pedido de reembolso.
+    if (!cobrancaAtiva()) {
+      return NextResponse.json(
+        { error: 'As assinaturas ainda nao estao abertas. Seu acesso segue liberado.' },
+        { status: 503 }
+      );
+    }
 
     if (!mercadoPagoConfigurado()) {
       return NextResponse.json(

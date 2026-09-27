@@ -21,9 +21,32 @@ import {
  * Lê o perfil com o cliente autenticado (respeitando RLS), não com service_role: a pessoa
  * só pode consultar a própria assinatura mesmo.
  */
+/**
+ * Interruptor geral da cobrança.
+ *
+ * DESLIGADO por padrão, de propósito: a ausência da variável, um erro de digitação no painel
+ * da Vercel ou um ambiente novo nunca podem começar barrando aluno. Só o valor exato "true"
+ * liga — qualquer outra coisa ("TRUE", "1", "sim", vazio) mantém desligado.
+ *
+ * Com a cobrança desligada, este guarda libera todo mundo e ninguém vê tela de pagamento,
+ * mesmo com o código inteiro publicado. É assim que dá para subir a integração, testar o
+ * checkout e o webhook, e só depois abrir a venda — sem precisar de outro deploy.
+ *
+ * Para ligar: variável COBRANCA_ATIVA = true no painel da Vercel, e redeploy.
+ * Para desligar: apague a variável ou troque para false, e redeploy.
+ */
+export function cobrancaAtiva(): boolean {
+  return process.env.COBRANCA_ATIVA === 'true';
+}
+
 export async function requireSubscription(
   userId: string
 ): Promise<{ estado: EstadoDeAcesso; error: null } | { estado: null; error: NextResponse }> {
+  // Cobrança desligada: ninguém é barrado, nem quem já passou dos 7 dias de teste.
+  if (!cobrancaAtiva()) {
+    return { estado: estadoDeAcesso({ subscriptionStatus: 'cortesia' }), error: null };
+  }
+
   const supabase = await createClient();
 
   const { data, error } = await supabase
