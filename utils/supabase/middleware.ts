@@ -47,7 +47,17 @@ export async function updateSession(request: NextRequest) {
     // incluindo os de saúde — era redirecionado para /login ao tentar lê-la. O art. 9 da LGPD
     // dá ao titular o direito de informação clara sobre o tratamento ANTES de consentir.
     !request.nextUrl.pathname.startsWith('/privacy') &&
-    !request.nextUrl.pathname.startsWith('/api/cron/')
+    !request.nextUrl.pathname.startsWith('/api/cron/') &&
+    // Webhook de gateway de pagamento. Quem chama é o servidor do Mercado Pago, que não tem
+    // — nem pode ter — sessão de usuário. Sem esta linha a notificação era redirecionada
+    // para /login com 307, e o gateway nunca alcançava a rota: a assinatura do aluno ficaria
+    // paga e nunca ativada, sem erro visível em lugar nenhum.
+    //
+    // A rota NÃO fica desprotegida: ela valida a assinatura HMAC do Mercado Pago e, mesmo
+    // depois disso, consulta a API do gateway antes de mudar qualquer coisa no banco. Mesmo
+    // motivo pelo qual /api/cron/ já estava liberado aqui — autenticação própria, por segredo
+    // compartilhado, em vez de sessão.
+    !request.nextUrl.pathname.startsWith('/api/webhooks/')
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
