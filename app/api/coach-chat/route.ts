@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
+import { requireSubscription } from "@/utils/supabase/subscription-guard";
 import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
@@ -20,6 +21,11 @@ export async function POST(req: NextRequest) {
   try {
     const { user, error: authError } = await requireAuth();
     if (authError) return authError;
+
+    // Assinatura vem ANTES de reservar orcamento de IA: reservar para uma chamada que vai
+    // ser recusada suja a janela de throttle de quem esta pagando.
+    const { error: subError } = await requireSubscription(user.id);
+    if (subError) return subError;
 
     const capacity = await reserveAiCapacity(user.id, "coach-chat", { limit: 40, windowMinutes: 60 });
     if (capacity.error) return capacity.error;

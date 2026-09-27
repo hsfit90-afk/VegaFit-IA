@@ -7,6 +7,7 @@ import { Apple, Loader2, Target, Flame, Activity, Info } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
+import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 
 interface NutritionData {
   tmb: number;
@@ -54,6 +55,8 @@ export default function NutritionPage() {
       });
 
       const result = await response.json();
+
+      if (tratarBloqueioDeAssinatura(response, result)) return;
       if (!result.error) {
         setData(result);
         localStorage.setItem('fitforge_nutrition', JSON.stringify(result));

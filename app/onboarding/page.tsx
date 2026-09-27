@@ -8,6 +8,7 @@ import { UserProfile } from '@/lib/types';
 import { useAppContext } from '@/app/context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/components/ui/Toast';
+import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 
 const LOADING_PHRASES = [
   "Analisando seu biotipo...",
@@ -132,6 +133,8 @@ export default function Onboarding() {
       });
       
       const plan = await res.json();
+      
+      if (tratarBloqueioDeAssinatura(res, plan)) return;
       if (plan && !plan.error) {
         plan.id = crypto.randomUUID();
         plan.createdAt = Date.now();

@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
 import { mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
+import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 
 export default function Generator() {
   const { addWorkoutPlan, profile, history } = useAppContext();
@@ -86,6 +87,8 @@ export default function Generator() {
       });
 
       const data = await res.json();
+
+      if (tratarBloqueioDeAssinatura(res, data)) return;
       if (!res.ok) throw new Error(data.error || 'Erro ao gerar treino');
 
       // BUG FIX: Validação do schema do JSON retornado pela IA
