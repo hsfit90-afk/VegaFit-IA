@@ -19,6 +19,7 @@ import { RestTimerOverlay } from '@/components/workout/RestTimerOverlay';
 import { PeriodizationResetNotice } from '@/components/workout/PeriodizationResetNotice';
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
@@ -428,6 +429,7 @@ export default function ActiveWorkout() {
 
       if (response?.ok) {
         const data = await response.json();
+        if (tratarBloqueioDeAssinatura(response, data)) return;
         bestAlternative = availableAlternatives.find(e => e.id === data.id) || null;
       }
 

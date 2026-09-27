@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
+import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 
 export default function ProgressionCheckIn() {
   const toast = useToast();
@@ -56,6 +57,8 @@ export default function ProgressionCheckIn() {
       });
 
       const data = await response.json();
+
+      if (tratarBloqueioDeAssinatura(response, data)) return;
       if (data.plan) {
         // Preserva método de treino e equipamento do plano atual — o endpoint de progressão não
         // pergunta nenhum dos dois, então sem isso Superset/Circuito/Rest-Pause e o filtro de

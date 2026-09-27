@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 
 interface Message {
   id: string;
@@ -67,6 +68,8 @@ export default function Coach() {
       });
       
       const data = await res.json();
+      
+      if (tratarBloqueioDeAssinatura(res, data)) return;
       if (!res.ok) throw new Error(data.error);
 
       const modelMsg: Message = { id: crypto.randomUUID(), role: 'model', content: data.text };
