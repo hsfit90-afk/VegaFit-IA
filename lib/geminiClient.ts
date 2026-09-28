@@ -42,7 +42,23 @@ export const MODELOS_RESERVA = [
   'gemini-3.6-flash',
   'gemini-3.1-flash-lite',
   'gemini-3.5-flash',
+  'gemini-3.7-flash',
+  'gemini-3.8-flash',
+  'gemini-flash-latest',
 ];
+
+/**
+ * A lista é longa de propósito, e não custa nada quando o primeiro responde.
+ *
+ * Numa segunda medição, minutos depois da primeira, o 3.6-flash que tinha respondido 200
+ * passou a recusar — e o tamanho do pedido não era a variável: a mesma chamada de uma linha
+ * levou 503. A indisponibilidade oscila minuto a minuto na conta inteira, então quanto mais
+ * portas houver, maior a chance de uma estar aberta na hora da tentativa.
+ *
+ * O orçamento de tempo é que limita: quando as recusas são rápidas dá para tentar todos;
+ * quando demoram, o relógio corta antes. Nenhum dos dois casos deixa o aluno esperando além
+ * do limite da função.
+ */
 
 /**
  * Teto de tempo para a cadeia inteira de tentativas.
