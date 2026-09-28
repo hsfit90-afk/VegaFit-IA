@@ -30,7 +30,7 @@ export default function AdminDashboard() {
       // numa requisição. O teto de 200 é folgado para o tamanho atual e impede o pior caso.
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, role, max_clients, trainer_id')
+        .select('id, name, role, max_clients, trainer_id, subscription_status, trial_ends_at, subscription_expires_at')
         .order('created_at', { ascending: false })
         .limit(200);
       if (data) {
@@ -43,6 +43,56 @@ export default function AdminDashboard() {
       loadUsers();
     }
   }, [profile, router]);
+
+  /**
+   * Muda a assinatura de um aluno na mão.
+   *
+   * Vai pela rota de servidor, e não direto pelo Supabase, porque o gatilho da migration 34
+   * preserva as colunas de assinatura em qualquer escrita vinda do navegador — inclusive a
+   * sua. É proposital: o gatilho distingue backend de navegador, não master de aluno.
+   */
+  const [mudando, setMudando] = useState<string | null>(null);
+
+  const mudarAssinatura = async (alvo: string, acao: string, rotulo: string, dias?: number) => {
+    setMudando(alvo);
+    try {
+      const res = await fetch('/api/admin/assinatura', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: alvo, acao, dias }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não consegui alterar.');
+
+      // Atualiza só a linha alterada, em vez de recarregar os 200 perfis.
+      setUsers(anteriores => anteriores.map(u => (u.id === alvo ? { ...u, ...data.perfil } : u)));
+      toast.sucesso(`${data.perfil?.name || 'Aluno'} agora é ${rotulo}.`);
+    } catch (e) {
+      toast.erro(e instanceof Error ? e.message : 'Não consegui alterar.');
+    } finally {
+      setMudando(null);
+    }
+  };
+
+  /** Texto curto do estado da assinatura, com o prazo quando existir. */
+  const descreverAssinatura = (u: any): { texto: string; cor: string } => {
+    const fmt = (iso?: string | null) =>
+      iso ? new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
+    switch (u.subscription_status) {
+      case 'cortesia':
+        return { texto: 'Cortesia (vitalício)', cor: 'bg-purple-500/20 text-purple-400' };
+      case 'ativo':
+        return { texto: `Pago até ${fmt(u.subscription_expires_at)}`, cor: 'bg-primary/20 text-primary' };
+      case 'trial':
+        return { texto: `Teste até ${fmt(u.trial_ends_at)}`, cor: 'bg-blue-500/20 text-blue-400' };
+      case 'cancelado':
+        return { texto: `Cancelado (até ${fmt(u.subscription_expires_at)})`, cor: 'bg-yellow-500/20 text-yellow-400' };
+      case 'vencido':
+        return { texto: 'Sem acesso', cor: 'bg-red-500/20 text-red-400' };
+      default:
+        return { texto: u.subscription_status || '-', cor: 'bg-white/10 text-gray-400' };
+    }
+  };
 
   const updateLimit = async (userId: string, currentLimit: number) => {
     const newLimit = prompt('Digite o novo limite máximo de alunos para este personal:', currentLimit.toString());
@@ -104,7 +154,7 @@ export default function AdminDashboard() {
                 <tr>
                   <th className="px-6 py-4">Nome</th>
                   <th className="px-6 py-4">Papel (Role)</th>
-                  <th className="px-6 py-4">Trainer ID</th>
+                  <th className="px-6 py-4">Assinatura</th>
                   <th className="px-6 py-4">Limite</th>
                   <th className="px-6 py-4 text-right">Ações</th>
                 </tr>
@@ -121,19 +171,61 @@ export default function AdminDashboard() {
                         {u.role || 'client'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{u.trainer_id || '-'}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${descreverAssinatura(u).cor}`}>
+                        {descreverAssinatura(u).texto}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 font-bold text-white">
                       {u.role === 'trainer' ? (u.max_clients || 5) : '-'}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      {u.role === 'trainer' && (
-                        <button 
-                          onClick={() => updateLimit(u.id, u.max_clients || 5)}
-                          className="text-xs bg-surface-light hover:bg-primary/20 hover:text-primary transition-colors px-3 py-1.5 rounded-lg border border-white/5"
+                    <td className="px-6 py-4">
+                      <div className="flex gap-1.5 justify-end flex-wrap">
+                        <button
+                          onClick={() => mudarAssinatura(u.id, 'cortesia', 'cortesia vitalícia')}
+                          disabled={mudando === u.id}
+                          title="Acesso liberado para sempre, sem cobrança"
+                          className="text-xs bg-surface-light hover:bg-purple-500/20 hover:text-purple-400 disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
                         >
-                          Editar Limite
+                          Cortesia
                         </button>
-                      )}
+                        <button
+                          onClick={() => mudarAssinatura(u.id, 'ativo', 'pago por 30 dias', 30)}
+                          disabled={mudando === u.id}
+                          title="Marca como pago por 30 dias — para quem pagou por fora, no Pix"
+                          className="text-xs bg-surface-light hover:bg-primary/20 hover:text-primary disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
+                        >
+                          +30 dias
+                        </button>
+                        <button
+                          onClick={() => mudarAssinatura(u.id, 'trial', 'em teste por 7 dias', 7)}
+                          disabled={mudando === u.id}
+                          title="Reinicia o teste gratuito por 7 dias"
+                          className="text-xs bg-surface-light hover:bg-blue-500/20 hover:text-blue-400 disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
+                        >
+                          Teste 7d
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Cortar o acesso de ${u.name || 'este aluno'}? Ele mantém o treino e o histórico, mas para de gerar treino novo.`)) {
+                              mudarAssinatura(u.id, 'vencido', 'sem acesso');
+                            }
+                          }}
+                          disabled={mudando === u.id}
+                          title="Bloqueia geração de treino novo. O histórico e o plano atual continuam"
+                          className="text-xs bg-surface-light hover:bg-red-500/20 hover:text-red-400 disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
+                        >
+                          Cortar
+                        </button>
+                        {u.role === 'trainer' && (
+                          <button
+                            onClick={() => updateLimit(u.id, u.max_clients || 5)}
+                            className="text-xs bg-surface-light hover:bg-primary/20 hover:text-primary transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
+                          >
+                            Limite
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
