@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/Toast';
 import Link from 'next/link';
 import { isPushSupported, getCurrentPushSubscription, subscribeToPush, unsubscribeFromPush } from '@/utils/push';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
 
 export default function Settings() {
   const { profile, setProfile, clearData } = useAppContext();
@@ -141,6 +142,13 @@ export default function Settings() {
           </Button>
         }
       />
+
+      {/* Situacao completa da assinatura. Na home o aviso so aparece quando o prazo aperta;
+          aqui ele mostra sempre, porque e para ca que a pessoa vem quando quer saber de
+          cobranca. Nao aparece para quem esta em cortesia nem com assinatura em dia. */}
+      <div className="mb-6 empty:hidden">
+        <AvisoDeAssinatura />
+      </div>
 
       <div className="space-y-6">
         

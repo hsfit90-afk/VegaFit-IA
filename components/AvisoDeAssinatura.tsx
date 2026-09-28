@@ -26,7 +26,18 @@ import { estadoDeAcesso, type EstadoDeAcesso } from '@/lib/subscription';
  * Lê o próprio status direto do banco em vez de passar pelo AppContext: é um aviso isolado, e
  * enfiar assinatura no contexto global obrigaria a mexer em vinte telas para resolver uma.
  */
-export function AvisoDeAssinatura() {
+/**
+ * `somenteUrgente` é o que a home usa.
+ *
+ * Com seis dias restantes, o aviso não muda o comportamento de ninguém — vira ruído diário
+ * entre o aluno e o botão de treinar. Aviso que aparece todo dia deixa de ser lido, e aí
+ * quando importa de verdade já virou paisagem.
+ *
+ * No modo urgente ele só sobe quando faltam dois dias ou menos, ou quando o pagamento
+ * falhou. A situação completa fica no Perfil, que é onde a pessoa vai quando quer saber de
+ * cobrança.
+ */
+export function AvisoDeAssinatura({ somenteUrgente = false }: { somenteUrgente?: boolean }) {
   const [estado, setEstado] = useState<EstadoDeAcesso | null>(null);
 
   useEffect(() => {
@@ -76,6 +87,10 @@ export function AvisoDeAssinatura() {
 
   const dias = estado.diasDeTesteRestantes ?? 0;
   const acabando = dias <= 2;
+
+  // Na home, só aparece quando o prazo aperta. Nos outros dias o aluno abre o app para
+  // treinar, não para pensar em cobrança.
+  if (somenteUrgente && !acabando) return null;
 
   return (
     <Faixa

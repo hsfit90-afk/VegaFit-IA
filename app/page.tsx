@@ -224,72 +224,17 @@ export default function Dashboard() {
       initial="hidden"
       animate="show"
     >
-      <motion.header variants={itemVariants} className="mb-8 mt-2">
-        <h1 className="text-3xl md:text-4xl font-outfit font-bold tracking-tight mb-1">
+      {/* Saudacao em uma linha: o titulo grande mais subtitulo gastavam uma faixa
+          inteira da tela para dizer "bom dia", empurrando o treino para baixo da dobra. */}
+      <motion.header variants={itemVariants} className="mb-5 mt-1">
+        <h1 className="text-2xl md:text-3xl font-outfit font-bold tracking-tight">
           {greeting()}, <span className="text-primary">{profile?.name || 'Atleta'}</span>
         </h1>
-        <p className="text-foreground-muted text-sm md:text-base">Pronto para superar seus limites hoje?</p>
       </motion.header>
 
-      {/* Avisa quantos dias faltam do teste. Não aparece para cortesia nem para assinatura
-          em dia — ver o comentário do componente sobre por que o aviso precisa vir ANTES
-          do bloqueio. */}
-      <motion.div variants={itemVariants} className="mb-6 empty:hidden">
-        <AvisoDeAssinatura />
-      </motion.div>
 
-      {/* No celular a barra inferior nao tem esta tela; sem o card o produto de maior
-          margem ficaria invisivel para a maior parte do publico. */}
-      <motion.div variants={itemVariants} className="mb-6 empty:hidden">
-        <CardPersonalizado />
-      </motion.div>
 
-      {/* Dica do Dia */}
-      <motion.div variants={itemVariants} className="mb-8">
-        <Card variant="glass" className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 md:p-5 flex items-start gap-4">
-            <div className="bg-primary/20 p-2.5 rounded-xl flex-shrink-0">
-              <Lightbulb className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h4 className="text-primary font-semibold text-sm mb-1 uppercase tracking-wider">Dica do Dia</h4>
-              <p className="text-foreground/90 text-sm md:text-base leading-relaxed">{dailyTip}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
 
-      {/* Métricas Principais */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-8">
-        <DashboardCard 
-          title="Treinos (Semana)" 
-          value={currentWeekWorkouts.length.toString()} 
-          icon={Calendar} 
-          color="text-blue-400" 
-          bg="bg-blue-400/10"
-        />
-        <DashboardCard 
-          title="Volume Semanal" 
-          value={`${totalVolume.toLocaleString()}kg`} 
-          icon={Dumbbell} 
-          color="text-primary" 
-          bg="bg-primary/10"
-        />
-        <DashboardCard 
-          title="Streak Atual" 
-          value={`${streak} ${streak === 1 ? 'dia' : 'dias'}`} 
-          icon={Flame} 
-          color="text-orange-400" 
-          bg="bg-orange-400/10"
-        />
-        <DashboardCard 
-          title="Total Treinos" 
-          value={history.length.toString()} 
-          icon={Trophy} 
-          color="text-secondary" 
-          bg="bg-secondary/10"
-        />
-      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-8">
         
@@ -441,6 +386,66 @@ export default function Dashboard() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Métricas Principais */}
+      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-8">
+        <DashboardCard 
+          title="Treinos (Semana)" 
+          value={currentWeekWorkouts.length.toString()} 
+          icon={Calendar} 
+          color="text-blue-400" 
+          bg="bg-blue-400/10"
+        />
+        <DashboardCard 
+          title="Volume Semanal" 
+          value={`${totalVolume.toLocaleString()}kg`} 
+          icon={Dumbbell} 
+          color="text-primary" 
+          bg="bg-primary/10"
+        />
+        <DashboardCard 
+          title="Streak Atual" 
+          value={`${streak} ${streak === 1 ? 'dia' : 'dias'}`} 
+          icon={Flame} 
+          color="text-orange-400" 
+          bg="bg-orange-400/10"
+        />
+        <DashboardCard 
+          title="Total Treinos" 
+          value={history.length.toString()} 
+          icon={Trophy} 
+          color="text-secondary" 
+          bg="bg-secondary/10"
+        />
+      </motion.div>
+
+      {/* Avisa quantos dias faltam do teste. Não aparece para cortesia nem para assinatura
+          em dia — ver o comentário do componente sobre por que o aviso precisa vir ANTES
+          do bloqueio. */}
+      <motion.div variants={itemVariants} className="mb-6 empty:hidden">
+        <AvisoDeAssinatura somenteUrgente />
+      </motion.div>
+
+      {/* Dica do Dia */}
+      <motion.div variants={itemVariants} className="mb-8">
+        <Card variant="glass" className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4 md:p-5 flex items-start gap-4">
+            <div className="bg-primary/20 p-2.5 rounded-xl flex-shrink-0">
+              <Lightbulb className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h4 className="text-primary font-semibold text-sm mb-1 uppercase tracking-wider">Dica do Dia</h4>
+              <p className="text-foreground/90 text-sm md:text-base leading-relaxed">{dailyTip}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* No celular a barra inferior nao tem esta tela; sem o card o produto de maior
+          margem ficaria invisivel para a maior parte do publico. */}
+      <motion.div variants={itemVariants} className="mb-6 empty:hidden">
+        <CardPersonalizado />
+      </motion.div>
 
       {/* Meus Planos de Treino */}
       <motion.div variants={itemVariants} className="mb-8">
