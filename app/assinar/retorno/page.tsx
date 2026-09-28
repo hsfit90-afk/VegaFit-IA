@@ -32,6 +32,20 @@ export default function RetornoDoPagamento() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.replace('/login'); return true; }
 
+    // Primeiro PERGUNTA ao Mercado Pago em vez de esperar a notificação chegar. É o que faz
+    // esta tela funcionar mesmo se o webhook falhar ou atrasar — o aluno que acabou de pagar
+    // não pode ficar preso aqui por causa de um problema que não é dele.
+    try {
+      const res = await fetch('/api/assinatura/sincronizar', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.temAcesso) return true;
+      }
+    } catch {
+      // Sincronização é o caminho rápido, não o único: se falhar, a leitura abaixo ainda
+      // pega o resultado do webhook quando ele chegar.
+    }
+
     const { data } = await supabase
       .from('profiles')
       .select('subscription_status, trial_ends_at, subscription_expires_at')

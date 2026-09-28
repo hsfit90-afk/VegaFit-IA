@@ -41,6 +41,11 @@ export default function Assinar() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace('/login'); return; }
 
+      // Sincroniza com o Mercado Pago ANTES de decidir mostrar paywall. Quem já pagou mas
+      // cujo webhook falhou ou atrasou não pode encontrar uma parede de pagamento — é o
+      // caminho mais curto para um pedido de reembolso e uma avaliação ruim.
+      try { await fetch('/api/assinatura/sincronizar', { method: 'POST' }); } catch { /* segue com o que está no banco */ }
+
       const { data } = await supabase
         .from('profiles')
         .select('subscription_status, trial_ends_at, subscription_expires_at, subscription_plan')
