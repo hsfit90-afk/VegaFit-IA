@@ -5,18 +5,27 @@ import { usePathname } from 'next/navigation';
 import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2, ClipboardList } from 'lucide-react';
 import { useAppContext } from '@/app/context/AppContext';
 
-// Full list for Desktop Sidebar
+/**
+ * `somenteMaster` esconde a tela de todo mundo que não é master.
+ *
+ * É a marca de "ainda em teste": a funcionalidade existe e funciona, mas o aluno comum não
+ * deve nem saber que ela está lá. Para liberar uma delas ao público depois, basta apagar a
+ * propriedade desta lista — e para esconder outra, basta acrescentá-la.
+ *
+ * Ver ROTAS_SOMENTE_MASTER logo abaixo: esconder do menu não basta sozinho, porque o
+ * endereço continua acessível por link direto.
+ */
 const DESKTOP_NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/anamnese', label: 'Anamnese', icon: ClipboardList },
   { href: '/progress', label: 'Progresso', icon: BarChart2 },
   { href: '/generator', label: 'Gerador IA', icon: Zap },
   { href: '/active', label: 'Treinar', icon: PlayCircle },
-  { href: '/library', label: 'Exercícios', icon: Dumbbell },
+  { href: '/library', label: 'Exercícios', icon: Dumbbell, somenteMaster: true },
   { href: '/history', label: 'Histórico', icon: History },
   { href: '/progression', label: 'Check-in', icon: TrendingUp },
-  { href: '/nutrition', label: 'Nutrição IA', icon: Apple },
-  { href: '/coach', label: 'AI Coach', icon: MessageSquare },
+  { href: '/nutrition', label: 'Nutrição IA', icon: Apple, somenteMaster: true },
+  { href: '/coach', label: 'AI Coach', icon: MessageSquare, somenteMaster: true },
   { href: '/settings', label: 'Perfil', icon: Settings },
 ];
 
@@ -28,6 +37,11 @@ const MOBILE_NAV_ITEMS = [
   { href: '/progress', label: 'Progresso', icon: BarChart2 },
   { href: '/settings', label: 'Perfil', icon: Settings },
 ];
+
+/** As mesmas rotas, para as telas se protegerem por conta própria. */
+export const ROTAS_SOMENTE_MASTER = DESKTOP_NAV_ITEMS
+  .filter(i => i.somenteMaster)
+  .map(i => i.href);
 
 export function Navigation() {
   const pathname = usePathname();
@@ -47,16 +61,11 @@ export function Navigation() {
     desktopItems.unshift({ href: '/admin', label: 'Admin (Master)', icon: Settings });
   }
 
-  const filteredDesktopNav = desktopItems.filter(item => {
-    if (item.href === '/nutrition') return role === 'master';
-    if (item.href === '/library') return role === 'master';
-    return true;
-  });
+  const visivel = (item: { href: string; somenteMaster?: boolean }) =>
+    !item.somenteMaster || role === 'master';
 
-  const filteredMobileNav = mobileItems.filter(item => {
-    if (item.href === '/nutrition') return role === 'master';
-    return true;
-  });
+  const filteredDesktopNav = desktopItems.filter(visivel);
+  const filteredMobileNav = mobileItems.filter(visivel);
 
   return (
     <>

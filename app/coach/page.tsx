@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
+import { useSomenteMaster } from "@/components/useSomenteMaster";
 
 interface Message {
   id: string;
@@ -19,6 +20,8 @@ const SUGGESTIONS = [
 ];
 
 export default function Coach() {
+  // Tela em teste: aluno comum e devolvido para a home (ver useSomenteMaster).
+  useSomenteMaster();
   const { profile } = useAppContext();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');

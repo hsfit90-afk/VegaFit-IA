@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
+import { useSomenteMaster } from "@/components/useSomenteMaster";
 
 interface NutritionData {
   tmb: number;
@@ -23,6 +24,8 @@ interface NutritionData {
 }
 
 export default function NutritionPage() {
+  // Tela em teste: aluno comum e devolvido para a home (ver useSomenteMaster).
+  useSomenteMaster();
   const { profile } = useAppContext();
   const toast = useToast();
   const router = useRouter();

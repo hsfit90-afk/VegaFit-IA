@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { useSomenteMaster } from "@/components/useSomenteMaster";
 
 const MUSCLE_GROUP_OPTIONS = [
   'Peito', 'Costas', 'Ombro', 'Bíceps', 'Tríceps', 'Antebraço', 'Pernas (quadríceps)',
@@ -17,6 +18,8 @@ const MUSCLE_GROUP_OPTIONS = [
 ];
 
 export default function Library() {
+  // Tela em teste: aluno comum e devolvido para a home (ver useSomenteMaster).
+  useSomenteMaster();
   const { profile, toggleFavoriteExercise } = useAppContext();
   const toast = useToast();
   const confirmar = useConfirm();
