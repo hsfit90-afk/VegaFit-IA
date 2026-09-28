@@ -11,6 +11,7 @@ import { motion, type Variants } from 'motion/react';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { WorkoutPlan } from '@/lib/types';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
 
 export default function Dashboard() {
   const { profile, history, workoutPlans, activePlanId, setActivePlan, deleteWorkoutPlan, currentSessionIndex } = useAppContext();
@@ -228,6 +229,13 @@ export default function Dashboard() {
         </h1>
         <p className="text-foreground-muted text-sm md:text-base">Pronto para superar seus limites hoje?</p>
       </motion.header>
+
+      {/* Avisa quantos dias faltam do teste. Não aparece para cortesia nem para assinatura
+          em dia — ver o comentário do componente sobre por que o aviso precisa vir ANTES
+          do bloqueio. */}
+      <motion.div variants={itemVariants} className="mb-6 empty:hidden">
+        <AvisoDeAssinatura />
+      </motion.div>
 
       {/* Dica do Dia */}
       <motion.div variants={itemVariants} className="mb-8">

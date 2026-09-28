@@ -83,6 +83,16 @@ export default function Register() {
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Criar Conta'}
             </button>
+
+            {/* Dizer o preço ANTES do cadastro. Quem descobre a cobrança só no oitavo dia se
+                sente enganado e pede reembolso — mesmo tendo gostado do treino. Avisar aqui
+                custa alguns cadastros de quem nunca ia pagar, e evita todos os cancelamentos
+                por surpresa. */}
+            <p className="text-center text-xs text-gray-500 leading-relaxed">
+              7 dias grátis para testar. Depois, R$ 37 por mês.
+              <br />
+              Sem cartão agora e sem fidelidade — cancele quando quiser.
+            </p>
           </form>
         )}
 
