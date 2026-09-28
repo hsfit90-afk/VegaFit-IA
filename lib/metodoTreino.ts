@@ -169,3 +169,28 @@ export function rotuloCurto(rotulo: string | undefined, indiceDaSerie: number): 
 export function ehSerieEspecial(rotulo: string | undefined): boolean {
   return Boolean(rotulo) && (ehDrop(rotulo!) || ehRestPause(rotulo!));
 }
+
+/**
+ * O que fazer NESTA série, dito na linha dela.
+ *
+ * A dica do exercício explica o que a técnica é, uma vez, no topo. Isso não basta no momento
+ * que importa: o aluno está com o peso na mão, olhando uma linha que diz "D · 16 · 8" e
+ * precisa saber se faz 8 repetições ou vai até a falha. Drop set é até a falha — o número
+ * pré-preenchido contradiz a técnica, então a linha precisa dizer.
+ *
+ * Devolve null para série comum: instrução em toda linha vira ruído e ninguém lê nenhuma.
+ */
+export function instrucaoDaSerie(rotulo: string | undefined, cargaSugerida: number): string | null {
+  if (!rotulo) return null;
+
+  if (ehDrop(rotulo)) {
+    const peso = cargaSugerida > 0 ? `para ${cargaSugerida} kg` : 'em cerca de 20%';
+    return `Sem descansar: baixe a carga ${peso} e faça o máximo que conseguir.`;
+  }
+
+  if (ehRestPause(rotulo)) {
+    return 'Descanse 15 segundos, mantenha a mesma carga e vá até a falha de novo.';
+  }
+
+  return null;
+}

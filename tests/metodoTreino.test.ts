@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { descansoAposSerie, avisoDoProximoPasso, limparAlvosPorSerie, fatorDeCarga, rotuloCurto, ehSerieEspecial, DESCANSO_DROP_SET, DESCANSO_REST_PAUSE } from '@/lib/metodoTreino';
+import { descansoAposSerie, avisoDoProximoPasso, limparAlvosPorSerie, fatorDeCarga, rotuloCurto, ehSerieEspecial, instrucaoDaSerie, DESCANSO_DROP_SET, DESCANSO_REST_PAUSE } from '@/lib/metodoTreino';
 
 /**
  * Drop Set e Rest-Pause eram so um nome na tela: o cronometro disparava os mesmos 60 segundos
@@ -207,5 +207,33 @@ describe('ehSerieEspecial — a linha precisa se destacar', () => {
     expect(ehSerieEspecial('RP1')).toBe(true);
     expect(ehSerieEspecial('S1')).toBe(false);
     expect(ehSerieEspecial(undefined)).toBe(false);
+  });
+});
+
+describe('instrucaoDaSerie — diz o que fazer na linha, nao so o que a tecnica e', () => {
+  it('drop set manda ir ate a falha, com a carga em kg', () => {
+    // A linha mostra "D · 16 · 8". O 8 pre-preenchido contradiz a tecnica: drop set e ate a
+    // falha. Sem esta frase o aluno faz 8 repeticoes e acha que cumpriu.
+    const t = instrucaoDaSerie('Drop Set', 16);
+    expect(t).toMatch(/sem descansar/i);
+    expect(t).toMatch(/16 kg/);
+    expect(t).toMatch(/maximo que conseguir|máximo que conseguir/i);
+  });
+
+  it('sem carga calculada, cai na porcentagem', () => {
+    // Aluno sem historico ainda nao tem 1RM, entao nao ha kg para sugerir.
+    expect(instrucaoDaSerie('Drop Set', 0)).toMatch(/20%/);
+  });
+
+  it('rest-pause manda MANTER a carga', () => {
+    const t = instrucaoDaSerie('RP1', 30);
+    expect(t).toMatch(/15 segundos/);
+    expect(t).toMatch(/mesma carga/i);
+    expect(t).not.toMatch(/baixe|reduza/i);
+  });
+
+  it('serie comum nao mostra instrucao: uma em toda linha vira ruido', () => {
+    expect(instrucaoDaSerie('S1', 20)).toBeNull();
+    expect(instrucaoDaSerie(undefined, 20)).toBeNull();
   });
 });

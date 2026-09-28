@@ -20,7 +20,7 @@ import { PeriodizationResetNotice } from '@/components/workout/PeriodizationRese
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
-import { descansoAposSerie, avisoDoProximoPasso, fatorDeCarga, rotuloCurto, ehSerieEspecial } from '@/lib/metodoTreino';
+import { descansoAposSerie, avisoDoProximoPasso, fatorDeCarga, rotuloCurto, ehSerieEspecial, instrucaoDaSerie } from '@/lib/metodoTreino';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
@@ -1188,6 +1188,17 @@ export default function ActiveWorkout() {
                     </button>
                   </div>
                 </div>
+
+                {/* O que fazer NESTA série. A dica do topo explica o que a técnica é, uma vez;
+                    isso não basta com o peso na mão, olhando uma linha que diz "D · 16 · 8" —
+                    o aluno precisa saber se faz 8 repetições ou vai até a falha. Some depois
+                    de concluída, para não poluir o que já passou. */}
+                {!set.completed && instrucaoDaSerie(set.label, set.weight) && (
+                  <p className="flex items-start gap-1.5 text-[11px] leading-snug text-accent/90 mt-1.5 mb-1 px-2">
+                    <Zap className="w-3 h-3 flex-none mt-[1px]" />
+                    {instrucaoDaSerie(set.label, set.weight)}
+                  </p>
+                )}
 
                 {trainingMethod === 'rest_pause' && !set.completed && (
                   <div className="flex items-center justify-center gap-2 mt-1.5 mb-1">
