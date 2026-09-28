@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { descansoAposSerie, avisoDoProximoPasso, limparAlvosPorSerie, DESCANSO_DROP_SET, DESCANSO_REST_PAUSE } from '@/lib/metodoTreino';
+import { descansoAposSerie, avisoDoProximoPasso, limparAlvosPorSerie, fatorDeCarga, rotuloCurto, ehSerieEspecial, DESCANSO_DROP_SET, DESCANSO_REST_PAUSE } from '@/lib/metodoTreino';
 
 /**
  * Drop Set e Rest-Pause eram so um nome na tela: o cronometro disparava os mesmos 60 segundos
@@ -130,7 +130,7 @@ describe('limparAlvosPorSerie — a rede embaixo da IA', () => {
   });
 
   it('nao inventa campo quando a IA nao mandou nada', () => {
-    const r = limparAlvosPorSerie({ sets: 3 });
+    const r = limparAlvosPorSerie({ sets: 3, targetReps: undefined, targetWeights: undefined, targetLabels: undefined });
     expect(r.targetReps).toBeUndefined();
     expect(r.targetWeights).toBeUndefined();
     expect(r.targetLabels).toBeUndefined();
@@ -140,5 +140,72 @@ describe('limparAlvosPorSerie — a rede embaixo da IA', () => {
     const r = limparAlvosPorSerie({ sets: 3, name: 'Supino', reps: '8-12', targetReps: ['x'] } as any);
     expect((r as any).name).toBe('Supino');
     expect((r as any).reps).toBe('8-12');
+  });
+});
+
+describe('fatorDeCarga — o drop precisa pesar menos', () => {
+  it('serie normal usa a carga cheia', () => {
+    expect(fatorDeCarga(['S1', 'S2', 'Drop Set'], 0)).toBe(1);
+    expect(fatorDeCarga(['S1', 'S2', 'Drop Set'], 1)).toBe(1);
+  });
+
+  it('o drop cai para 80%', () => {
+    // Sem isto a app sugeria o MESMO peso nas tres series, inclusive no drop -- e quem
+    // seguisse a sugestao estaria fazendo serie normal com outro nome, chegando a falha na
+    // segunda repeticao.
+    expect(fatorDeCarga(['S1', 'S2', 'Drop Set'], 2)).toBeCloseTo(0.8);
+  });
+
+  it('drops em sequencia acumulam', () => {
+    const r = ['S1', 'S2', 'Drop 1', 'Drop 2'];
+    expect(fatorDeCarga(r, 2)).toBeCloseTo(0.8);
+    expect(fatorDeCarga(r, 3)).toBeCloseTo(0.64);
+  });
+
+  it('rest-pause NAO reduz: a tecnica e manter a carga', () => {
+    // Reduzir ali descaracterizaria o metodo -- rest-pause compra repeticao com descanso
+    // curto, nao com peso menor.
+    expect(fatorDeCarga(['S1', 'RP1', 'RP2'], 1)).toBe(1);
+    expect(fatorDeCarga(['S1', 'RP1', 'RP2'], 2)).toBe(1);
+  });
+
+  it('plano sem rotulo usa carga cheia', () => {
+    expect(fatorDeCarga(undefined, 0)).toBe(1);
+    expect(fatorDeCarga([], 2)).toBe(1);
+  });
+});
+
+describe('rotuloCurto — cabe na coluna estreita', () => {
+  it('S1 vira 1: o S nao acrescenta nada na coluna de series', () => {
+    expect(rotuloCurto('S1', 0)).toBe('1');
+    expect(rotuloCurto('S3', 2)).toBe('3');
+  });
+
+  it('drop vira D ou D1', () => {
+    expect(rotuloCurto('Drop Set', 2)).toBe('D');
+    expect(rotuloCurto('Drop 2', 3)).toBe('D2');
+  });
+
+  it('rest-pause mantem o numero', () => {
+    expect(rotuloCurto('RP1', 1)).toBe('RP1');
+    expect(rotuloCurto('Rest-Pause', 1)).toBe('RP');
+  });
+
+  it('sem rotulo cai no numero da serie, como era antes', () => {
+    expect(rotuloCurto(undefined, 0)).toBe('1');
+    expect(rotuloCurto(undefined, 4)).toBe('5');
+  });
+
+  it('rotulo inesperado e cortado em vez de quebrar a linha', () => {
+    expect(rotuloCurto('Aquecimento', 0)).toBe('Aque');
+  });
+});
+
+describe('ehSerieEspecial — a linha precisa se destacar', () => {
+  it('drop e rest-pause sim, serie comum nao', () => {
+    expect(ehSerieEspecial('Drop Set')).toBe(true);
+    expect(ehSerieEspecial('RP1')).toBe(true);
+    expect(ehSerieEspecial('S1')).toBe(false);
+    expect(ehSerieEspecial(undefined)).toBe(false);
   });
 });

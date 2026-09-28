@@ -20,7 +20,7 @@ import { PeriodizationResetNotice } from '@/components/workout/PeriodizationRese
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
-import { descansoAposSerie, avisoDoProximoPasso } from '@/lib/metodoTreino';
+import { descansoAposSerie, avisoDoProximoPasso, fatorDeCarga, rotuloCurto, ehSerieEspecial } from '@/lib/metodoTreino';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
@@ -145,6 +145,12 @@ export default function ActiveWorkout() {
             if (oneRM > 0) {
               finalWeight = calculateTargetWeight(oneRM, profile?.goal || 'Hipertrofia', targetReps, isDeload);
             }
+
+            // Num drop set a carga cai a cada queda. Sem isto a app sugeria o MESMO peso nas
+            // três séries, inclusive no drop — e quem seguisse a sugestão estava fazendo
+            // série normal com outro nome, chegando à falha na segunda repetição.
+            const fator = fatorDeCarga(ex.targetLabels, i);
+            if (fator !== 1) finalWeight = Math.round(finalWeight * fator);
 
             return { 
               label: ex.targetLabels?.[i] || `S${i + 1}`,
@@ -1091,13 +1097,27 @@ export default function ActiveWorkout() {
               
               {ex.sets.map((set, setIndex) => (
                 <div key={setIndex}>
+                {/* A linha de técnica especial se destaca em roxo: com três linhas iguais o
+                    aluno tratava o drop como série normal. */}
                 <div className={`grid grid-cols-12 gap-2 items-center p-2 md:p-3 rounded-2xl border transition-all duration-300 relative group ${
                   set.completed
                     ? 'bg-gradient-to-r from-primary/10 to-transparent border-primary/30 shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.15)]'
-                    : 'bg-surface border-border hover:bg-white/[0.06]'
+                    : ehSerieEspecial(set.label)
+                      ? 'bg-accent/[0.07] border-accent/30 hover:bg-accent/[0.11]'
+                      : 'bg-surface border-border hover:bg-white/[0.06]'
                 }`}>
+                  {/* Mostra o RÓTULO da série, não o índice. Antes aparecia "1 2 3" mesmo num
+                      drop set: o aluno não tinha como saber que a terceira era o drop, registrava
+                      com a carga cheia, e o volume da semana saía errado — não por erro de conta,
+                      mas por erro de registro que a própria tela induzia. */}
                   <div className="col-span-1 flex justify-center">
-                    <span className={`text-xs font-mono font-bold ${ set.completed ? 'text-primary' : 'text-gray-600' }`}>{setIndex + 1}</span>
+                    <span className={`text-[0.7rem] font-mono font-bold tracking-tight ${
+                      set.completed ? 'text-primary'
+                      : ehSerieEspecial(set.label) ? 'text-accent'
+                      : 'text-gray-600'
+                    }`}>
+                      {rotuloCurto(set.label, setIndex)}
+                    </span>
                   </div>
                   
                   <div className="col-span-3">

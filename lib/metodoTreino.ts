@@ -116,3 +116,56 @@ export function limparAlvosPorSerie<T extends {
 
   return limpo;
 }
+
+/** Quanto da carga se mantém a cada queda do drop set. 20% a menos, que é a prescrição usual. */
+export const FATOR_DO_DROP = 0.8;
+
+/**
+ * Quanto da carga de trabalho esta série deve usar.
+ *
+ * Num drop set o aluno reduz a carga a cada queda. Sem isto, a app sugeria o MESMO peso nas
+ * três séries — inclusive no drop — e quem seguisse a sugestão estaria fazendo série normal
+ * com outro nome, chegando à falha na segunda repetição.
+ *
+ * Drops em sequência acumulam: "Drop 1" fica em 80%, "Drop 2" em 64%.
+ *
+ * Rest-pause NÃO reduz: a técnica é justamente manter a carga e comprar repetição com
+ * descanso curto. Reduzir ali descaracterizaria o método.
+ */
+export function fatorDeCarga(rotulos: string[] | null | undefined, indiceDaSerie: number): number {
+  if (!rotulos?.length) return 1;
+
+  let fator = 1;
+  for (let i = 0; i <= indiceDaSerie && i < rotulos.length; i++) {
+    if (ehDrop(rotulos[i])) fator *= FATOR_DO_DROP;
+  }
+  return fator;
+}
+
+/**
+ * Rótulo curto para a coluna estreita da tabela de séries.
+ *
+ * A coluna cabe dois ou três caracteres. "Drop Set" por extenso quebraria a linha, e o número
+ * cru — que era o que aparecia antes — escondia justamente a informação que muda o que o
+ * aluno faz.
+ */
+export function rotuloCurto(rotulo: string | undefined, indiceDaSerie: number): string {
+  if (!rotulo) return String(indiceDaSerie + 1);
+  if (ehDrop(rotulo)) {
+    const n = rotulo.match(/\d+/)?.[0];
+    return n ? `D${n}` : 'D';
+  }
+  if (ehRestPause(rotulo)) {
+    const n = rotulo.match(/\d+/)?.[0];
+    return n ? `RP${n}` : 'RP';
+  }
+  // "S1" vira "1": o S não acrescenta nada numa coluna que já é a de séries.
+  const so = rotulo.match(/^S(\d+)$/i);
+  if (so) return so[1];
+  return rotulo.slice(0, 4);
+}
+
+/** A série é de uma técnica especial? A tela usa para destacar a linha. */
+export function ehSerieEspecial(rotulo: string | undefined): boolean {
+  return Boolean(rotulo) && (ehDrop(rotulo!) || ehRestPause(rotulo!));
+}
