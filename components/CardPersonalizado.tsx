@@ -59,7 +59,7 @@ export function CardPersonalizado() {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-outfit font-bold text-sm leading-tight">
-            {urgente ? 'Últimas vagas do treino montado por mim' : 'Quer um treino montado por mim?'}
+            {urgente ? 'Últimas vagas com o personal' : 'Quer um treino montado pelo personal?'}
           </p>
           <span className={`px-2 py-0.5 rounded-full text-[0.65rem] font-bold uppercase tracking-wider whitespace-nowrap ${
             urgente ? 'bg-warning/20 text-warning' : 'bg-accent/20 text-accent'

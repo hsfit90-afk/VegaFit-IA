@@ -41,8 +41,8 @@ interface Estado {
  */
 function linkWhatsApp(numero: string, objetivo: string): string {
   const msg = objetivo
-    ? `Olá! Reservei minha vaga do Treino Personalizado no VegaFit. Meu objetivo: ${objetivo}`
-    : 'Olá! Reservei minha vaga do Treino Personalizado no VegaFit.';
+    ? `Olá! Reservei minha vaga do Treino do Personal no VegaFit. Meu objetivo: ${objetivo}`
+    : 'Olá! Reservei minha vaga do Treino do Personal no VegaFit.';
   return `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`;
 }
 
@@ -104,8 +104,8 @@ export default function TreinoPersonalizado() {
             <UserCheck className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-outfit font-bold leading-none">Treino Personalizado</h1>
-            <p className="text-sm text-foreground-muted mt-1">Montado à mão, por um profissional</p>
+            <h1 className="text-3xl md:text-4xl font-outfit font-bold leading-none">Treino do Personal</h1>
+            <p className="text-sm text-foreground-muted mt-1">Montado à mão, exercício por exercício</p>
           </div>
         </div>
         <p className="text-foreground-muted leading-relaxed max-w-prose">

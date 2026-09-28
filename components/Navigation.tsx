@@ -24,7 +24,7 @@ const DESKTOP_NAV_ITEMS = [
   { href: '/library', label: 'Exercícios', icon: Dumbbell, somenteMaster: true },
   { href: '/history', label: 'Histórico', icon: History },
   { href: '/progression', label: 'Check-in', icon: TrendingUp },
-  { href: '/personalizado', label: 'Personalizado', icon: UserCheck },
+  { href: '/personalizado', label: 'Personal', icon: UserCheck },
   { href: '/nutrition', label: 'Nutrição IA', icon: Apple, somenteMaster: true },
   { href: '/coach', label: 'AI Coach', icon: MessageSquare, somenteMaster: true },
   { href: '/settings', label: 'Perfil', icon: Settings },

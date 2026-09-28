@@ -95,7 +95,7 @@ export function FilaPersonalizado() {
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
         <h2 className="text-2xl font-outfit font-bold flex items-center gap-2">
           <UserCheck className="w-6 h-6 text-primary" />
-          Treino Personalizado
+          Treino do Personal
         </h2>
         <div className="flex items-center gap-3 text-sm">
           <span className={`px-3 py-1.5 rounded-full font-semibold ${
