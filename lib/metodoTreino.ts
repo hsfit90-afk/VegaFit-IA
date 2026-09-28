@@ -68,3 +68,51 @@ export function avisoDoProximoPasso(e: EntradaDeDescanso): string | null {
   if (ehRestPause(proximo)) return 'Respire 15 segundos e faça mais repetições com a mesma carga.';
   return null;
 }
+
+/**
+ * Limpa os arrays por série que vieram da IA.
+ *
+ * Medido em 27/09/2026: pedindo uma pirâmide, o modelo devolveu
+ * `targetWeights: ["Carga Moderada", "Carga Pesada", "Carga Máxima"]` — texto onde o tipo
+ * declara `number[]`. A tela faz `ex.targetWeights?.[i] || 0`, e string é truthy: o campo de
+ * carga do aluno receberia "Carga Moderada" e a conta de volume iria junto.
+ *
+ * O modelo não errou por acaso — ele não tem como saber quantos quilos o aluno levanta. Por
+ * isso o prompt parou de pedir carga, e a app calcula a partir do 1RM real do histórico. Esta
+ * função é a rede embaixo: qualquer valor não numérico é descartado, para qualquer método.
+ */
+export function limparAlvosPorSerie<T extends {
+  sets?: number;
+  targetReps?: unknown;
+  targetWeights?: unknown;
+  targetLabels?: unknown;
+}>(exercicio: T): T {
+  const limpo: T = { ...exercicio };
+
+  const numeros = (v: unknown): number[] | undefined => {
+    if (!Array.isArray(v)) return undefined;
+    const n = v.map(x => Number(x)).filter(x => Number.isFinite(x) && x >= 0);
+    return n.length === v.length && n.length > 0 ? n : undefined;
+  };
+
+  const textos = (v: unknown): string[] | undefined => {
+    if (!Array.isArray(v)) return undefined;
+    const t = v.filter((x): x is string => typeof x === 'string' && x.trim().length > 0);
+    return t.length === v.length && t.length > 0 ? t : undefined;
+  };
+
+  limpo.targetReps = numeros(exercicio.targetReps);
+  limpo.targetWeights = numeros(exercicio.targetWeights);
+  limpo.targetLabels = textos(exercicio.targetLabels);
+
+  // Array de tamanho diferente de "sets" desalinha rótulo e série: a série 3 mostraria o
+  // rótulo da 2, e no drop set isso significa descansar na hora errada. Melhor não ter.
+  const n = exercicio.sets;
+  if (typeof n === 'number' && n > 0) {
+    if (limpo.targetReps && (limpo.targetReps as number[]).length !== n) limpo.targetReps = undefined;
+    if (limpo.targetWeights && (limpo.targetWeights as number[]).length !== n) limpo.targetWeights = undefined;
+    if (limpo.targetLabels && (limpo.targetLabels as string[]).length !== n) limpo.targetLabels = undefined;
+  }
+
+  return limpo;
+}

@@ -6,6 +6,7 @@ import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
 import { isMobilityOnly } from "@/lib/exerciseType";
 import { classifyExerciseLevel, normalizarNivel, NIVEIS_PERMITIDOS, GRUPOS_SEM_FILTRO_DE_NIVEL } from "@/lib/exerciseLevel";
+import { limparAlvosPorSerie } from "@/lib/metodoTreino";
 import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
 import { computeUnlock, type MethodId } from "@/lib/trainingUnlock";
@@ -556,6 +557,13 @@ ${instrucaoDoMetodo}`;
           usedExerciseNames.add(candidate.name);
         }
       }
+    }
+
+    // Descarta alvo por série que nao veio no formato certo. O modelo ja devolveu
+    // targetWeights como texto ("Carga Pesada"), e string e truthy na tela — o campo de carga
+    // do aluno receberia a palavra e a conta de volume iria junto.
+    for (const session of json.sessions || []) {
+      session.exercises = (session.exercises || []).map((ex: any) => limparAlvosPorSerie(ex));
     }
 
     // Sanitiza o aeróbico. Ao contrário das sessões de força, um cardio inválido NÃO derruba a
