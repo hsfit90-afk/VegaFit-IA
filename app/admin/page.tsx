@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { UserProfile } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
+import { FilaPersonalizado } from '@/components/FilaPersonalizado';
 
 export default function AdminDashboard() {
   const { profile, userId } = useAppContext();
@@ -144,6 +145,8 @@ export default function AdminDashboard() {
           <p className="text-4xl font-bold text-blue-400">{clients.length}</p>
         </Card>
       </div>
+
+      <FilaPersonalizado />
 
       <div>
         <h2 className="text-2xl font-outfit font-bold mb-4">Todos os Usuários</h2>
