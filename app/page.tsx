@@ -12,6 +12,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { WorkoutPlan } from '@/lib/types';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
+import { CardPersonalizado } from '@/components/CardPersonalizado';
 
 export default function Dashboard() {
   const { profile, history, workoutPlans, activePlanId, setActivePlan, deleteWorkoutPlan, currentSessionIndex } = useAppContext();
@@ -235,6 +236,12 @@ export default function Dashboard() {
           do bloqueio. */}
       <motion.div variants={itemVariants} className="mb-6 empty:hidden">
         <AvisoDeAssinatura />
+      </motion.div>
+
+      {/* No celular a barra inferior nao tem esta tela; sem o card o produto de maior
+          margem ficaria invisivel para a maior parte do publico. */}
+      <motion.div variants={itemVariants} className="mb-6 empty:hidden">
+        <CardPersonalizado />
       </motion.div>
 
       {/* Dica do Dia */}

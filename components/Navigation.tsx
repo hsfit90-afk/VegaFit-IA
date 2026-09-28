@@ -24,7 +24,7 @@ const DESKTOP_NAV_ITEMS = [
   { href: '/library', label: 'Exercícios', icon: Dumbbell, somenteMaster: true },
   { href: '/history', label: 'Histórico', icon: History },
   { href: '/progression', label: 'Check-in', icon: TrendingUp },
-  { href: '/personalizado', label: 'Treino Personalizado', icon: UserCheck },
+  { href: '/personalizado', label: 'Personalizado', icon: UserCheck },
   { href: '/nutrition', label: 'Nutrição IA', icon: Apple, somenteMaster: true },
   { href: '/coach', label: 'AI Coach', icon: MessageSquare, somenteMaster: true },
   { href: '/settings', label: 'Perfil', icon: Settings },
@@ -72,7 +72,7 @@ export function Navigation() {
     <>
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-[260px] h-screen fixed top-0 left-0 bg-surface border-r border-border p-6 z-50">
-        <div className="flex items-center gap-3 mb-12">
+        <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
             <Zap className="w-6 h-6 text-primary-foreground" />
           </div>
@@ -87,23 +87,26 @@ export function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold transition-all duration-300 ${
-                  isActive 
-                    ? 'bg-surface-light text-primary shadow-sm' 
+                // shrink-0 é o que conserta o item cortado ao meio: sem ele, o flex column
+                // espremia os últimos da lista em vez de deixar o <nav> rolar.
+                // truncate + whitespace-nowrap impedem que um rótulo comprido vaze da barra.
+                className={`shrink-0 flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold transition-all duration-300 ${
+                  isActive
+                    ? 'bg-surface-light text-primary shadow-sm'
                     : 'text-foreground-muted hover:text-foreground hover:bg-surface-light/50'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${isActive ? 'fill-primary/20' : ''}`} />
-                <span>{item.label}</span>
+                <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'fill-primary/20' : ''}`} />
+                <span className="truncate whitespace-nowrap">{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-auto pt-6 border-t border-border">
+        <div className="mt-auto pt-4 border-t border-border shrink-0">
           <button
             onClick={() => clearData()}
-            className="flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold text-destructive hover:bg-destructive/10 transition-all duration-300 w-full"
+            className="flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-destructive hover:bg-destructive/10 transition-all duration-300 w-full"
           >
             <LogOut className="w-5 h-5" />
             <span>Sair da Conta</span>
