@@ -251,6 +251,36 @@ export async function POST(req: NextRequest) {
     }
     const methodDesc = methodDescriptions[methodLabel] || methodDescriptions['tradicional'];
 
+    /**
+     * Instrução por método, com a ESTRUTURA que cada técnica exige no JSON.
+     *
+     * Medido em 27/09/2026, gerando um treino de cada método contra produção: a regra genérica
+     * acima produzia rótulos corretos só para o Drop Set. Pirâmide e Rest-Pause voltavam com
+     * ["S1","S2","S3"] e targetReps vazio — ou seja, um treino tradicional com outro nome, para
+     * um aluno que esperou seis meses pela técnica.
+     *
+     * A diferença é pedir o campo específico, com exemplo, em vez de descrever a técnica em
+     * prosa e esperar que o modelo deduza o formato. O rótulo não é enfeite: é ele que a tela
+     * de execução lê para decidir o descanso de cada série (ver lib/metodoTreino.ts).
+     */
+    const instrucoesPorMetodo: Record<string, string> = {
+      piramide:
+        'ESTRUTURA OBRIGATÓRIA DA PIRÂMIDE: preencha "targetReps" com as repetições DECRESCENDO a cada série ' +
+        '(ex: [12, 10, 8] para 3 séries) e "targetWeights" com a carga CRESCENDO na mesma proporção ' +
+        '(ex: [20, 25, 30]). Os dois arrays DEVEM ter tamanho igual a "sets". Sem esses dois arrays o ' +
+        'método não existe: a pirâmide É a variação de carga e repetição entre as séries.',
+      rest_pause:
+        'ESTRUTURA OBRIGATÓRIA DO REST-PAUSE: em "targetLabels", a primeira série é a série de trabalho e as ' +
+        'seguintes são retomadas. Use exatamente ["S1", "RP1", "RP2"] para 3 séries, ou ["S1", "RP1"] para 2. ' +
+        'Os rótulos "RP" são lidos pelo aplicativo para encurtar o descanso para 15 segundos — sem eles o ' +
+        'aluno descansa o tempo normal e a técnica deixa de ser rest-pause.',
+      drop_set:
+        'ESTRUTURA OBRIGATÓRIA DO DROP SET: a ÚLTIMA série de "targetLabels" deve se chamar "Drop Set" ' +
+        '(ex: ["S1", "S2", "Drop Set"]). Se prescrever mais de um drop, use ["S1", "S2", "Drop 1", "Drop 2"]. ' +
+        'O aplicativo lê esse rótulo para não disparar descanso antes do drop.',
+    };
+    const instrucaoDoMetodo = instrucoesPorMetodo[methodLabel] ?? '';
+
     const durationMinutes = parseInt(config.duration) || 60;
     const level = (config.level || profile?.level || 'Iniciante').toLowerCase();
     
@@ -433,9 +463,10 @@ Gere exercícios compatíveis com os "Equipamentos disponíveis" (${config.equip
 REGRA CRÍTICA SOBRE O CAMPO "reps": o valor no exemplo do JSON acima é ilustrativo, NÃO copie o mesmo número pra todos os exercícios. Classifique CADA exercício como composto ou isolado e defina "reps" com um valor numérico real dentro da faixa correspondente (${compoundReps} para composto, ${isolationReps} para isolado) — exercícios diferentes na mesma sessão DEVEM ter valores de "reps" diferentes quando forem de tipos diferentes.
 REGRA CRÍTICA SOBRE O CAMPO "sets": o valor ${compoundSets} no exemplo do JSON acima também é só o exemplo pra exercício COMPOSTO. Para exercício ISOLADO, "sets" DEVE ser ${isolationSets}. Em AMBOS os casos, esse número tem que ser EXATAMENTE IGUAL ao número escrito em "Semana 1" dentro do campo "method" do mesmo exercício — os dois campos nunca podem contradizer um ao outro. A progressão das semanas seguintes (Semana 2, 3, 4) parte desse número inicial, conforme a REGRA CRÍTICA de Periodização.
 Aplique o método ${methodLabel.toUpperCase()} de forma coerente em todos os exercícios.
-REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause, Pirâmide, etc: 
+REGRA CRÍTICA PARA MÉTODOS AVANÇADOS: Se o método for Drop Set, Rest-Pause, Pirâmide, etc:
 1. Use o array "targetLabels" para nomear as séries (ex: ["S1", "S2", "Drop Set"]). O tamanho DEVE ser igual ao número de "sets". Para o método tradicional, use ["S1", "S2", "S3"].
-2. Você DEVE explicar brevemente como executar o método no campo "tips" de CADA exercício (ex: "No Drop Set, ao falhar, reduza 20% da carga e continue sem descanso").`;
+2. Você DEVE explicar brevemente como executar o método no campo "tips" de CADA exercício (ex: "No Drop Set, ao falhar, reduza 20% da carga e continue sem descanso").
+${instrucaoDoMetodo}`;
 
     const response = await generateWithRetry(key, {
       prompt,

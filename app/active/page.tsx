@@ -20,6 +20,7 @@ import { PeriodizationResetNotice } from '@/components/workout/PeriodizationRese
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
+import { descansoAposSerie, avisoDoProximoPasso } from '@/lib/metodoTreino';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
@@ -43,6 +44,8 @@ export default function ActiveWorkout() {
   const [activeExercises, setActiveExercises] = useState<ActiveExercise[]>([]);
   const [startTime, setStartTime] = useState<number>(0);
   const [restEndTime, setRestEndTime] = useState<number>(0);
+  // Explica por que o cronometro encurtou ou nao apareceu (drop set, rest-pause).
+  const [dicaDoMetodo, setDicaDoMetodo] = useState<string | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [finishedVolume, setFinishedVolume] = useState(0);
   const [finishedDuration, setFinishedDuration] = useState(0);
@@ -273,8 +276,18 @@ export default function ActiveWorkout() {
       if (!isCurrentlyCompleted) {
          const { isLastInGroup } = getGroupInfo(exerciseIndex);
          if (isLastInGroup) {
-           const restSeconds = profile?.defaultRestTimer || currentSession?.exercises[exerciseIndex]?.restSeconds || 60;
-           setRestEndTime(Date.now() + restSeconds * 1000);
+           const padrao = profile?.defaultRestTimer || currentSession?.exercises[exerciseIndex]?.restSeconds || 60;
+
+           // O descanso é por SÉRIE, não por exercício: antes de um drop ele é zero, e antes
+           // de uma retomada de rest-pause são 15 segundos. Sem isto as duas técnicas eram só
+           // um nome na tela — o cronômetro disparava os mesmos 60s e destruía o método.
+           const rotulos = currentSession?.exercises[exerciseIndex]?.targetLabels;
+           const segundos = descansoAposSerie({ rotulos, indiceDaSerie: setIndex, descansoPadrao: padrao });
+
+           // Cronômetro que não aparece, sem explicação, parece bug: o aluno fica olhando a
+           // tela esperando. A dica diz o que fazer agora.
+           setDicaDoMetodo(avisoDoProximoPasso({ rotulos, indiceDaSerie: setIndex, descansoPadrao: padrao }));
+           setRestEndTime(segundos > 0 ? Date.now() + segundos * 1000 : 0);
          }
          if (typeof navigator !== 'undefined' && navigator.vibrate) {
            navigator.vibrate(50);
@@ -840,6 +853,16 @@ export default function ActiveWorkout() {
         onPular={() => setRestEndTime(0)}
         formatarTempo={formatTime}
       />
+
+      {/* No drop set o descanso é zero, então o cronômetro nem aparece — e tela sem nada
+          depois de concluir uma série parece bug, o aluno fica esperando. Esta faixa diz o
+          que fazer agora. Ela se limpa sozinha na próxima série concluída. */}
+      {dicaDoMetodo && (
+        <div className="mb-4 flex items-center gap-3 p-3.5 rounded-xl border border-accent/40 bg-accent/10 animate-fade-in">
+          <Zap className="w-5 h-5 text-accent flex-none" />
+          <p className="text-sm font-semibold leading-snug">{dicaDoMetodo}</p>
+        </div>
+      )}
 
       <PeriodizationResetNotice diasParado={resetNotice} onFechar={() => setResetNotice(null)} />
 
