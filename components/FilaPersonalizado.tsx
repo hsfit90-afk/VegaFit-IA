@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
 import { UserCheck, Loader2, ExternalLink } from 'lucide-react';
-import { descreverStatus, vagasDoMes, VAGAS_POR_MES } from '@/lib/treinoPersonalizado';
+import { descreverStatus, vagasDoLote } from '@/lib/treinoPersonalizado';
 
 /**
  * Fila de Treino Personalizado no painel master.
@@ -50,11 +50,12 @@ export function FilaPersonalizado() {
   const toast = useToast();
   const [pedidos, setPedidos] = useState<Pedido[] | null>(null);
   const [mexendo, setMexendo] = useState<string | null>(null);
+  const [limite, setLimite] = useState(10);
 
   const carregar = async () => {
     try {
       const res = await fetch('/api/admin/personalizado');
-      if (res.ok) setPedidos((await res.json()).pedidos);
+      if (res.ok) { const d = await res.json(); setPedidos(d.pedidos); if (d.limite) setLimite(d.limite); }
       else setPedidos([]);
     } catch { setPedidos([]); }
   };
@@ -84,7 +85,8 @@ export function FilaPersonalizado() {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   }
 
-  const vagas = vagasDoMes(pedidos.map(p => ({ status: p.status, createdAt: p.created_at })));
+  // O limite vem do servidor junto com a lista; aqui so contamos o que ja foi usado.
+  const vagas = vagasDoLote(pedidos.map(p => ({ status: p.status, createdAt: p.created_at })), limite);
   const emAndamento = pedidos.filter(p => p.status !== 'entregue' && p.status !== 'cancelado');
   const concluidos = pedidos.filter(p => p.status === 'entregue').length;
 
@@ -99,7 +101,7 @@ export function FilaPersonalizado() {
           <span className={`px-3 py-1.5 rounded-full font-semibold ${
             vagas.esgotado ? 'bg-destructive/15 text-destructive' : 'bg-primary/15 text-primary'
           }`}>
-            {vagas.ocupadas} de {VAGAS_POR_MES} vagas usadas
+            {vagas.ocupadas} de {vagas.limite} vagas do lote
           </span>
           <span className="text-gray-500">{concluidos} entregues no total</span>
         </div>
@@ -108,7 +110,7 @@ export function FilaPersonalizado() {
       {emAndamento.length === 0 ? (
         <Card>
           <CardContent className="p-6 text-center text-sm text-gray-400">
-            Nenhum pedido em andamento. As {vagas.restantes} vagas restantes deste mês estão livres.
+            Nenhum pedido em andamento. Restam {vagas.restantes} vagas no lote.
           </CardContent>
         </Card>
       ) : (
@@ -159,7 +161,7 @@ export function FilaPersonalizado() {
                     </a>
                     <button
                       onClick={() => {
-                        if (confirm(`Cancelar o pedido de ${p.nome}? A vaga volta para o mês.`)) {
+                        if (confirm(`Cancelar o pedido de ${p.nome}? A vaga volta para o lote.`)) {
                           mover(p.id, 'cancelado', 'Pedido cancelado');
                         }
                       }}

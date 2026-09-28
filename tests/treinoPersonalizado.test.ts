@@ -1,107 +1,118 @@
 import { describe, it, expect } from 'vitest';
 import {
-  vagasDoMes, jaTemPedidoAberto, prazoDeEntrega, VAGAS_POR_MES, type PedidoResumo,
+  vagasDoLote, jaTemPedidoAberto, prazoDeEntrega, VAGAS_PADRAO, type PedidoResumo,
 } from '@/lib/treinoPersonalizado';
 
 /**
- * O limite de vagas protege a AGENDA do profissional, não é escassez de marketing. Cada
- * treino personalizado consome horas dele; prometer mais do que cabe no mês transforma o
- * produto de maior margem no maior problema.
+ * As dez vagas sao do LOTE DE LANCAMENTO, nao de um mes. Quando acabarem, acabou -- e um novo
+ * lote e decisao do dono, feita pela variavel VAGAS_PERSONALIZADO no painel da Vercel.
+ *
+ * Isso protege duas coisas: a agenda dele (cada treino consome horas) e a promessa feita ao
+ * aluno (escassez que reseta sozinha todo mes nao e escassez, e mentira que o cliente percebe).
  */
 
-const OUTUBRO = new Date('2026-10-15T12:00:00Z');
-const p = (status: string, iso: string): PedidoResumo => ({ status, createdAt: iso });
+const p = (status: string, iso = '2026-10-02T10:00:00Z'): PedidoResumo => ({ status, createdAt: iso });
 
-describe('vagasDoMes — o que ocupa vaga', () => {
-  it('mês vazio tem as dez vagas', () => {
-    expect(vagasDoMes([], OUTUBRO)).toEqual({ ocupadas: 0, restantes: VAGAS_POR_MES, esgotado: false });
+describe('vagasDoLote — o que ocupa vaga', () => {
+  it('lote novo tem as dez vagas', () => {
+    const v = vagasDoLote([]);
+    expect(v.ocupadas).toBe(0);
+    expect(v.restantes).toBe(VAGAS_PADRAO);
+    expect(v.esgotado).toBe(false);
   });
 
-  it('pedido sem pagamento NÃO ocupa vaga', () => {
-    // Senão bastaria alguém abrir a tela e pedir dez vezes para fechar o mês sem pagar nada.
-    const dez = Array.from({ length: 10 }, () => p('aguardando_pagamento', '2026-10-02T10:00:00Z'));
-    expect(vagasDoMes(dez, OUTUBRO).ocupadas).toBe(0);
+  it('pedido sem pagamento NAO ocupa vaga', () => {
+    // Senao bastaria alguem abrir a tela e pedir dez vezes para fechar o lote sem pagar nada.
+    const dez = Array.from({ length: 10 }, () => p('aguardando_pagamento'));
+    expect(vagasDoLote(dez).ocupadas).toBe(0);
   });
 
-  it('pago, em produção e entregue ocupam', () => {
-    const pedidos = [
-      p('pago', '2026-10-01T10:00:00Z'),
-      p('em_producao', '2026-10-05T10:00:00Z'),
-      p('entregue', '2026-10-08T10:00:00Z'),
-    ];
-    expect(vagasDoMes(pedidos, OUTUBRO).ocupadas).toBe(3);
-  });
-
-  it('entregue continua contando — a vaga foi gasta, o trabalho aconteceu', () => {
-    const pedidos = Array.from({ length: 10 }, () => p('entregue', '2026-10-03T10:00:00Z'));
-    expect(vagasDoMes(pedidos, OUTUBRO).esgotado).toBe(true);
+  it('pago, em producao e entregue ocupam', () => {
+    expect(vagasDoLote([p('pago'), p('em_producao'), p('entregue')]).ocupadas).toBe(3);
   });
 
   it('cancelado devolve a vaga', () => {
-    const pedidos = [p('cancelado', '2026-10-01T10:00:00Z'), p('pago', '2026-10-02T10:00:00Z')];
-    expect(vagasDoMes(pedidos, OUTUBRO).ocupadas).toBe(1);
+    expect(vagasDoLote([p('cancelado'), p('pago')]).ocupadas).toBe(1);
   });
 });
 
-describe('vagasDoMes — a contagem é do mês corrente', () => {
-  it('pedido do mês passado não ocupa vaga deste mês', () => {
-    const pedidos = Array.from({ length: 10 }, () => p('entregue', '2026-09-20T10:00:00Z'));
-    expect(vagasDoMes(pedidos, OUTUBRO).restantes).toBe(VAGAS_POR_MES);
+describe('vagasDoLote — o lote NAO reseta com o tempo', () => {
+  it('pedido antigo continua ocupando: e lote, nao mes', () => {
+    // A regra anterior contava por mes, e a virada devolvia tudo. Aqui nao: dez entregues no
+    // ano passado mantem o lote fechado ate o dono abrir outro.
+    const antigos = Array.from({ length: 10 }, () => p('entregue', '2025-01-15T10:00:00Z'));
+    expect(vagasDoLote(antigos).esgotado).toBe(true);
   });
 
-  it('a virada do mês devolve as dez vagas', () => {
-    const cheio = Array.from({ length: 10 }, () => p('pago', '2026-10-28T10:00:00Z'));
-    expect(vagasDoMes(cheio, OUTUBRO).esgotado).toBe(true);
-    expect(vagasDoMes(cheio, new Date('2026-11-01T00:00:00Z')).esgotado).toBe(false);
-  });
-
-  it('data ilegível não conta, em vez de derrubar a contagem', () => {
-    expect(vagasDoMes([p('pago', 'ontem')], OUTUBRO).ocupadas).toBe(0);
+  it('pedidos espalhados em meses diferentes somam no mesmo lote', () => {
+    const pedidos = [
+      p('entregue', '2026-08-01T10:00:00Z'),
+      p('entregue', '2026-09-01T10:00:00Z'),
+      p('pago',     '2026-10-01T10:00:00Z'),
+    ];
+    expect(vagasDoLote(pedidos).ocupadas).toBe(3);
   });
 });
 
-describe('vagasDoMes — nunca mostra número negativo', () => {
-  it('mês com mais pedidos que vagas mostra esgotado, não "-2 vagas"', () => {
-    // Acontece se você abrir vagas extras na mão num mês cheio.
-    const doze = Array.from({ length: 12 }, () => p('pago', '2026-10-10T10:00:00Z'));
-    const v = vagasDoMes(doze, OUTUBRO);
+describe('vagasDoLote — limite configuravel', () => {
+  it('aceita um lote maior sem mexer em codigo', () => {
+    const cinco = Array.from({ length: 5 }, () => p('pago'));
+    expect(vagasDoLote(cinco, 10).restantes).toBe(5);
+    expect(vagasDoLote(cinco, 25).restantes).toBe(20);
+  });
+
+  it('nunca mostra numero negativo', () => {
+    // Acontece se ele atender alguem fora do app e o lote estourar.
+    const doze = Array.from({ length: 12 }, () => p('pago'));
+    const v = vagasDoLote(doze, 10);
     expect(v.restantes).toBe(0);
     expect(v.esgotado).toBe(true);
   });
 });
 
-describe('jaTemPedidoAberto — um por vez', () => {
-  it('bloqueia quem já tem pedido em andamento', () => {
-    expect(jaTemPedidoAberto([p('aguardando_pagamento', '2026-10-01T10:00:00Z')])).toBe(true);
-    expect(jaTemPedidoAberto([p('pago', '2026-10-01T10:00:00Z')])).toBe(true);
-    expect(jaTemPedidoAberto([p('em_producao', '2026-10-01T10:00:00Z')])).toBe(true);
+describe('vagasDoLote — quando a tela mostra urgencia', () => {
+  it('acabando liga com um terco ou menos restante', () => {
+    const ocupar = (n: number) => Array.from({ length: n }, () => p('pago'));
+    expect(vagasDoLote(ocupar(5), 10).acabando).toBe(false);  // 5 restantes
+    expect(vagasDoLote(ocupar(6), 10).acabando).toBe(false);  // 4 restantes
+    expect(vagasDoLote(ocupar(7), 10).acabando).toBe(true);   // 3 restantes
+    expect(vagasDoLote(ocupar(9), 10).acabando).toBe(true);   // 1 restante
   });
 
-  it('quem já recebeu pode pedir de novo', () => {
-    expect(jaTemPedidoAberto([p('entregue', '2026-09-01T10:00:00Z')])).toBe(false);
-    expect(jaTemPedidoAberto([p('cancelado', '2026-09-01T10:00:00Z')])).toBe(false);
+  it('esgotado NAO e "acabando": sao mensagens diferentes na tela', () => {
+    const v = vagasDoLote(Array.from({ length: 10 }, () => p('pago')), 10);
+    expect(v.esgotado).toBe(true);
+    expect(v.acabando).toBe(false);
   });
 });
 
-describe('prazoDeEntrega — só dias úteis', () => {
+describe('jaTemPedidoAberto — um por vez', () => {
+  it('bloqueia quem ja tem pedido em andamento', () => {
+    expect(jaTemPedidoAberto([p('aguardando_pagamento')])).toBe(true);
+    expect(jaTemPedidoAberto([p('pago')])).toBe(true);
+    expect(jaTemPedidoAberto([p('em_producao')])).toBe(true);
+  });
+
+  it('quem ja recebeu pode pedir de novo', () => {
+    expect(jaTemPedidoAberto([p('entregue')])).toBe(false);
+    expect(jaTemPedidoAberto([p('cancelado')])).toBe(false);
+  });
+});
+
+describe('prazoDeEntrega — so dias uteis', () => {
   it('pedido na segunda entrega na quinta', () => {
-    const segunda = new Date('2026-10-05T10:00:00Z');
-    expect(prazoDeEntrega(segunda).getUTCDate()).toBe(8);
+    expect(prazoDeEntrega(new Date('2026-10-05T10:00:00Z')).getUTCDate()).toBe(8);
   });
 
   it('pedido na sexta pula o fim de semana', () => {
-    // Prometer "3 dias" e entregar na terça porque caiu numa sexta é o caminho mais curto
-    // para um cliente satisfeito virar pedido de reembolso.
-    const sexta = new Date('2026-10-09T10:00:00Z');
-    const entrega = prazoDeEntrega(sexta);
-    expect(entrega.getUTCDate()).toBe(14); // quarta da semana seguinte
+    const entrega = prazoDeEntrega(new Date('2026-10-09T10:00:00Z'));
+    expect(entrega.getUTCDate()).toBe(14);
     expect([0, 6]).not.toContain(entrega.getDay());
   });
 
-  it('nunca cai em sábado ou domingo', () => {
+  it('nunca cai em sabado ou domingo', () => {
     for (let dia = 1; dia <= 28; dia++) {
-      const inicio = new Date(Date.UTC(2026, 9, dia, 12));
-      expect([0, 6]).not.toContain(prazoDeEntrega(inicio).getDay());
+      expect([0, 6]).not.toContain(prazoDeEntrega(new Date(Date.UTC(2026, 9, dia, 12))).getDay());
     }
   });
 });

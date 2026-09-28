@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/utils/supabase/auth-guard';
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
-import type { StatusPedido } from '@/lib/treinoPersonalizado';
+import { limiteDeVagas, type StatusPedido } from '@/lib/treinoPersonalizado';
 
 /**
  * Fila de Treino Personalizado, do lado do profissional.
@@ -61,6 +61,7 @@ export async function GET() {
 
   const nomes = new Map((perfis ?? []).map(p => [p.id, p.name]));
   return NextResponse.json({
+    limite: limiteDeVagas(),
     pedidos: (data ?? []).map(p => ({ ...p, nome: nomes.get(p.user_id) ?? 'Sem nome' })),
   });
 }

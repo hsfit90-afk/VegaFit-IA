@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/utils/supabase/auth-guard';
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
-import { vagasDoMes, jaTemPedidoAberto, VALOR } from '@/lib/treinoPersonalizado';
+import { vagasDoLote, jaTemPedidoAberto, limiteDeVagas, VALOR } from '@/lib/treinoPersonalizado';
 
 /**
  * Pedido de Treino Personalizado.
@@ -27,14 +27,13 @@ function admin() {
 
 async function estadoAtual(userId: string) {
   const db = admin();
-  const inicioDoMes = new Date();
-  inicioDoMes.setUTCDate(1);
-  inicioDoMes.setUTCHours(0, 0, 0, 0);
 
-  const [{ data: doMes }, { data: doAluno }] = await Promise.all([
+  // Sem recorte de data: as vagas são do lote de lançamento, não de um mês. Escassez que
+  // reseta sozinha todo mês não é escassez — é uma promessa que o cliente percebe ser falsa.
+  const [{ data: doLote }, { data: doAluno }] = await Promise.all([
     db.from('treino_personalizado_pedidos')
       .select('status, created_at')
-      .gte('created_at', inicioDoMes.toISOString()),
+      .in('status', ['pago', 'em_producao', 'entregue']),
     db.from('treino_personalizado_pedidos')
       .select('id, status, created_at, objetivo, workout_plan_id')
       .eq('user_id', userId)
@@ -42,7 +41,10 @@ async function estadoAtual(userId: string) {
       .limit(10),
   ]);
 
-  const vagas = vagasDoMes((doMes ?? []).map(p => ({ status: p.status, createdAt: p.created_at })));
+  const vagas = vagasDoLote(
+    (doLote ?? []).map(p => ({ status: p.status, createdAt: p.created_at })),
+    limiteDeVagas()
+  );
   const meus = (doAluno ?? []).map(p => ({ status: p.status, createdAt: p.created_at }));
   return { vagas, pedidos: doAluno ?? [], temAberto: jaTemPedidoAberto(meus) };
 }
@@ -56,7 +58,9 @@ export async function GET() {
     return NextResponse.json({
       valor: VALOR,
       vagasRestantes: vagas.restantes,
+      limiteDeVagas: vagas.limite,
       esgotado: vagas.esgotado,
+      acabando: vagas.acabando,
       temPedidoAberto: temAberto,
       pedidos,
       // Só os dígitos do número, sem formatação: a tela monta o link wa.me.

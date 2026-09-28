@@ -24,6 +24,8 @@ import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 interface Estado {
   valor: number;
   vagasRestantes: number;
+  limiteDeVagas: number;
+  acabando: boolean;
   esgotado: boolean;
   temPedidoAberto: boolean;
   pedidos: { id: string; status: string; created_at: string; objetivo?: string | null }[];
@@ -170,11 +172,12 @@ export default function TreinoPersonalizado() {
                   <span className="text-foreground-muted text-sm ml-1">pagamento único</span>
                 </div>
                 <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
-                  estado.esgotado ? 'bg-destructive/15 text-destructive' : 'bg-primary/15 text-primary'
+                  estado.esgotado ? 'bg-destructive/15 text-destructive'
+                    : estado.acabando ? 'bg-warning/15 text-warning' : 'bg-primary/15 text-primary'
                 }`}>
                   {estado.esgotado
-                    ? 'Vagas esgotadas este mês'
-                    : `${estado.vagasRestantes} ${estado.vagasRestantes === 1 ? 'vaga restante' : 'vagas restantes'}`}
+                    ? 'Lote esgotado'
+                    : `${estado.vagasRestantes} de ${estado.limiteDeVagas} vagas`}
                 </span>
               </div>
 
@@ -195,10 +198,10 @@ export default function TreinoPersonalizado() {
           {estado.esgotado ? (
             <Card className="border-border">
               <CardContent className="p-6 text-center">
-                <p className="font-outfit font-bold mb-1">As dez vagas deste mês acabaram.</p>
+                <p className="font-outfit font-bold mb-1">As vagas deste lote acabaram.</p>
                 <p className="text-sm text-foreground-muted">
-                  O limite existe porque cada treino é montado à mão — prefiro entregar dez bem
-                  feitos a trinta às pressas. Volte no dia 1º.
+                  O limite existe porque cada treino é montado à mão — prefiro entregar poucos bem
+                  feitos a muitos às pressas. Quando eu abrir um novo lote, aviso por aqui.
                 </p>
               </CardContent>
             </Card>
