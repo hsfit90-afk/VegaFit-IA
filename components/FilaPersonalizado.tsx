@@ -154,7 +154,7 @@ export function FilaPersonalizado() {
                       </button>
                     )}
                     <a
-                      href={`/generator?para=${p.user_id}`}
+                      href="/admin/montar"
                       className="text-xs bg-surface-light hover:bg-white/10 transition-colors px-3 py-2 rounded-lg inline-flex items-center gap-1.5"
                     >
                       Montar treino <ExternalLink className="w-3 h-3" />

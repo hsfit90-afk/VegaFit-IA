@@ -146,6 +146,14 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
+      {/* O montador e onde o Treino do Personal e entregue; sem atalho daqui ele ficaria
+          escondido numa URL que so eu conheco. */}
+      <div className="mb-8">
+        <a href="/admin/montar" className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-outfit font-bold px-5 py-3 rounded-xl hover:bg-primary-hover transition-colors">
+          Montar treino para um aluno
+        </a>
+      </div>
+
       <FilaPersonalizado />
 
       <div>

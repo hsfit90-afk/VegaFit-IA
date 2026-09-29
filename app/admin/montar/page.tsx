@@ -1,0 +1,395 @@
+"use client";
+
+import { useEffect, useMemo, useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
+import { useSomenteMaster } from '@/components/useSomenteMaster';
+import { useToast } from '@/components/ui/Toast';
+import { Card, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search } from 'lucide-react';
+import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
+
+/**
+ * Montador manual de treino, só para o master.
+ *
+ * Existe para o Treino do Personal: o aluno paga R$ 147 por um treino montado à mão, e sem
+ * esta tela não havia onde montar.
+ *
+ * A ORDEM DOS BOTÕES NÃO É ACIDENTE. "Gerar com IA" vem antes de "Começar do zero" porque
+ * revisar um plano gerado leva uns dez minutos e montar do zero leva quarenta — e é essa
+ * diferença que decide se dez treinos por mês cabem na agenda de alguém que também atende
+ * aluno presencial. O plano gerado já respeita a anamnese, o nível e a academia do aluno; o
+ * trabalho vira ajustar o que o profissional discorda, não digitar tudo.
+ */
+
+interface ExercicioLinha {
+  id: string;
+  exerciseId: string;
+  name: string;
+  muscleGroup: string;
+  sets: number;
+  reps: string;
+  restSeconds: number;
+  tips: string;
+}
+
+interface SessaoLinha {
+  id: string;
+  name: string;
+  exercises: ExercicioLinha[];
+}
+
+interface Aluno { id: string; name: string | null; role: string | null }
+interface ExercicioCatalogo { id: string; name: string; muscle_group: string }
+
+const novaLinha = (): ExercicioLinha => ({
+  id: crypto.randomUUID(),
+  exerciseId: '',
+  name: '',
+  muscleGroup: '',
+  sets: 3,
+  reps: '8-12',
+  restSeconds: 60,
+  tips: '',
+});
+
+export default function MontarTreino() {
+  const ehMaster = useSomenteMaster();
+  const toast = useToast();
+
+  const [alunos, setAlunos] = useState<Aluno[]>([]);
+  const [catalogo, setCatalogo] = useState<ExercicioCatalogo[]>([]);
+  const [alunoId, setAlunoId] = useState('');
+  const [nome, setNome] = useState('');
+  const [sessoes, setSessoes] = useState<SessaoLinha[]>([]);
+  const [gerando, setGerando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient();
+      const [r, cat] = await Promise.all([
+        fetch('/api/admin/plano'),
+        supabase.from('exercises').select('id, name, muscle_group').order('name').limit(1000),
+      ]);
+      if (r.ok) setAlunos((await r.json()).alunos ?? []);
+      if (cat.data) setCatalogo(cat.data);
+      setCarregando(false);
+    })();
+  }, []);
+
+  const alunoEscolhido = alunos.find(a => a.id === alunoId);
+
+  // ---- montagem ----
+
+  const addSessao = () => setSessoes(s => [...s, {
+    id: crypto.randomUUID(),
+    name: `Treino ${String.fromCharCode(65 + s.length)}`,
+    exercises: [novaLinha()],
+  }]);
+
+  const removeSessao = (id: string) => setSessoes(s => s.filter(x => x.id !== id));
+
+  const mudaSessao = (id: string, campo: keyof SessaoLinha, valor: any) =>
+    setSessoes(s => s.map(x => (x.id === id ? { ...x, [campo]: valor } : x)));
+
+  const addExercicio = (sessaoId: string) =>
+    setSessoes(s => s.map(x => (x.id === sessaoId ? { ...x, exercises: [...x.exercises, novaLinha()] } : x)));
+
+  const removeExercicio = (sessaoId: string, exId: string) =>
+    setSessoes(s => s.map(x => (x.id === sessaoId
+      ? { ...x, exercises: x.exercises.filter(e => e.id !== exId) }
+      : x)));
+
+  const mudaExercicio = (sessaoId: string, exId: string, campo: keyof ExercicioLinha, valor: any) =>
+    setSessoes(s => s.map(x => (x.id === sessaoId
+      ? { ...x, exercises: x.exercises.map(e => (e.id === exId ? { ...e, [campo]: valor } : e)) }
+      : x)));
+
+  /** Ao escolher um exercício do catálogo, traz o grupo muscular junto — um campo a menos. */
+  const escolheExercicio = (sessaoId: string, exId: string, nomeEscolhido: string) => {
+    const achado = catalogo.find(c => c.name === nomeEscolhido);
+    setSessoes(s => s.map(x => (x.id === sessaoId
+      ? { ...x, exercises: x.exercises.map(e => (e.id === exId ? {
+          ...e,
+          name: nomeEscolhido,
+          exerciseId: achado?.id ?? '',
+          muscleGroup: achado?.muscle_group ?? e.muscleGroup,
+        } : e)) }
+      : x)));
+  };
+
+  // ---- gerar com IA como ponto de partida ----
+
+  const gerarComIA = async () => {
+    if (!alunoId) { toast.erro('Escolha o aluno primeiro.'); return; }
+    setGerando(true);
+    try {
+      const res = await fetch('/api/treino', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // profile.id manda a rota gerar PARA este aluno: ela lê a anamnese, o histórico e o
+        // nível dele do banco, e confere no servidor que quem pede é master.
+        body: JSON.stringify({
+          profile: { id: alunoId, name: alunoEscolhido?.name || 'Aluno', level: 'Intermediário', goal: 'Hipertrofia' },
+          config: {
+            goal: 'Hipertrofia', level: 'Intermediário', daysPerWeek: 3, duration: 60,
+            equipment: 'Academia completa', priorities: [], limitations: '', trainingMethod: 'tradicional',
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não consegui gerar.');
+
+      setSessoes((data.sessions || []).map((s: any, i: number) => ({
+        id: crypto.randomUUID(),
+        name: s.name || `Treino ${String.fromCharCode(65 + i)}`,
+        exercises: (s.exercises || []).map((e: any) => ({
+          id: crypto.randomUUID(),
+          exerciseId: catalogo.find(c => c.name === e.name)?.id ?? '',
+          name: e.name ?? '',
+          muscleGroup: e.muscleGroup ?? '',
+          sets: Number(e.sets) || 3,
+          reps: String(e.reps || '8-12'),
+          restSeconds: Number(e.restSeconds) || 60,
+          tips: String(e.tips || ''),
+        })),
+      })));
+      if (!nome) setNome(`Treino de ${alunoEscolhido?.name || 'aluno'}`);
+      toast.sucesso('Plano gerado. Agora é só ajustar o que você mudaria.');
+    } catch (e) {
+      toast.erro(e instanceof Error ? e.message : 'Não consegui gerar.');
+    } finally {
+      setGerando(false);
+    }
+  };
+
+  // ---- salvar ----
+
+  const salvar = async () => {
+    if (!alunoId) { toast.erro('Escolha o aluno.'); return; }
+    if (!nome.trim()) { toast.erro('Dê um nome ao treino.'); return; }
+    const semExercicio = sessoes.filter(s => s.exercises.every(e => !e.name.trim()));
+    if (sessoes.length === 0 || semExercicio.length === sessoes.length) {
+      toast.erro('Adicione ao menos um exercício.'); return;
+    }
+
+    setSalvando(true);
+    try {
+      const res = await fetch('/api/admin/plano', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: alunoId,
+          name: nome,
+          split: `${sessoes.length} dias`,
+          sessions: sessoes.map(s => ({
+            ...s,
+            exercises: s.exercises.filter(e => e.name.trim()),
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não consegui salvar.');
+      toast.sucesso(`Treino salvo na conta de ${alunoEscolhido?.name || 'aluno'} (${data.dias} dias).`);
+    } catch (e) {
+      toast.erro(e instanceof Error ? e.message : 'Não consegui salvar.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const totalExercicios = useMemo(
+    () => sessoes.reduce((n, s) => n + s.exercises.filter(e => e.name.trim()).length, 0),
+    [sessoes]
+  );
+
+  if (!ehMaster || carregando) {
+    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+  }
+
+  return (
+    <div className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
+      <header className="mb-6">
+        <h1 className="text-3xl md:text-4xl font-outfit font-bold">Montar treino</h1>
+        <p className="text-sm text-foreground-muted mt-1">
+          Para entregar o Treino do Personal. O treino vai direto para a conta do aluno.
+        </p>
+      </header>
+
+      {/* Aluno e nome */}
+      <Card className="mb-5">
+        <CardContent className="p-5 grid md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="aluno" className="text-sm font-semibold">Para quem é</label>
+            <select
+              id="aluno"
+              value={alunoId}
+              onChange={e => setAlunoId(e.target.value)}
+              className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50"
+            >
+              <option value="">Escolha o aluno…</option>
+              {alunos.map(a => (
+                <option key={a.id} value={a.id}>
+                  {a.name || 'Sem nome'}{a.role === 'master' ? ' (master)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="nomeplano" className="text-sm font-semibold">Nome do treino</label>
+            <Input id="nomeplano" value={nome} onChange={e => setNome(e.target.value)}
+              placeholder="Ex: Hipertrofia — outubro" maxLength={120} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Ponto de partida. Gerar vem primeiro de propósito — ver comentário do componente. */}
+      {sessoes.length === 0 && (
+        <Card className="mb-5 border-primary/30">
+          <CardContent className="p-6 flex flex-col gap-4">
+            <div>
+              <p className="font-outfit font-bold mb-1">Por onde começar</p>
+              <p className="text-sm text-foreground-muted">
+                Gerar com IA traz um plano que já respeita a anamnese, o nível e a academia do aluno.
+                Aí você ajusta o que mudaria — leva uns 10 minutos, contra 40 montando do zero.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button onClick={gerarComIA} disabled={gerando || !alunoId} className="flex-1">
+                {gerando ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Gerar com IA e ajustar</>}
+              </Button>
+              <Button variant="outline" onClick={addSessao} className="flex-1">
+                <Plus className="w-4 h-4" /> Começar do zero
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sessões */}
+      <div className="flex flex-col gap-4">
+        {sessoes.map((sessao, si) => (
+          <Card key={sessao.id}>
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <GripVertical className="w-4 h-4 text-foreground-muted flex-none" />
+                <Input
+                  value={sessao.name}
+                  onChange={e => mudaSessao(sessao.id, 'name', e.target.value)}
+                  className="font-outfit font-bold"
+                  maxLength={80}
+                  aria-label={`Nome do dia ${si + 1}`}
+                />
+                <button
+                  onClick={() => removeSessao(sessao.id)}
+                  aria-label={`Remover ${sessao.name}`}
+                  className="p-2 text-foreground-muted hover:text-destructive transition-colors flex-none"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {sessao.exercises.map(ex => (
+                  <div key={ex.id} className="grid grid-cols-12 gap-2 items-start bg-surface/60 rounded-xl p-2.5 border border-border">
+                    <div className="col-span-12 md:col-span-5 flex flex-col gap-1">
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted pointer-events-none" />
+                        <input
+                          list="catalogo-exercicios"
+                          value={ex.name}
+                          onChange={e => escolheExercicio(sessao.id, ex.id, e.target.value)}
+                          placeholder="Digite para buscar no catálogo…"
+                          className="w-full bg-black/30 border border-border rounded-lg py-2 pl-9 pr-3 text-sm focus:outline-none focus:border-primary/50"
+                        />
+                      </div>
+                      {ex.muscleGroup && (
+                        <span className="text-[11px] text-foreground-muted pl-1">{ex.muscleGroup}</span>
+                      )}
+                    </div>
+
+                    <div className="col-span-3 md:col-span-2 flex flex-col gap-1">
+                      <label className="text-[10px] uppercase tracking-wider text-foreground-muted pl-1">Séries</label>
+                      <input type="number" min={1} max={10} value={ex.sets}
+                        onChange={e => mudaExercicio(sessao.id, ex.id, 'sets', Number(e.target.value))}
+                        className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center tabular-nums focus:outline-none focus:border-primary/50" />
+                    </div>
+
+                    <div className="col-span-4 md:col-span-2 flex flex-col gap-1">
+                      <label className="text-[10px] uppercase tracking-wider text-foreground-muted pl-1">Reps</label>
+                      <input value={ex.reps} maxLength={20}
+                        onChange={e => mudaExercicio(sessao.id, ex.id, 'reps', e.target.value)}
+                        className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center focus:outline-none focus:border-primary/50" />
+                    </div>
+
+                    <div className="col-span-4 md:col-span-2 flex flex-col gap-1">
+                      <label className="text-[10px] uppercase tracking-wider text-foreground-muted pl-1">Desc. (s)</label>
+                      <input type="number" min={0} max={600} step={15} value={ex.restSeconds}
+                        onChange={e => mudaExercicio(sessao.id, ex.id, 'restSeconds', Number(e.target.value))}
+                        className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center tabular-nums focus:outline-none focus:border-primary/50" />
+                    </div>
+
+                    <div className="col-span-1 flex items-end justify-center h-full pb-1">
+                      <button
+                        onClick={() => removeExercicio(sessao.id, ex.id)}
+                        aria-label={`Remover ${ex.name || 'exercício'}`}
+                        className="p-1.5 text-foreground-muted hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="col-span-12">
+                      <input
+                        value={ex.tips}
+                        onChange={e => mudaExercicio(sessao.id, ex.id, 'tips', e.target.value)}
+                        placeholder="Observação para o aluno (opcional) — ex: controle a descida em 3 segundos"
+                        maxLength={500}
+                        className="w-full bg-transparent border-0 border-t border-border/60 rounded-none pt-2 px-1 text-xs text-foreground-muted focus:outline-none focus:text-foreground"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => addExercicio(sessao.id)}
+                className="mt-3 text-sm font-semibold text-primary hover:text-primary-hover transition-colors flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" /> Adicionar exercício
+              </button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {sessoes.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3 mt-5">
+          <Button variant="outline" onClick={addSessao} className="sm:w-auto">
+            <Plus className="w-4 h-4" /> Adicionar dia
+          </Button>
+          <div className="flex-1" />
+          <Button onClick={salvar} disabled={salvando} className="sm:w-auto">
+            {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4" /> Salvar na conta do aluno</>}
+          </Button>
+        </div>
+      )}
+
+      {sessoes.length > 0 && (
+        <p className="text-xs text-foreground-muted mt-4 text-center">
+          {sessoes.length} {sessoes.length === 1 ? 'dia' : 'dias'} · {totalExercicios} exercícios ·
+          {alunoEscolhido ? ` vai para ${alunoEscolhido.name || 'o aluno'}` : ' escolha o aluno acima'}
+        </p>
+      )}
+
+      {/* Um datalist só, compartilhado por todas as linhas: 882 opções repetidas por linha
+          deixariam a tela pesada sem necessidade. */}
+      <datalist id="catalogo-exercicios">
+        {catalogo.map(c => <option key={c.id} value={c.name} />)}
+      </datalist>
+    </div>
+  );
+}
