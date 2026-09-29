@@ -7,6 +7,7 @@ import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentT
 import { isMobilityOnly } from "@/lib/exerciseType";
 import { classifyExerciseLevel, normalizarNivel, NIVEIS_PERMITIDOS, GRUPOS_SEM_FILTRO_DE_NIVEL } from "@/lib/exerciseLevel";
 import { limparAlvosPorSerie } from "@/lib/metodoTreino";
+import { filtrarPorEquipamentoAusente } from "@/lib/equipamentoAusente";
 import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
 import { computeUnlock, type MethodId } from "@/lib/trainingUnlock";
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const [{ data: dbExercises }, latestAnswers, { data: historyRows }, { data: targetRole }] =
+    const [{ data: dbExercises }, latestAnswers, { data: historyRows }, { data: targetProfileRow }] =
       await Promise.all([
         serviceSupabase
           .from('exercises')
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
         serviceSupabase.from('workout_history').select('date').eq('user_id', targetUserId),
         // Papel lido do BANCO, nunca do corpo da requisição: `profile` vem do cliente e poderia
         // chegar com role:'master' forjado pra driblar o desbloqueio por constância.
-        serviceSupabase.from('profiles').select('role').eq('id', targetUserId).single(),
+        serviceSupabase.from('profiles').select('role, equipamentos_ausentes').eq('id', targetUserId).single(),
       ]);
 
     let availableExercises = dbExercises || [];
@@ -192,6 +193,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Camada fina, depois do tipo de lugar: dentro de uma academia completa, cada uma tem um
+    // conjunto diferente de aparelhos. Vazio = recebe tudo, que é o caso da maioria.
+    //
+    // Não custa chamada de IA nenhuma — corta aqui, antes de montar o prompt. E economiza
+    // indiretamente: exercício que a academia não tem vira troca, e cada troca É uma chamada.
+    const ausentes = targetProfileRow?.equipamentos_ausentes as string[] | null | undefined;
+    if (ausentes?.length) {
+      const antes = availableExercises.length;
+      availableExercises = filtrarPorEquipamentoAusente(availableExercises, ausentes);
+      console.log(`[treino] equipamento ausente (${ausentes.join(', ')}): ${antes} -> ${availableExercises.length} exercícios.`);
+    }
+
     // BUG FIX (2ª ocorrência — achado em produção real): limite fixo de 10/grupo estourou nosso
     // próprio limite de 8000 TPM de novo, porque desde a última vez o prompt cresceu (regra de
     // Músculos Prioritários, entre outras) mesmo com o catálogo do mesmo tamanho. Em vez de um
@@ -240,7 +253,7 @@ export async function POST(req: NextRequest) {
     const unlock = computeUnlock(
       (historyRows || []).map((h: any) => ({ date: new Date(h.date).getTime() })),
       Date.now(),
-      targetRole?.role
+      targetProfileRow?.role
     );
     const pedido = config.trainingMethod || 'tradicional';
     const methodLabel = unlock.liberados.includes(pedido as MethodId) ? pedido : 'tradicional';

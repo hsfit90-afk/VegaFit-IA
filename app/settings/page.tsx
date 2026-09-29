@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { isPushSupported, getCurrentPushSubscription, subscribeToPush, unsubscribeFromPush } from '@/utils/push';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
+import { MinhaAcademia } from '@/components/MinhaAcademia';
 
 export default function Settings() {
   const { profile, setProfile, clearData } = useAppContext();
@@ -151,6 +152,7 @@ export default function Settings() {
       </div>
 
       <div className="space-y-6">
+        <MinhaAcademia />
         
         {/* Atalho para Anamnese */}
         <Card className="bg-primary/5 border-primary/20 overflow-hidden relative">
