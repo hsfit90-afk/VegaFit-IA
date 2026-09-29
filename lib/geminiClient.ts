@@ -155,6 +155,7 @@ export async function generateWithRetry(
 
   // Se quem chama pediu um modelo específico, respeita e não inventa reserva: pode ser um
   // teste ou uma rota com necessidade própria. Sem pedido, usa a cadeia padrão.
+  const usandoCadeia = !req.model;
   const modelos = req.model ? [req.model] : [MODELO_PADRAO, ...MODELOS_RESERVA];
 
   for (const modelo of modelos) {
@@ -224,12 +225,19 @@ export async function generateWithRetry(
       // modelo não conserta um pedido malformado, só gasta cota para falhar igual.
       if (!(err instanceof RespostaJsonInvalida)) throw err;
 
-      // JSON quebrado até o fim das tentativas: em vez de desistir, tenta o próximo modelo.
-      // Se este insiste em devolver JSON torto, outro pode não insistir.
-      if (attempt === maxRetries) {
-        console.warn(`[gemini] "${modelo}" devolveu JSON inválido ${maxRetries + 1}x; tentando o próximo.`);
+      // JSON quebrado, usando a cadeia: vai para o próximo modelo SEM esperar.
+      //
+      // A espera crescente existia porque repetir a mesma chamada quase sempre volta bem —
+      // uma nova amostra resolve. Com a cadeia, o próximo modelo JÁ é uma amostra nova, e
+      // melhor: vem de outro lugar. Esperar 1,5s e 3s em cada um dos sete modelos daria 31
+      // segundos só de pausa, dentro de um orçamento total de 40.
+      if (usandoCadeia) {
+        console.warn(`[gemini] "${modelo}" devolveu JSON inválido; tentando o próximo modelo.`);
         break;
       }
+
+      // Modelo fixado por quem chamou: não há próximo, então a espera curta é a única chance.
+      if (attempt === maxRetries) throw err;
 
       const delayMs = 1500 * Math.pow(2, attempt); // 1.5s, depois 3s
       await new Promise(resolve => setTimeout(resolve, delayMs));

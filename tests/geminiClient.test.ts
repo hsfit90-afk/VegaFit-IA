@@ -22,7 +22,7 @@ vi.mock('@google/genai', () => ({
   },
 }));
 
-const { generateWithRetry } = await import('@/lib/geminiClient');
+const { generateWithRetry, MODELOS_RESERVA } = await import('@/lib/geminiClient');
 
 /** Resposta do SDK: `text` é getter na classe real, mas objeto simples serve aqui. */
 const resposta = (text: string, finishReason = 'STOP', totalTokens = 100) => ({
@@ -48,11 +48,26 @@ describe('generateWithRetry — JSON invalido', () => {
     expect(r.totalTokens).toBe(250);
   });
 
-  it('desiste depois de esgotar as tentativas, em vez de devolver lixo', async () => {
+  it('desiste depois de tentar TODOS os modelos, em vez de devolver lixo', async () => {
+    // Antes da cadeia de modelos (28/09/2026), isto tentava 2x no mesmo modelo e desistia.
+    // Agora tenta uma vez em cada modelo da cadeia: se um insiste em devolver JSON torto,
+    // outro pode nao insistir. O importante nao mudou -- nunca devolve lixo ao chamador.
     generateContent.mockResolvedValue(resposta('{quebrado'));
 
     await expect(
       generateWithRetry('chave', { prompt: 'x', json: true, maxOutputTokens: 100 }, 1)
+    ).rejects.toThrow(/JSON invalido/);
+
+    expect(generateContent).toHaveBeenCalledTimes(1 + MODELOS_RESERVA.length);
+  });
+
+  it('com modelo FIXADO, volta a repetir no mesmo, porque nao ha proximo', async () => {
+    // Quem passa `model` explicito perde a cadeia de proposito (pode ser teste, ou rota com
+    // necessidade propria). Ali a espera curta e a unica chance de uma amostra nova.
+    generateContent.mockResolvedValue(resposta('{quebrado'));
+
+    await expect(
+      generateWithRetry('chave', { prompt: 'x', json: true, maxOutputTokens: 100, model: 'so-esse' }, 1)
     ).rejects.toThrow(/JSON invalido/);
 
     expect(generateContent).toHaveBeenCalledTimes(2); // tentativa inicial + 1 retry
