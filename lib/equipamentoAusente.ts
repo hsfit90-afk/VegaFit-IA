@@ -36,9 +36,32 @@ export interface ItemDeEquipamento {
 export const EQUIPAMENTOS: ItemDeEquipamento[] = [
   { id: 'leg_press',   rotulo: 'Leg press',            palavras: ['leg press'] },
   { id: 'hack',        rotulo: 'Hack',                 ajuda: 'agachamento na máquina inclinada', palavras: ['hack'] },
-  { id: 'extensora',   rotulo: 'Cadeira extensora',    palavras: ['cadeira extensora', 'mesa extensora'] },
-  { id: 'flexora',     rotulo: 'Cadeira ou mesa flexora', palavras: ['cadeira flexora', 'mesa flexora'] },
+  // O catálogo escreve a extensora de quatro formas: "Cadeira extensora", "Extensão de Perna
+  // Unilateral" e duas variações de "Máquina de Extensão de Pernas". São sinônimos, e marcar
+  // a caixa precisa pegar todas — senão o aluno marca e metade continua aparecendo.
+  //
+  // ATENÇÃO à palavra que NÃO está aqui: "extensão" sozinha. Ela casa com 43 exercícios do
+  // catálogo, e a maioria é TRÍCEPS ("Extensão de tríceps com barra", "com cabo", "com
+  // haltere"). Marcar cadeira extensora apagaria mais de trinta exercícios de braço. É a
+  // mesma armadilha do "frontal" em lib/exerciseLevel.ts, que pegava elevação frontal.
+  { id: 'extensora',   rotulo: 'Cadeira extensora',
+    ajuda: 'também chamada de extensão de pernas',
+    palavras: ['cadeira extensora', 'mesa extensora', 'extensão de perna', 'extensao de perna'] },
+
+  // Mesma lógica do lado oposto, e o mesmo cuidado: "flexão de perna" sozinho pegaria
+  // "Flexão de Pernas com Halteres", "com toalha" e "na Bola de Estabilidade" — que não
+  // precisam de aparelho nenhum. Só o nome da máquina entra.
+  { id: 'flexora',     rotulo: 'Cadeira ou mesa flexora',
+    ajuda: 'também chamada de flexão de pernas na máquina',
+    palavras: ['cadeira flexora', 'mesa flexora', 'máquina de flexão de perna', 'maquina de flexao de perna'] },
   { id: 'adutora',     rotulo: 'Adutora e abdutora',   ajuda: 'as cadeiras de abrir e fechar as pernas', palavras: ['cadeira adutora', 'cadeira abdutora', 'adutor', 'abdutor'] },
+  // Hoje não corta nada: o catálogo não tem nenhum exercício com "graviton" no nome. Fica
+  // para quando você cadastrar — a caixa existir de antemão é melhor que descobrir depois
+  // que falta.
+  //
+  // A palavra "assistid" NÃO entra aqui, mesmo parecendo sinônimo: o catálogo tem "Barra
+  // fixa Assistida com Faixa Elástica" (assistida por elástico, não por máquina) e três
+  // alongamentos assistidos. É a mesma decisão já registrada em lib/equipmentTier.ts.
   { id: 'graviton',    rotulo: 'Graviton',             ajuda: 'máquina de barra fixa assistida', palavras: ['graviton'] },
   { id: 'cross_over',  rotulo: 'Cross over',           ajuda: 'as duas polias altas, uma de cada lado', palavras: ['cross over', 'crossover'] },
   { id: 'voador',      rotulo: 'Voador / peck deck',   palavras: ['voador', 'pec deck', 'peck deck'] },

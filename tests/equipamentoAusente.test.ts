@@ -113,3 +113,57 @@ describe('resumirAusentes — a tela explica o efeito', () => {
     expect(t).toContain(' e ');
   });
 });
+
+describe('sinonimos — a mesma maquina tem varios nomes no catalogo', () => {
+  const catalogoReal = [
+    ex('Cadeira extensora', 'Pernas (quadríceps)'),
+    ex('Extensão de Perna Unilateral', 'Pernas (quadríceps)'),
+    ex('Glúteo Coice Na Máquina De Extensão De Pernas', 'Glúteos'),
+    // Segundo exercicio de Gluteos de proposito: sem ele o grupo zeraria e a salvaguarda
+    // devolveria o coice, mascarando o que este teste quer medir. No catalogo real Gluteos
+    // tem dezenas.
+    ex('Elevação pélvica com barra', 'Glúteos'),
+    ex('Mesa flexora', 'Posterior de coxa'),
+    ex('Cadeira flexora', 'Posterior de coxa'),
+    ex('Máquina de Flexão de Perna Unilateral', 'Pernas (quadríceps)'),
+    // os que NAO podem sair junto:
+    ex('Extensão de tríceps com barra atrás da cabeça', 'Tríceps'),
+    ex('Extensão de tríceps com cabo ajoelhado', 'Tríceps'),
+    ex('Flexão de Pernas com Halteres Declinado', 'Posterior de coxa'),
+    ex('Flexão de pernas com toalha', 'Posterior de coxa'),
+    ex('Agachamento livre com barra', 'Pernas (quadríceps)'),
+  ];
+
+  it('extensora pega as quatro formas que o catalogo escreve', () => {
+    const r = filtrarPorEquipamentoAusente(catalogoReal, ['extensora']).map(e => e.name);
+    expect(r).not.toContain('Cadeira extensora');
+    expect(r).not.toContain('Extensão de Perna Unilateral');
+    expect(r).not.toContain('Glúteo Coice Na Máquina De Extensão De Pernas');
+  });
+
+  it('extensora NAO leva os triceps junto', () => {
+    // "extensao" sozinha casa com 43 exercicios do catalogo real, e a maioria e triceps.
+    // Marcar cadeira extensora apagaria mais de trinta exercicios de braco -- a mesma
+    // armadilha do "frontal" em lib/exerciseLevel.ts.
+    const r = filtrarPorEquipamentoAusente(catalogoReal, ['extensora']).map(e => e.name);
+    expect(r).toContain('Extensão de tríceps com barra atrás da cabeça');
+    expect(r).toContain('Extensão de tríceps com cabo ajoelhado');
+  });
+
+  it('flexora pega a maquina e deixa o que nao precisa de aparelho', () => {
+    const r = filtrarPorEquipamentoAusente(catalogoReal, ['flexora']).map(e => e.name);
+    expect(r).not.toContain('Mesa flexora');
+    expect(r).not.toContain('Cadeira flexora');
+    expect(r).not.toContain('Máquina de Flexão de Perna Unilateral');
+    // halteres e toalha nao dependem de aparelho nenhum
+    expect(r).toContain('Flexão de Pernas com Halteres Declinado');
+    expect(r).toContain('Flexão de pernas com toalha');
+  });
+
+  it('nenhuma caixa derruba o agachamento livre', () => {
+    // O exercicio mais basico de perna nao pode sumir por causa de um aparelho marcado.
+    const todas = EQUIPAMENTOS.map(e => e.id);
+    const r = filtrarPorEquipamentoAusente(catalogoReal, todas).map(e => e.name);
+    expect(r).toContain('Agachamento livre com barra');
+  });
+});
