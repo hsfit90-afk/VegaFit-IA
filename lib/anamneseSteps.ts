@@ -11,6 +11,15 @@ export interface AnamneseField {
   max_label?: string;
   defaultValue?: number;
   hint?: string;
+  /**
+   * Campo que só aparece dependendo de outra resposta. Mesmo padrão do `condition` que o
+   * passo já tinha — ninguém precisa aprender um conceito novo para ler isto.
+   *
+   * O primeiro uso: perguntar o que a pessoa tem em casa só faz sentido para quem respondeu
+   * que treina em casa. Quem treina em academia nunca vê a pergunta, e a anamnese, que já
+   * tem 48 campos, não cresce para a maioria.
+   */
+  condition?: (answers: Record<string, any>) => boolean;
 }
 
 export interface AnamneseStep {
@@ -81,8 +90,21 @@ export const anamneseSteps: AnamneseStep[] = [
     title: "Estrutura disponível",
     sub: "Onde e como você vai treinar.",
     fields: [
-      { id: "local", type: "chips-single", label: "Local de treino", options: ["Academia completa", "Casa com equipamentos", "Casa sem equipamentos", "Ar livre / parque"] },
-      { id: "equipamentos", type: "textarea", label: "Equipamentos disponíveis (se treina em casa)", placeholder: "Ex: Halteres até 20kg, elástico", optional: true },
+      // Duas opções, não quatro. "Casa com equipamentos" e "Casa sem equipamentos" eram a
+      // mesma resposta com e sem inventário — e o inventário agora tem campo próprio logo
+      // abaixo. "Ar livre / parque" caía em calistenia pura, embora parque tenha barra fixa
+      // e paralelas; quem treina ao ar livre marca o que encontra na lista.
+      { id: "local", type: "chips-single", label: "Local de treino", options: ["Academia completa", "Em casa"] },
+
+      // Antes era uma textarea com placeholder "Ex: Halteres até 20kg, elástico". O aluno
+      // respondia e NINGUÉM lia: nenhuma rota tocava nesse campo. Texto livre não vira filtro.
+      // Agora são caixas, e cada caixa marcada entra no corte que acontece antes do prompt.
+      //
+      // Só aparece para quem respondeu "Em casa" — quem treina em academia não vê a pergunta.
+      { id: "equipamentos_casa", type: "chips-multi", label: "O que você tem em casa?",
+        hint: "Marque tudo que você tem. Sem nada marcado, seus treinos usam só o peso do corpo — são mais de 400 exercícios.",
+        condition: (a) => a.local === "Em casa",
+        options: ["Halteres", "Barra e anilhas", "Elástico ou faixa", "Banco", "Barra fixa", "Kettlebell", "Bola, TRX ou argolas"] },
       { id: "dias", type: "text", label: "Dias e horários fixos possíveis", placeholder: "Ex: Seg, qua e sex às 7h" }
     ]
   },

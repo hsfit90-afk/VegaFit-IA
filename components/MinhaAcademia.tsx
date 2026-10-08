@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { Dumbbell, Loader2, Check } from 'lucide-react';
 import { EQUIPAMENTOS, resumirAusentes } from '@/lib/equipamentoAusente';
+import { EQUIPAMENTOS_CASA, resumirCasa } from '@/lib/equipamentoCasa';
+import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 
 /**
  * "O que a minha academia não tem" — opcional, no Perfil.
@@ -28,6 +30,7 @@ import { EQUIPAMENTOS, resumirAusentes } from '@/lib/equipamentoAusente';
 export function MinhaAcademia() {
   const toast = useToast();
   const [ausentes, setAusentes] = useState<string[]>([]);
+  const [emCasa, setEmCasa] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [aberto, setAberto] = useState(false);
@@ -40,11 +43,15 @@ export function MinhaAcademia() {
       if (!user) return;
       const { data } = await supabase
         .from('profiles')
-        .select('equipamentos_ausentes')
+        .select('equipamentos_ausentes, equipamentos_casa, training_location')
         .eq('id', user.id)
         .maybeSingle();
       if (!vivo) return;
-      setAusentes(data?.equipamentos_ausentes ?? []);
+      // Em casa o aluno marca o que TEM; na academia, o que FALTA. Mesma tela, duas
+      // perguntas, porque o padrao util e oposto nos dois casos.
+      const casa = treinaEmCasa(mapAnamneseLocationToEquipment(data?.training_location));
+      setEmCasa(casa);
+      setAusentes((casa ? data?.equipamentos_casa : data?.equipamentos_ausentes) ?? []);
       setCarregando(false);
     })();
     return () => { vivo = false; };
@@ -61,7 +68,7 @@ export function MinhaAcademia() {
       if (!user) throw new Error('Sessão expirada.');
       const { error } = await supabase
         .from('profiles')
-        .update({ equipamentos_ausentes: ausentes })
+        .update(emCasa ? { equipamentos_casa: ausentes } : { equipamentos_ausentes: ausentes })
         .eq('id', user.id);
       if (error) throw new Error(error.message);
       toast.sucesso('Pronto. Seus próximos treinos já respeitam isso.');
@@ -86,11 +93,13 @@ export function MinhaAcademia() {
             <Dumbbell className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-outfit font-bold">Minha academia</p>
+            <p className="font-outfit font-bold">{emCasa ? 'Meu equipamento' : 'Minha academia'}</p>
             <p className="text-xs text-foreground-muted mt-0.5">
               {ausentes.length === 0
-                ? 'Falta algum aparelho? Marque para não aparecer nos seus treinos.'
-                : `${ausentes.length} ${ausentes.length === 1 ? 'aparelho marcado' : 'aparelhos marcados'}`}
+                ? (emCasa
+                    ? 'Comprou algum equipamento? Marque para ele entrar nos seus treinos.'
+                    : 'Falta algum aparelho? Marque para não aparecer nos seus treinos.')
+                : `${ausentes.length} ${ausentes.length === 1 ? 'item marcado' : 'itens marcados'}`}
             </p>
           </div>
           <span className="text-xs font-semibold text-primary flex-none">
@@ -101,12 +110,17 @@ export function MinhaAcademia() {
         {aberto && (
           <div className="mt-5 pt-5 border-t border-border flex flex-col gap-4 animate-fade-in">
             <p className="text-sm text-foreground-muted">
-              Marque o que a sua academia <strong className="text-foreground">não tem</strong>.
-              Deixar tudo desmarcado é o normal — você recebe o catálogo completo.
+              {emCasa ? (
+                <>Marque tudo que você <strong className="text-foreground">tem</strong> em casa.
+                Sem nada marcado, seus treinos usam só o peso do corpo.</>
+              ) : (
+                <>Marque o que a sua academia <strong className="text-foreground">não tem</strong>.
+                Deixar tudo desmarcado é o normal — você recebe o catálogo completo.</>
+              )}
             </p>
 
             <div className="grid sm:grid-cols-2 gap-2">
-              {EQUIPAMENTOS.map(eq => {
+              {(emCasa ? EQUIPAMENTOS_CASA : EQUIPAMENTOS).map(eq => {
                 const marcado = ausentes.includes(eq.id);
                 return (
                   <button
@@ -135,7 +149,7 @@ export function MinhaAcademia() {
               })}
             </div>
 
-            <p className="text-xs text-foreground-muted">{resumirAusentes(ausentes)}</p>
+            <p className="text-xs text-foreground-muted">{emCasa ? resumirCasa(ausentes) : resumirAusentes(ausentes)}</p>
 
             <Button onClick={salvar} disabled={salvando} className="w-full sm:w-auto sm:self-start">
               {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar'}

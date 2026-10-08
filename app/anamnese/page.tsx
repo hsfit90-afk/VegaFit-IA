@@ -6,7 +6,8 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/app/context/AppContext';
 import { Check } from 'lucide-react';
-import { anamneseSteps as steps } from '@/lib/anamneseSteps';
+import { anamneseSteps as steps, type AnamneseStep, type AnamneseField } from '@/lib/anamneseSteps';
+import { EQUIPAMENTOS_CASA } from '@/lib/equipamentoCasa';
 
 export default function AnamnesePage() {
   const router = useRouter();
@@ -68,11 +69,32 @@ export default function AnamnesePage() {
     return "informe o sexo biológico no passo 1 para ver a referência da OMS";
   };
 
+  /**
+   * Campos visiveis no passo, respeitando o `condition` de cada um.
+   *
+   * Render e validacao usam a MESMA funcao de proposito: se divergissem, a tela esconderia
+   * um campo e a validacao continuaria exigindo-o, e o aluno travaria no "Continuar" sem ver
+   * o que falta preencher.
+   */
+  const camposVisiveis = (step: AnamneseStep): AnamneseField[] =>
+    step.fields.filter(f => !f.condition || f.condition(answers));
+
+  /**
+   * Converte os rótulos da anamnese nos ids de lib/equipamentoCasa.ts.
+   *
+   * A tela mostra "Barra e anilhas"; o filtro trabalha com "barra". Separar os dois permite
+   * reescrever o texto da pergunta sem quebrar o treino de quem já respondeu.
+   */
+  const rotulosParaIds = (rotulos: string[] | undefined): string[] =>
+    (rotulos ?? [])
+      .map(r => EQUIPAMENTOS_CASA.find(e => e.rotulo === r)?.id)
+      .filter((id): id is string => Boolean(id));
+
   const validateStep = () => {
     let valid = true;
     const newErrors: Record<string, boolean> = {};
 
-    currentStep.fields.forEach(f => {
+    camposVisiveis(currentStep).forEach(f => {
       if (f.optional) return;
       const val = answers[f.id];
       const empty = val === undefined || val === "" || (Array.isArray(val) && val.length === 0);
@@ -170,6 +192,10 @@ export default function AnamnesePage() {
           goal: answers.objetivo?.[0] || profile?.goal,
           level: answers.nivel || profile?.level,
           training_location: answers.local || profile?.trainingLocation,
+          // Os rótulos da anamnese ("Halteres", "Barra e anilhas") viram os ids que o filtro
+          // entende. Guardar o rótulo cru faria o corte depender do texto da tela: mudar uma
+          // palavra ali quebraria o treino de quem já respondeu.
+          equipamentos_casa: rotulosParaIds(answers.equipamentos_casa),
         })
         .eq('id', userId);
 
@@ -257,13 +283,13 @@ export default function AnamnesePage() {
             <p className="text-sm text-foreground-muted leading-[1.5] text-center mb-6">Confira suas respostas. Elas serão salvas no seu perfil para personalizar seus treinos.</p>
 
             {activeSteps.map(step => {
-              const hasAny = step.fields.some(f => answers[f.id] !== undefined && answers[f.id] !== "" && (!Array.isArray(answers[f.id]) || answers[f.id].length > 0));
+              const hasAny = camposVisiveis(step).some(f => answers[f.id] !== undefined && answers[f.id] !== "" && (!Array.isArray(answers[f.id]) || answers[f.id].length > 0));
               if (!hasAny) return null;
               
               return (
                 <div key={step.id} className="bg-surface border border-border rounded-xl p-4 mb-3.5">
                   <h4 className="font-outfit text-[13px] font-semibold uppercase tracking-[0.08em] text-primary mb-2.5">{step.title}</h4>
-                  {step.fields.map(f => {
+                  {camposVisiveis(step).map(f => {
                     const v = answers[f.id];
                     const empty = v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
                     if (empty) return null;
@@ -296,7 +322,7 @@ export default function AnamnesePage() {
             <h2 className="font-outfit font-semibold text-[22px] leading-[1.2] mt-3.5 mb-1 text-white">{currentStep?.title}</h2>
             <p className="text-sm text-foreground-muted leading-[1.5] mb-6">{currentStep?.sub}</p>
 
-            {currentStep?.fields.map(f => (
+            {camposVisiveis(currentStep).map(f => (
               <div key={f.id} className="mb-6">
                 <label className="block text-[15px] font-medium mb-2.5 leading-[1.4] text-white">
                   {f.label} {!f.optional && <span className="text-primary ml-1">*</span>}

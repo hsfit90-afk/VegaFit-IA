@@ -8,6 +8,8 @@ import { isMobilityOnly } from "@/lib/exerciseType";
 import { classifyExerciseLevel, normalizarNivel, NIVEIS_PERMITIDOS, GRUPOS_SEM_FILTRO_DE_NIVEL } from "@/lib/exerciseLevel";
 import { limparAlvosPorSerie } from "@/lib/metodoTreino";
 import { filtrarPorEquipamentoAusente } from "@/lib/equipamentoAusente";
+import { filtrarParaCasa } from "@/lib/equipamentoCasa";
+import { treinaEmCasa } from "@/lib/trainingLocation";
 import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
 import { computeUnlock, type MethodId } from "@/lib/trainingUnlock";
@@ -89,7 +91,7 @@ export async function POST(req: NextRequest) {
         serviceSupabase.from('workout_history').select('date').eq('user_id', targetUserId),
         // Papel lido do BANCO, nunca do corpo da requisição: `profile` vem do cliente e poderia
         // chegar com role:'master' forjado pra driblar o desbloqueio por constância.
-        serviceSupabase.from('profiles').select('role, equipamentos_ausentes').eq('id', targetUserId).single(),
+        serviceSupabase.from('profiles').select('role, equipamentos_ausentes, equipamentos_casa').eq('id', targetUserId).single(),
       ]);
 
     let availableExercises = dbExercises || [];
@@ -172,6 +174,24 @@ export async function POST(req: NextRequest) {
     // grava "Haltere" fixo, sem exceção — não existe campo de equipamento no formulário). Então
     // classificamos por palavra-chave no NOME (ver lib/equipmentTier.ts, compartilhado com o
     // endpoint de troca de exercício).
+    // Em casa, o filtro e OUTRO: em vez de liberar baldes de equipamento, cada exercicio e
+    // lido pelo nome e so passa se tudo que ele pede estiver na lista do aluno. Sem lista,
+    // sobra peso corporal -- 424 exercicios, cobrindo todos os grupos.
+    //
+    // Sem salvaguarda por grupo aqui, ao contrario do filtro de academia: devolver um
+    // exercicio de maquina a quem esta na academia e inconveniente; devolver leg press a
+    // quem treina na sala e prescrever o impossivel.
+    if (treinaEmCasa(config.equipment)) {
+      const tenho = targetProfileRow?.equipamentos_casa as string[] | null | undefined;
+      const antes = availableExercises.length;
+      availableExercises = filtrarParaCasa(availableExercises, tenho);
+      console.log(`[treino] em casa (${(tenho ?? []).join(', ') || 'sem equipamento'}): ${antes} -> ${availableExercises.length} exercícios.`);
+
+      if (availableExercises.length === 0) {
+        return NextResponse.json({ error: "Nao encontrei exercicios para o que voce tem em casa. Revise seus equipamentos no Perfil." }, { status: 400 });
+      }
+    }
+
     const allowedTiers = EQUIPMENT_ALLOWED_TIERS[config.equipment as string];
 
     if (allowedTiers) {

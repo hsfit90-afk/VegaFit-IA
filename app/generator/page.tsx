@@ -283,10 +283,13 @@ export default function Generator() {
                   onChange={e => setForm({ ...form, equipment: e.target.value })}
                   className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                 >
+                  {/* Duas opções, não quatro. "Halteres em casa" e "Barra e anilhas"
+                      obrigavam o aluno a traduzir o que ele tem num rótulo só: quem tem banco,
+                      halteres E barra escolhia qual, e perdia equipamento nas duas. O que a
+                      pessoa tem em casa é inventário, e inventário se marca numa lista — isso
+                      fica na anamnese e no Perfil (ver lib/equipamentoCasa.ts). */}
                   <option>Academia completa</option>
-                  <option>Halteres em casa</option>
-                  <option>Barra e anilhas</option>
-                  <option>Sem equipamento (calistenia)</option>
+                  <option>Em casa</option>
                 </select>
               </div>
 
