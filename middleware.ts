@@ -18,8 +18,17 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     *
+     * manifest.json e sw.js entraram em 08/10/2026, depois de os dois responderem 307.
+     * A lista antiga isentava imagem por extensão, mas não .json nem .js — então o
+     * middleware mandava os dois para /login, e o navegador, sem conseguir ler o manifest,
+     * nunca oferecia instalar o app. O PWA simplesmente não instalava, e a página de vendas
+     * promete justamente "instala pelo navegador, sem baixar de loja".
+     *
+     * Os dois são arquivos estáticos públicos por natureza: o manifest só tem nome, cor e
+     * ícone, e o service worker é código que o navegador precisa buscar ANTES de existir
+     * qualquer sessão. Não há nada para proteger ali.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
