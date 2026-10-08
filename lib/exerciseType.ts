@@ -37,3 +37,27 @@ export function isMobilityOnly(name: string): boolean {
   if (RESISTANCE_OVERRIDE_KEYWORDS.some(k => n.includes(k))) return false;
   return MOBILITY_KEYWORDS.some(k => n.includes(k));
 }
+
+/**
+ * Grupos musculares com nomes equivalentes.
+ *
+ * O catálogo guarda "Pernas (quadríceps)" e "Posterior de coxa"; a sessão gerada costuma vir
+ * com "Perna" ou "Pernas". Sem casar os dois, qualquer regra que compare grupo da sessão com
+ * grupo do catálogo erra silenciosamente — o aquecimento viria sempre genérico, por exemplo.
+ *
+ * Chave = nome canônico; valores = pedaços que aparecem no catálogo ou na sessão, minúsculos.
+ */
+export const MUSCLE_ALIASES: Record<string, string[]> = {
+  perna:      ['perna', 'quadríceps', 'quadriceps', 'coxa', 'posterior de coxa'],
+  gluteo:     ['glúteo', 'gluteo'],
+  panturrilha:['panturrilha'],
+  peito:      ['peito', 'peitoral'],
+  costas:     ['costas', 'dorsal'],
+  ombro:      ['ombro', 'deltoide'],
+  biceps:     ['bíceps', 'biceps'],
+  triceps:    ['tríceps', 'triceps'],
+  antebraco:  ['antebraço', 'antebraco'],
+  core:       ['core', 'abdômen', 'abdomen', 'abdominal'],
+  lombar:     ['lombar'],
+  cardio:     ['cardio'],
+};

@@ -33,10 +33,26 @@ export interface WorkoutExercise {
   targetLabels?: string[];  // Nomes personalizados para as séries (ex: "S1", "Aquec", "Drop")
 }
 
+/**
+ * Exercício de aquecimento. Prescrito por TEMPO, não por série e repetição — mobilidade é
+ * movimento articular sem carga, e contar repetição ali não diz nada ao aluno.
+ */
+export interface ExercicioDePreparo {
+  exerciseId?: string;
+  name: string;
+  muscleGroup: string;
+  segundos: number;
+}
+
 export interface WorkoutSession {
   id: string;
   name: string;
   exercises: WorkoutExercise[];
+  /**
+   * Mobilidade do dia, montada no servidor a partir dos grupos desta sessão — não vem da
+   * IA e não custa token. Ausente em planos gerados antes de 08/10/2026.
+   */
+  warmup?: ExercicioDePreparo[];
 }
 
 /**

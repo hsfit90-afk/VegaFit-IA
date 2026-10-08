@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2, ClipboardList , UserCheck } from 'lucide-react';
+import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2, ClipboardList , UserCheck , StretchHorizontal } from 'lucide-react';
 import { useAppContext } from '@/app/context/AppContext';
 
 /**
@@ -25,6 +25,7 @@ const DESKTOP_NAV_ITEMS = [
   { href: '/history', label: 'Histórico', icon: History },
   { href: '/progression', label: 'Check-in', icon: TrendingUp },
   { href: '/personalizado', label: 'Personal', icon: UserCheck },
+  { href: '/alongamento', label: 'Alongamento', icon: StretchHorizontal },
   { href: '/nutrition', label: 'Nutrição IA', icon: Apple, somenteMaster: true },
   { href: '/coach', label: 'AI Coach', icon: MessageSquare, somenteMaster: true },
   { href: '/settings', label: 'Perfil', icon: Settings },

@@ -9,6 +9,7 @@ import { classifyExerciseLevel, normalizarNivel, NIVEIS_PERMITIDOS, GRUPOS_SEM_F
 import { limparAlvosPorSerie } from "@/lib/metodoTreino";
 import { filtrarPorEquipamentoAusente } from "@/lib/equipamentoAusente";
 import { filtrarParaCasa } from "@/lib/equipamentoCasa";
+import { selecionarMobilidade } from "@/lib/preparoFinalizacao";
 import { treinaEmCasa } from "@/lib/trainingLocation";
 import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
@@ -590,6 +591,24 @@ ${instrucaoDoMetodo}`;
           usedExerciseNames.add(candidate.name);
         }
       }
+    }
+
+    // Mobilidade do dia, montada AQUI e não pela IA.
+    //
+    // Não custa token nenhum: lê os grupos musculares que a sessão já tem e escolhe do
+    // catálogo. E fica melhor do que pedir à IA, porque a escolha é dirigida — mobilidade de
+    // tornozelo e quadril no dia de perna, de ombro no dia de empurrar.
+    //
+    // Vem do catálogo COMPLETO, não do bolso filtrado: mobilidade não usa equipamento, então
+    // o filtro de academia e o de casa não se aplicam a ela.
+    for (const session of json.sessions || []) {
+      const grupos = [...new Set((session.exercises || []).map((e: any) => e.muscleGroup).filter(Boolean))] as string[];
+      session.warmup = selecionarMobilidade(dbExercises || [], grupos, 3).map((m: any) => ({
+        exerciseId: m.id,
+        name: m.name,
+        muscleGroup: m.muscle_group || '',
+        segundos: 40,
+      }));
     }
 
     // Descarta alvo por série que nao veio no formato certo. O modelo ja devolveu

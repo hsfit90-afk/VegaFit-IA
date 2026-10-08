@@ -21,6 +21,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 import { descansoAposSerie, avisoDoProximoPasso, fatorDeCarga, rotuloCurto, ehSerieEspecial, instrucaoDaSerie } from '@/lib/metodoTreino';
+import { BlocoAquecimento } from '@/components/workout/BlocoAquecimento';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
@@ -871,6 +872,8 @@ export default function ActiveWorkout() {
       )}
 
       <PeriodizationResetNotice diasParado={resetNotice} onFechar={() => setResetNotice(null)} />
+
+      <BlocoAquecimento itens={currentSession?.warmup} />
 
       <div className="space-y-6">
         {activeExercises.map((ex, exIndex) => {
