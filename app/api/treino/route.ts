@@ -11,7 +11,7 @@ import { filtrarPorEquipamentoAusente } from "@/lib/equipamentoAusente";
 import { filtrarParaCasa } from "@/lib/equipamentoCasa";
 import { selecionarMobilidade } from "@/lib/preparoFinalizacao";
 import { treinaEmCasa } from "@/lib/trainingLocation";
-import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
+import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, textoLivreParaPrompt, LIMITE_PREFERENCIAS, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
 import { computeUnlock, type MethodId } from "@/lib/trainingUnlock";
 import { normalizarListas } from "@/lib/listasDoAluno";
@@ -417,7 +417,17 @@ export async function POST(req: NextRequest) {
     // BUG FIX: config.limitations (o que o aluno escreveu AGORA na tela do gerador) tinha prioridade
     // menor que profile?.intent (a anamnese salva), então editar o campo na hora de gerar não tinha
     // efeito nenhum. Prioriza o que foi escrito agora; só cai pra anamnese se o campo ficar vazio.
-    const studentPreferences = config.limitations || profile?.intent || 'Nenhuma';
+    //
+    // DELIMITADO E COM TETO desde 09/10/2026. Este era o único texto livre do aluno que ia ao
+    // prompt cru: sem limite de tamanho e sem o rótulo de "isto é dado, não instrução" que os
+    // campos da anamnese já tinham. Enquanto o pessoal escrevia "Geral" não dava problema; o
+    // campo passou a convidar descrição longa, e aí vale a mesma defesa — e o mesmo teto, que
+    // é o que impede um texto de 50 mil caracteres virar prompt de 50 mil caracteres.
+    const studentPreferences = textoLivreParaPrompt(
+      config.limitations || profile?.intent,
+      'Nenhuma informada',
+      LIMITE_PREFERENCIAS
+    );
 
     // Dados de saúde vêm SEMPRE da anamnese estruturada (anamnese_history), não do texto livre acima —
     // se o aluno editar/apagar o campo de preferências, lesões e condições médicas não podem sumir do prompt.
@@ -461,13 +471,13 @@ ${nivelAluno === 'iniciante'
 - Duração por sessão: ${config.duration} minutos
 - Equipamentos disponíveis: ${config.equipment}
 - Grupos musculares prioritários: ${config.priorities.join(', ')}
-- Preferências e Limitações do Aluno: ${studentPreferences}
 - Método de treino: ${methodLabel.toUpperCase()} — ${methodDesc}
 ${healthBlock}
 
 REGRA CRÍTICA SOBRE AS PREFERÊNCIAS DO ALUNO (RESPEITAR OS PROTOCOLOS CIENTÍFICOS):
-O aluno forneceu as seguintes preferências: "${studentPreferences}".
-Você DEVE adaptar a seleção de exercícios e o foco do treino para atender a esses pedidos do aluno (ex: evitar exercícios que causem dor, priorizar os músculos que ele pediu, respeitar o horário/local se mencionado).
+O aluno escreveu, com as próprias palavras, o que quer deste treino e em que contexto vai treinar: ${studentPreferences}
+${healthBlock ? '' : AVISO_CONTEUDO_DO_ALUNO}
+Você DEVE adaptar a seleção de exercícios, a ordem e as dicas para atender a esses pedidos (ex: evitar o que causa dor, priorizar o que ele pediu, encaixar no tempo e no horário que ele descreveu, preferir o tipo de exercício que ele gosta).
 PORÉM, os pedidos do aluno NUNCA podem violar os dois protocolos científicos obrigatórios definidos abaixo (REGRA CRÍTICA SOBRE VOLUME/INTENSIDADE e REGRA CRÍTICA DE EXERCÍCIOS DISPONÍVEIS): a quantidade exata de exercícios por sessão, o volume/intensidade do objetivo (hipertrofia ou emagrecimento) e a periodização de 4 semanas são inegociáveis. Se o pedido do aluno conflitar com essas regras (ex: pedir muito menos exercícios do que o protocolo exige), encaixe a preferência dele DENTRO do protocolo em vez de quebrar o protocolo — nunca o contrário.
 ${favoriteNames.length > 0 ? `
 EXERCÍCIOS FAVORITOS DO ALUNO (preferência, não obrigação):

@@ -33,6 +33,16 @@ export async function fetchLatestAnamneseAnswers(
 const LIMITE_POR_CAMPO = 400;
 
 /**
+ * Teto do campo "Limitações, Foco ou Intenção" do gerador.
+ *
+ * Maior que o da anamnese de propósito: ali o aluno descreve UM fato (a lesão), aqui ele
+ * descreve contexto — horário, tempo real disponível, o que odeia fazer, o que quer voltar a
+ * conseguir. É o único lugar onde ele conta o que nenhum campo estruturado pergunta, e cortar
+ * curto demais joga fora justamente a parte que a IA não tem de outra fonte.
+ */
+export const LIMITE_PREFERENCIAS = 600;
+
+/**
  * Prepara um campo livre da anamnese para entrar num prompt de IA.
  *
  * Os campos `lesoes`, `condicoes`, `medicamentos` e `restricoes` são textarea aberta e iam
@@ -53,7 +63,31 @@ const LIMITE_POR_CAMPO = 400;
  * fim do bloco.
  */
 export function campoAnamneseParaPrompt(valor: string | undefined, seVazio: string): string {
-  const limpo = (valor || '').replace(/\s+/g, ' ').trim().slice(0, LIMITE_POR_CAMPO);
+  return textoLivreParaPrompt(valor, seVazio, LIMITE_POR_CAMPO);
+}
+
+/**
+ * O mesmo tratamento, com o teto escolhido por quem chama.
+ *
+ * BRECHA FECHADA EM 09/10/2026: a versão anterior só colapsava espaço em branco, e os sinais
+ * de maior e menor passavam intactos. Quem escrevesse `>>>` no meio da frase FECHAVA o bloco
+ * delimitado, e o resto do texto chegava ao modelo como se fosse prompt do app, não conteúdo
+ * do aluno — exatamente o que o delimitador existe para impedir.
+ *
+ * Por isso < e > saem do conteúdo. Não é filtrar "instruções" por regex, que é briga perdida:
+ * é impedir que o aluno escreva a única sequência de caracteres com significado estrutural
+ * aqui dentro.
+ */
+export function textoLivreParaPrompt(
+  valor: string | undefined | null,
+  seVazio: string,
+  limite: number = LIMITE_POR_CAMPO
+): string {
+  const limpo = (valor || '')
+    .replace(/[<>]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, limite);
   if (!limpo) return seVazio;
   return `<<<${limpo}>>>`;
 }

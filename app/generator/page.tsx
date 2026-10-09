@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/Button';
 import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
 import { mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
+import Link from 'next/link';
+import { LIMITE_PREFERENCIAS } from '@/lib/aiHealthContext';
 
 export default function Generator() {
   const { addWorkoutPlan, profile, history } = useAppContext();
@@ -367,14 +369,51 @@ export default function Generator() {
                 )}
               </div>
 
+              {/* O campo mais subaproveitado da tela. O rótulo prometia três coisas
+                  ("Limitações, Foco ou Intenção") e o exemplo só mostrava a primeira, então
+                  quase todo mundo escrevia uma linha seca — "Geral" — ou nada.
+
+                  É o ÚNICO lugar onde o aluno conta o que nenhum campo estruturado pergunta:
+                  quanto tempo ele tem de verdade, a que horas treina, o que odeia fazer, o
+                  que quer voltar a conseguir. O exemplo agora puxa isso.
+
+                  O aviso embaixo não é decoração. Equipamento e lesão são filtrados em
+                  CÓDIGO, a partir da anamnese — escrever "tenho halteres em casa" aqui não
+                  muda o catálogo que chega à IA. Sem dizer isso, o aluno escreve um parágrafo
+                  caprichado, vê o pedido de equipamento ser ignorado e conclui que o app não
+                  lê o que ele digita. */}
               <div className="space-y-2 md:col-span-2">
-                <label className="text-sm text-foreground-muted font-medium">Limitações, Foco ou Intenção</label>
+                <label htmlFor="limitacoes" className="text-sm text-foreground-muted font-medium">
+                  Limitações, Foco ou Intenção
+                </label>
                 <textarea
-                  placeholder="Ex: Dor no joelho esquerdo, evitar agachamento pesado..."
+                  id="limitacoes"
+                  maxLength={LIMITE_PREFERENCIAS}
+                  placeholder={
+                    'Quanto mais você contar, mais o treino sai com a sua cara. Por exemplo:\n\n' +
+                    '• Treino 6h da manhã, antes do trabalho, e tenho 40 min de verdade\n' +
+                    '• A academia lota às 18h e quase nunca consigo o rack\n' +
+                    '• Odeio esteira; prefiro halter a máquina\n' +
+                    '• Quero voltar a correr 5 km sem dor'
+                  }
                   value={form.limitations}
                   onChange={e => setForm({ ...form, limitations: e.target.value })}
-                  className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors min-h-[80px]"
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors min-h-[150px] leading-relaxed"
                 />
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-xs text-foreground-muted leading-relaxed">
+                    Lesões e equipamento não precisam entrar aqui — eles vêm da sua{' '}
+                    <Link href="/anamnese" className="text-primary underline">anamnese</Link> e são
+                    aplicados sempre.
+                  </p>
+                  <span className={`text-xs tabular-nums shrink-0 ${
+                    form.limitations.length >= LIMITE_PREFERENCIAS
+                      ? 'text-warning'
+                      : 'text-foreground-muted/60'
+                  }`}>
+                    {form.limitations.length}/{LIMITE_PREFERENCIAS}
+                  </span>
+                </div>
               </div>
             </div>
 
