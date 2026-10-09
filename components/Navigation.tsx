@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2, ClipboardList , UserCheck , StretchHorizontal , Waves, Flame} from 'lucide-react';
+import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2, ClipboardList , UserCheck , StretchHorizontal , Waves, Flame, Timer} from 'lucide-react';
 import { useAppContext } from '@/app/context/AppContext';
 
 /**
@@ -15,29 +15,50 @@ import { useAppContext } from '@/app/context/AppContext';
  * Ver ROTAS_SOMENTE_MASTER logo abaixo: esconder do menu não basta sozinho, porque o
  * endereço continua acessível por link direto.
  */
+/**
+ * A ORDEM SEGUE O DIA DO ALUNO, não o gosto de quem escreveu.
+ *
+ * O ciclo real é: ver o treino, gerar se não tiver, treinar, registrar o que mudou. A lista
+ * antiga punha Anamnese em segundo lugar — um formulário que se preenche uma vez e depois
+ * quase nunca. Ela desceu para junto do Perfil, onde já estava linkada.
+ *
+ * As quatro sessões avulsas ficam juntas no fim. Cardio faltava aqui: no dashboard as quatro
+ * são irmãs, mesmo card, mesmo rótulo, e só o aeróbico não tinha entrada no menu.
+ */
 const DESKTOP_NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: Home },
-  { href: '/anamnese', label: 'Anamnese', icon: ClipboardList },
-  { href: '/progress', label: 'Progresso', icon: BarChart2 },
   { href: '/generator', label: 'Gerador IA', icon: Zap },
   { href: '/active', label: 'Treinar', icon: PlayCircle },
-  { href: '/library', label: 'Exercícios', icon: Dumbbell, somenteMaster: true },
-  { href: '/history', label: 'Histórico', icon: History },
   { href: '/progression', label: 'Check-in', icon: TrendingUp },
+  { href: '/history', label: 'Histórico', icon: History },
+  { href: '/progress', label: 'Progresso', icon: BarChart2 },
   { href: '/personalizado', label: 'Personal', icon: UserCheck },
-  { href: '/mobilidade', label: 'Mobilidade', icon: Waves },
+  { href: '/cardio', label: 'Aeróbico', icon: Timer },
   { href: '/abdominal', label: 'Abdominal', icon: Flame },
+  { href: '/mobilidade', label: 'Mobilidade', icon: Waves },
   { href: '/alongamento', label: 'Alongamento', icon: StretchHorizontal },
+  { href: '/library', label: 'Exercícios', icon: Dumbbell, somenteMaster: true },
   { href: '/nutrition', label: 'Nutrição IA', icon: Apple, somenteMaster: true },
   { href: '/coach', label: 'AI Coach', icon: MessageSquare, somenteMaster: true },
+  { href: '/anamnese', label: 'Anamnese', icon: ClipboardList },
   { href: '/settings', label: 'Perfil', icon: Settings },
 ];
 
-// Core list for Mobile Bottom Nav
+/**
+ * Os cinco do rodapé do celular.
+ *
+ * CONSERTO DE 09/10/2026: `/progression` (Check-in) e `/history` não tinham NENHUM link fora
+ * da barra lateral do desktop, que é `hidden md:flex`. No celular as duas telas simplesmente
+ * não eram alcançáveis — num app que se instala como PWA e vende acompanhamento de evolução,
+ * e sendo o Check-in o que alimenta a progressão de carga.
+ *
+ * O lugar saiu da Anamnese: formulário de uma vez só, que já tem porta dentro do Perfil. O
+ * Histórico ganhou botão no topo do Progresso, que é onde o aluno vai procurar.
+ */
 const MOBILE_NAV_ITEMS = [
   { href: '/', label: 'Início', icon: Home },
-  { href: '/anamnese', label: 'Anamnese', icon: ClipboardList },
   { href: '/active', label: 'Treinar', icon: PlayCircle },
+  { href: '/progression', label: 'Check-in', icon: TrendingUp },
   { href: '/progress', label: 'Progresso', icon: BarChart2 },
   { href: '/settings', label: 'Perfil', icon: Settings },
 ];

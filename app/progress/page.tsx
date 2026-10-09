@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { TrendingUp, Scale, Trophy, Activity, Plus, BarChart2, ChevronDown } from 'lucide-react';
+import { TrendingUp, Scale, Trophy, Activity, Plus, BarChart2, ChevronDown, History } from 'lucide-react';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ChartSkeleton } from '@/components/charts/ChartSkeleton';
 
@@ -177,6 +178,19 @@ export default function ProgressPage() {
           Meu Progresso
         </h1>
         <p className="text-foreground-muted mt-2">Acompanhe sua evolução física e performance nos treinos.</p>
+
+        {/* A porta do Histórico no celular.
+            `/history` só tinha link na barra lateral do desktop (`hidden md:flex`), então no
+            telefone a tela existia e ninguém chegava nela. Aqui é onde o aluno procura: esta
+            tela mostra medida e evolução corporal, e o Histórico mostra os treinos feitos e o
+            volume — a pergunta seguinte de quem está olhando a própria evolução. */}
+        <Link
+          href="/history"
+          className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-blue-400 hover:text-blue-300 bg-surface border border-border rounded-xl px-4 py-2.5 transition-colors"
+        >
+          <History className="w-4 h-4" />
+          Ver treinos realizados
+        </Link>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
