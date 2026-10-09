@@ -873,7 +873,7 @@ export default function ActiveWorkout() {
 
       <PeriodizationResetNotice diasParado={resetNotice} onFechar={() => setResetNotice(null)} />
 
-      <BlocoAquecimento itens={currentSession?.warmup} />
+      <BlocoAquecimento itens={currentSession?.warmup} biblioteca={libraryExercises} />
 
       <div className="space-y-6">
         {activeExercises.map((ex, exIndex) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Waves, ChevronDown, Check } from 'lucide-react';
+import { Waves, ChevronDown, Check, ImageOff } from 'lucide-react';
 import type { ExercicioDePreparo } from '@/lib/types';
 
 /**
@@ -15,11 +15,40 @@ import type { ExercicioDePreparo } from '@/lib/types';
  * não mudam; quem não sabe abre e vê. Marcar como feito é opcional e não bloqueia nada: um
  * aquecimento que trava o botão de treinar vira motivo para fechar o app.
  */
-export function BlocoAquecimento({ itens }: { itens?: ExercicioDePreparo[] | null }) {
+interface ExercicioDaBiblioteca {
+  id?: string;
+  name: string;
+  mediaUrl?: string | null;
+}
+
+/**
+ * `biblioteca` vem da tela de execução, que já a carrega para os exercícios de força.
+ *
+ * Sem a imagem, o aquecimento era só uma lista de nomes — e "Catavento corporal" não diz nada
+ * a quem nunca viu. Exatamente o problema que o app resolve no treino de força, repetido no
+ * aquecimento por eu ter esquecido de passar a mídia.
+ */
+export function BlocoAquecimento({
+  itens,
+  biblioteca = [],
+}: {
+  itens?: ExercicioDePreparo[] | null;
+  biblioteca?: ExercicioDaBiblioteca[];
+}) {
   const [aberto, setAberto] = useState(false);
   const [feitos, setFeitos] = useState<Set<string>>(new Set());
 
   if (!itens?.length) return null;
+
+  // Mesma busca da tela de força: por id, e depois por nome, porque plano antigo pode ter
+  // guardado o exercício sem id.
+  const midiaDe = (item: ExercicioDePreparo): string | null => {
+    const porId = item.exerciseId ? biblioteca.find(e => e.id === item.exerciseId) : undefined;
+    const achado = porId ?? biblioteca.find(
+      e => e.name.trim().toLowerCase() === item.name.trim().toLowerCase()
+    );
+    return achado?.mediaUrl ?? null;
+  };
 
   const alternar = (nome: string) =>
     setFeitos(f => {
@@ -61,12 +90,13 @@ export function BlocoAquecimento({ itens }: { itens?: ExercicioDePreparo[] | nul
         <div className="px-4 pb-4 flex flex-col gap-2 animate-fade-in">
           {itens.map(item => {
             const feito = feitos.has(item.name);
+            const midia = midiaDe(item);
             return (
               <button
                 key={item.name}
                 onClick={() => alternar(item.name)}
                 aria-pressed={feito}
-                className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                className={`flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all ${
                   feito ? 'border-primary/40 bg-primary/10' : 'border-border bg-surface hover:bg-surface-hover'
                 }`}
               >
@@ -75,6 +105,26 @@ export function BlocoAquecimento({ itens }: { itens?: ExercicioDePreparo[] | nul
                 }`}>
                   {feito && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
                 </span>
+
+                {/* A imagem é o ponto do bloco: "Catavento corporal" não diz nada a quem nunca
+                    viu o movimento. object-contain para não cortar os pés, mesma correção que
+                    a tela de força já tinha recebido. */}
+                <span className="w-16 h-16 rounded-lg bg-black/40 flex-none grid place-items-center overflow-hidden">
+                  {midia ? (
+                    midia.endsWith('.mp4') ? (
+                      <video
+                        src={midia}
+                        autoPlay loop muted playsInline
+                        className="w-full h-full object-contain opacity-90"
+                      />
+                    ) : (
+                      <img src={midia} alt="" className="w-full h-full object-contain opacity-90" />
+                    )
+                  ) : (
+                    <ImageOff className="w-4 h-4 text-foreground-muted/40" />
+                  )}
+                </span>
+
                 <span className="flex-1 min-w-0">
                   <span className={`block text-sm leading-tight ${feito ? 'line-through text-foreground-muted' : ''}`}>
                     {item.name}
