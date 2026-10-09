@@ -37,10 +37,6 @@ const ESTIMATED_TOKENS_PER_CALL: Record<string, number> = {
   nutrition: 1500,
   progression: 4000,
   'daily-tip': 500,
-  // Chute alto de propósito: imagem consome muito mais token que texto, e o tamanho varia com
-  // a resolução da foto. Subestimar aqui faria o provedor recusar em vez do app — o erro caro
-  // descrito acima. A calibração automática corrige na terceira importação real.
-  'importar-treino': 12000,
 };
 
 const DEFAULT_ESTIMATE = 2000;
