@@ -70,6 +70,23 @@ export const MODELOS_RESERVA = [
  */
 export const ORCAMENTO_MS = 40_000;
 
+/**
+ * Teto de UMA tentativa.
+ *
+ * O orçamento acima só era consultado ENTRE tentativas, e a chamada ao Google ia sem limite
+ * nenhum. Se o Google aceitasse a conexão e nunca respondesse — nem resposta, nem erro, nem
+ * fechamento —, a chamada ficava pendurada para sempre: a verificação de 40s nunca rodava,
+ * porque o código estava parado dentro do `await`. O relógio ficava do lado de fora da sala
+ * onde o processo travou.
+ *
+ * Aconteceu em 09/10/2026, gerando um Treino do Personal: mais de 5 minutos de espera numa
+ * rota cujo teto é 60s.
+ *
+ * 25 segundos cabem duas tentativas dentro do orçamento, e uma chamada que passa disso não
+ * ia terminar a tempo de qualquer jeito — melhor abortar e cair para o próximo modelo.
+ */
+export const TIMEOUT_POR_TENTATIVA_MS = 25_000;
+
 export interface GeminiTurn {
   role: 'user' | 'model';
   text: string;
@@ -167,12 +184,33 @@ export async function generateWithRetry(
         throw lastError ?? new Error('Tempo esgotado tentando gerar');
       }
 
+      // O timeout vai junto do que SOBRA do orçamento: perto do fim da cadeia não adianta dar
+      // 25s a uma tentativa se só restam 8. O AbortSignal é o que realmente corta a conexão;
+      // `timeout` sozinho depende do SDK respeitar, e aqui as duas defesas custam nada.
+      //
+      // Declarado FORA do try porque o catch precisa dele para dizer no log quanto esperou.
+      const restante = ORCAMENTO_MS - (Date.now() - comecou);
+      const tetoDaTentativa = Math.max(5_000, Math.min(TIMEOUT_POR_TENTATIVA_MS, restante));
+
       try {
-      const response = await ai.models.generateContent({
-        model: modelo,
-        contents,
-        config,
-      });
+      const abortar = new AbortController();
+      const relogio = setTimeout(() => abortar.abort(), tetoDaTentativa);
+
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: modelo,
+          contents,
+          config: {
+            ...config,
+            abortSignal: abortar.signal,
+            httpOptions: { timeout: tetoDaTentativa },
+          },
+        });
+      } finally {
+        // Sem isto o timer segura o processo vivo até disparar, mesmo com a resposta na mão.
+        clearTimeout(relogio);
+      }
 
       const finishReason = response.candidates?.[0]?.finishReason;
       const text = response.text ?? '';
@@ -212,12 +250,22 @@ export async function generateWithRetry(
       //
       //   RESPOSTA RUIM (JSON quebrado) — é da chamada, não do modelo. A mesma chamada
       //   repetida quase sempre volta bem, então aqui a espera curta continua valendo.
+      //
+      //   NÃO RESPONDEU A TEMPO — o abort do teto por tentativa. Conta como modelo fora: um
+      //   modelo que pendurou a conexão não vai responder mais rápido na segunda tentativa, e
+      //   sem isto o AbortError caía no `throw err` logo abaixo e matava a cadeia inteira —
+      //   justamente quando o fallback é mais útil.
+      const naoRespondeu =
+        err?.name === 'AbortError' ||
+        /abort|timed? ?out|timeout|ETIMEDOUT/i.test(msg);
+
       const modeloFora =
         status === 429 || status === 503 || status === 500 ||
         /429|503|500|high demand|overloaded|UNAVAILABLE|RESOURCE_EXHAUSTED/i.test(msg);
 
-      if (modeloFora) {
-        console.warn(`[gemini] modelo "${modelo}" indisponível (${status || 'erro'}); tentando o próximo.`);
+      if (modeloFora || naoRespondeu) {
+        const motivo = naoRespondeu ? `não respondeu em ${tetoDaTentativa}ms` : `indisponível (${status || 'erro'})`;
+        console.warn(`[gemini] modelo "${modelo}" ${motivo}; tentando o próximo.`);
         break; // sai do laço de tentativas e vai para o próximo modelo
       }
 

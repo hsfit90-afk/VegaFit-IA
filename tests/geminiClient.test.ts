@@ -117,3 +117,55 @@ describe('generateWithRetry — falhas do provedor', () => {
     expect(generateContent).toHaveBeenCalledTimes(1);
   });
 });
+
+/**
+ * Travamento de producao (09/10/2026): uma geracao de Treino do Personal ficou mais de 5
+ * minutos esperando, numa rota cujo teto na Vercel e 60 segundos.
+ *
+ * A causa: o orcamento de 40s so era consultado ENTRE tentativas, e a chamada ao Google ia
+ * sem limite nenhum. Com a conexao pendurada, o codigo ficava parado dentro do `await` e a
+ * verificacao nunca rodava. O relogio estava do lado de fora da sala onde o processo travou.
+ *
+ * Estes testes fixam as duas metades do conserto: existe teto por tentativa, e estourar esse
+ * teto conta como "modelo fora" — cai para o proximo da cadeia em vez de matar tudo.
+ */
+describe('generateWithRetry — tentativa que nao responde', () => {
+  const abortError = () => Object.assign(new Error('This operation was aborted'), { name: 'AbortError' });
+
+  it('manda abortSignal e timeout em cada chamada', async () => {
+    generateContent.mockResolvedValueOnce(resposta('{"ok":true}'));
+
+    await generateWithRetry('chave', { prompt: 'x', json: true, maxOutputTokens: 100 });
+
+    const config = generateContent.mock.calls[0][0].config;
+    expect(config.abortSignal).toBeInstanceOf(AbortSignal);
+    expect(config.httpOptions.timeout).toBeGreaterThan(0);
+    expect(config.httpOptions.timeout).toBeLessThanOrEqual(25_000);
+  });
+
+  it('timeout cai para o proximo modelo em vez de estourar', async () => {
+    // O primeiro modelo pendura; o segundo responde. Antes do conserto o AbortError subia
+    // direto e a cadeia de reserva nao chegava a ser usada.
+    generateContent
+      .mockRejectedValueOnce(abortError())
+      .mockResolvedValueOnce(resposta('{"ok":true}'));
+
+    const r = await generateWithRetry('chave', { prompt: 'x', json: true, maxOutputTokens: 100 });
+
+    expect(r.text).toBe('{"ok":true}');
+    expect(generateContent.mock.calls[1][0].model).toBe(MODELOS_RESERVA[0]);
+  });
+
+  it('nao insiste no mesmo modelo que pendurou', async () => {
+    generateContent.mockRejectedValue(abortError());
+
+    await expect(
+      generateWithRetry('chave', { prompt: 'x', json: true, maxOutputTokens: 100 })
+    ).rejects.toThrow();
+
+    // Uma tentativa por modelo, nunca duas no mesmo: quem pendurou nao responde mais rapido
+    // na segunda vez, e cada repeticao gasta o orcamento de quem ainda poderia responder.
+    const modelosChamados = generateContent.mock.calls.map(c => c[0].model);
+    expect(new Set(modelosChamados).size).toBe(modelosChamados.length);
+  });
+});
