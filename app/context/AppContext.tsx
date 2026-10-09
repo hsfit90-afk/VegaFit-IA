@@ -202,8 +202,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       gemini_api_key: newProfile.geminiApiKey,
       sound_enabled: newProfile.soundEnabled,
       default_rest_timer: newProfile.defaultRestTimer,
-      banned_exercises: newProfile.bannedExercises || [],
-      favorite_exercises: newProfile.favoriteExercises || [],
+      // banned_exercises e favorite_exercises NAO entram aqui de proposito.
+      //
+      // Este upsert grava a linha INTEIRA do perfil a partir da copia em memoria. Enquanto as
+      // duas listas vinham no pacote, qualquer salvamento de perfil -- mudar o peso nos
+      // ajustes, por exemplo -- reescrevia as listas com o que o navegador tinha carregado na
+      // abertura do app. Isso apagava: (a) o que o profissional marcou pelo painel enquanto o
+      // aluno estava com o app aberto, e (b) o que o proprio aluno marcou em outro aparelho.
+      //
+      // As duas listas so mudam por banExerciseForUser e toggleFavoriteExercise, que escrevem
+      // a propria coluna e nada mais. Perfil novo nasce com as colunas nulas, e quem le trata
+      // nulo como lista vazia.
       role: newProfile.role || 'client',
       trainer_id: newProfile.trainerId || null,
       max_clients: newProfile.maxClients || 5,

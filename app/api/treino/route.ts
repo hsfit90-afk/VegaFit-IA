@@ -14,6 +14,7 @@ import { treinaEmCasa } from "@/lib/trainingLocation";
 import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
 import { computeUnlock, type MethodId } from "@/lib/trainingUnlock";
+import { normalizarListas } from "@/lib/listasDoAluno";
 
 // Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
 // capacidade (utils/rate-limit.ts) pode somar até AI_MAX_QUEUE_WAIT_MS em cima disso. Sem esta
@@ -92,20 +93,37 @@ export async function POST(req: NextRequest) {
         serviceSupabase.from('workout_history').select('date, workout_plan_id').eq('user_id', targetUserId),
         // Papel lido do BANCO, nunca do corpo da requisição: `profile` vem do cliente e poderia
         // chegar com role:'master' forjado pra driblar o desbloqueio por constância.
-        serviceSupabase.from('profiles').select('role, equipamentos_ausentes, equipamentos_casa').eq('id', targetUserId).single(),
+        serviceSupabase.from('profiles').select('role, equipamentos_ausentes, equipamentos_casa, banned_exercises, favorite_exercises').eq('id', targetUserId).single(),
       ]);
 
     let availableExercises = dbExercises || [];
 
-    // Filter out banned exercises if any exist in the profile
-    if (profile?.bannedExercises && profile.bannedExercises.length > 0) {
-      availableExercises = availableExercises.filter((ex: any) => !profile.bannedExercises.includes(ex.id));
+    // Banidos e favoritos vem do BANCO, pelo id do aluno -- nunca do corpo da requisicao.
+    //
+    // Achado em 09/10/2026: a rota lia profile.bannedExercises, que chega do navegador. No
+    // fluxo do proprio aluno funcionava, porque o app dele manda os proprios dados. Mas quando
+    // o profissional gera um treino PARA um aluno pelo montador, o corpo so leva id, nome,
+    // nivel e objetivo -- e a lista de banidos era simplesmente ignorada.
+    //
+    // Consequencia: o aluno baniu agachamento porque doi o joelho, o profissional gera um
+    // treino para ele, e o agachamento volta. Mesma correcao ja aplicada a papel e equipamento.
+    // normalizarListas resolve o caso de um id que ficou nas DUAS listas em escrita antiga:
+    // banido ganha, porque é a marca que carrega decisão de saúde.
+    const listasDoAluno = normalizarListas(
+      targetProfileRow?.favorite_exercises as string[] | null,
+      targetProfileRow?.banned_exercises as string[] | null
+    );
+
+    if (listasDoAluno.banidos.length > 0) {
+      availableExercises = availableExercises.filter(
+        (ex: any) => !listasDoAluno.banidos.includes(ex.id)
+      );
     }
 
     // Favoritos do aluno, resolvidos pelo pool JÁ filtrado (um favorito que também foi banido, ou
     // que saiu do catálogo, não chega ao prompt). Vai como "priorize quando couber", nunca como
     // regra — favoritos não podem furar o protocolo de volume/split nem a regra de saúde.
-    const favoriteIds: string[] = profile?.favoriteExercises || [];
+    const favoriteIds: string[] = listasDoAluno.favoritos;
     const favoriteNames = favoriteIds.length > 0
       ? availableExercises.filter((ex: any) => favoriteIds.includes(ex.id)).map((ex: any) => ex.name)
       : [];

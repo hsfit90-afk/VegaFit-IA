@@ -148,9 +148,14 @@ export default function AdminDashboard() {
 
       {/* O montador e onde o Treino do Personal e entregue; sem atalho daqui ele ficaria
           escondido numa URL que so eu conheco. */}
-      <div className="mb-8">
+      <div className="mb-8 flex flex-wrap gap-3">
         <a href="/admin/montar" className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-outfit font-bold px-5 py-3 rounded-xl hover:bg-primary-hover transition-colors">
           Montar treino para um aluno
+        </a>
+        {/* Caminho mais curto que o montador quando a questao e uma linha do treino, e nao o
+            treino todo: fixar ou proibir exercicio vale para toda geracao futura do aluno. */}
+        <a href="/admin/exercicios" className="inline-flex items-center gap-2 bg-surface-light border border-white/10 font-outfit font-bold px-5 py-3 rounded-xl hover:bg-white/5 transition-colors">
+          Exercicios por aluno
         </a>
       </div>
 
