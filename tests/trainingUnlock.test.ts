@@ -125,3 +125,40 @@ describe('contagem de progresso', () => {
     expect(computeUnlock(sujo, HOJE).treinosFeitos).toBe(24);
   });
 });
+
+describe('sessao avulsa nao conta como treino', () => {
+  const dias = (n: number) => Date.now() - n * 24 * 60 * 60 * 1000;
+
+  it('abdominal avulso NAO conta para desbloquear metodo', () => {
+    // Cinco minutos de abdomen nao sao prova de constancia em treino de forca. Sem esta
+    // exclusao, alguem chegaria aos 48 "treinos" sem nunca ter levantado peso -- justamente
+    // o que o desbloqueio existe para impedir.
+    const avulsos = Array.from({ length: 50 }, (_, i) => ({
+      date: dias(180 - i), workoutPlanId: 'avulso-abdominal',
+    }));
+    const r = computeUnlock(avulsos);
+    expect(r.treinosFeitos).toBe(0);
+    expect(r.fase).toBe(1);
+  });
+
+  it('treino de verdade continua contando', () => {
+    const reais = Array.from({ length: 50 }, (_, i) => ({
+      date: dias(200 - i * 3), workoutPlanId: 'plano-abc',
+    }));
+    expect(computeUnlock(reais).treinosFeitos).toBe(50);
+  });
+
+  it('historico misto conta so os de forca', () => {
+    const misto = [
+      ...Array.from({ length: 10 }, (_, i) => ({ date: dias(100 - i), workoutPlanId: 'plano-abc' })),
+      ...Array.from({ length: 20 }, (_, i) => ({ date: dias(100 - i), workoutPlanId: 'avulso-abdominal' })),
+    ];
+    expect(computeUnlock(misto).treinosFeitos).toBe(10);
+  });
+
+  it('entrada sem workoutPlanId conta, para nao quebrar historico antigo', () => {
+    // Planos salvos antes desta regra nao tem o campo; descarta-los apagaria o progresso de
+    // quem ja treinava.
+    expect(computeUnlock([{ date: dias(10) }]).treinosFeitos).toBe(1);
+  });
+});

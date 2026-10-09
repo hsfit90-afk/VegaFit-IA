@@ -17,6 +17,20 @@ import type { WorkoutHistoryEntry } from './types';
 
 export type MethodId = 'tradicional' | 'superset' | 'circuito' | 'drop_set' | 'rest_pause' | 'piramide';
 
+/**
+ * Prefixo dos planos que NÃO contam como treino para o desbloqueio.
+ *
+ * Sessão avulsa — abdominal, mobilidade, alongamento — vai para o histórico, e deve ir: o
+ * aluno fez e merece ver. Mas cinco minutos de abdômen não são prova de constância em treino
+ * de força, e sem esta exclusão alguém chegaria aos 48 "treinos" sem nunca ter levantado
+ * peso — justamente o que o desbloqueio existe para impedir.
+ */
+export const PREFIXO_AVULSO = 'avulso-';
+
+function contaComoTreino(h: { workoutPlanId?: string | null; date: number }): boolean {
+  return !String(h.workoutPlanId ?? '').startsWith(PREFIXO_AVULSO);
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MES_MS = 30 * DAY_MS;
 
@@ -42,14 +56,14 @@ export interface UnlockState {
 }
 
 export function computeUnlock(
-  history: Pick<WorkoutHistoryEntry, 'date'>[],
+  history: (Pick<WorkoutHistoryEntry, 'date'> & { workoutPlanId?: string | null })[],
   now: number = Date.now(),
   /** 'master' vê tudo liberado: é a conta de administração, precisa testar os métodos sem
    *  esperar 6 meses de constância. Aluno comum ('client') segue a regra normal. */
   role?: string | null
 ): UnlockState {
   if (role === 'master') {
-    const datas = (history || []).map(h => h.date).filter(d => Number.isFinite(d));
+    const datas = (history || []).filter(contaComoTreino).map(h => h.date).filter(d => Number.isFinite(d));
     const primeiro = datas.length ? Math.min(...datas) : null;
     return {
       fase: 3,
@@ -61,7 +75,7 @@ export function computeUnlock(
     };
   }
 
-  const datas = (history || []).map(h => h.date).filter(d => Number.isFinite(d));
+  const datas = (history || []).filter(contaComoTreino).map(h => h.date).filter(d => Number.isFinite(d));
   const treinosFeitos = datas.length;
   const primeiro = treinosFeitos ? Math.min(...datas) : null;
   const mesesTreinando = primeiro === null ? 0 : Math.floor((now - primeiro) / MES_MS);

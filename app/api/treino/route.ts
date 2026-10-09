@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
           .from('exercises')
           .select('id, name, muscle_group'), // Buscar todos os exercícios, ignorando user_id por enquanto (B2C)
         fetchLatestAnamneseAnswers(serviceSupabase, targetUserId),
-        serviceSupabase.from('workout_history').select('date').eq('user_id', targetUserId),
+        serviceSupabase.from('workout_history').select('date, workout_plan_id').eq('user_id', targetUserId),
         // Papel lido do BANCO, nunca do corpo da requisição: `profile` vem do cliente e poderia
         // chegar com role:'master' forjado pra driblar o desbloqueio por constância.
         serviceSupabase.from('profiles').select('role, equipamentos_ausentes, equipamentos_casa').eq('id', targetUserId).single(),
@@ -128,6 +128,15 @@ export async function POST(req: NextRequest) {
     // Aeróbico agora tem sessão própria, prescrita por tempo (ver cardioPool abaixo).
     let cardioPool = availableExercises.filter((ex: any) => ex.muscle_group === 'Cardio');
     availableExercises = availableExercises.filter((ex: any) => ex.muscle_group !== 'Cardio');
+
+    // Abdômen também sai da sessão de força, pelo mesmo motivo do aeróbico: tem sessão
+    // própria em /abdominal.
+    //
+    // Medido em 09/10/2026: o core aparecia 1 vez em 18 exercícios, e sempre por acaso --
+    // caía no dia de perna. Com 97 exercícios de core no catálogo, era desperdício dos dois
+    // lados: quem queria abdômen não recebia, e quem não queria levava um perdido no meio do
+    // treino de perna. Custo de tirar: 0,3 exercício por sessão.
+    availableExercises = availableExercises.filter((ex: any) => !/core|abd/i.test(ex.muscle_group || ''));
 
     // O aeróbico TAMBÉM precisa respeitar onde a pessoa treina.
     //
@@ -287,7 +296,7 @@ export async function POST(req: NextRequest) {
     // um POST direto pra pedir Drop Set no primeiro dia de treino. Técnicas de falha muscular em
     // quem não tem base são risco de lesão, então a regra tem que valer no servidor.
     const unlock = computeUnlock(
-      (historyRows || []).map((h: any) => ({ date: new Date(h.date).getTime() })),
+      (historyRows || []).map((h: any) => ({ date: new Date(h.date).getTime(), workoutPlanId: h.workout_plan_id })),
       Date.now(),
       targetProfileRow?.role
     );

@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Card, CardContent } from '@/components/ui/Card';
-import { StretchHorizontal, Loader2, Clock, Play, Pause, RotateCcw } from 'lucide-react';
-import { selecionarAlongamento, type ExercicioSimples } from '@/lib/preparoFinalizacao';
+import { StretchHorizontal, Loader2, Clock } from 'lucide-react';
+import { ListaComCronometro, type ItemDaLista } from '@/components/workout/ListaComCronometro';
+import { selecionarAlongamento } from '@/lib/preparoFinalizacao';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 /**
@@ -25,30 +26,22 @@ const GRUPOS = ['Todos', 'Peito', 'Costas', 'Ombro', 'Pernas (quadríceps)', 'Po
 const SEGUNDOS = 30;
 
 export default function Alongamento() {
-  const [catalogo, setCatalogo] = useState<ExercicioSimples[] | null>(null);
+  const [catalogo, setCatalogo] = useState<ItemDaLista[] | null>(null);
   const [grupo, setGrupo] = useState('Todos');
-  const [rodando, setRodando] = useState<string | null>(null);
-  const [restam, setRestam] = useState(SEGUNDOS);
 
   useEffect(() => {
     (async () => {
       const supabase = createClient();
       const { data } = await supabase
         .from('exercises')
-        .select('id, name, muscle_group')
+        .select('id, name, muscle_group, media_url')
         .order('name')
         .limit(1000);
-      setCatalogo(data ?? []);
+      setCatalogo((data ?? []).map(e => ({
+        id: e.id, name: e.name, muscle_group: e.muscle_group, mediaUrl: e.media_url,
+      })));
     })();
   }, []);
-
-  // Um cronômetro só, do exercício que está rodando. Zera ao chegar no fim.
-  useEffect(() => {
-    if (!rodando) return;
-    if (restam <= 0) { setRodando(null); setRestam(SEGUNDOS); return; }
-    const t = setTimeout(() => setRestam(r => r - 1), 1000);
-    return () => clearTimeout(t);
-  }, [rodando, restam]);
 
   const lista = useMemo(() => {
     if (!catalogo) return [];
@@ -91,50 +84,13 @@ export default function Alongamento() {
         ))}
       </div>
 
-      {lista.length === 0 ? (
-        <Card><CardContent className="p-6 text-center text-sm text-foreground-muted">
-          Nenhum alongamento cadastrado para essa região ainda.
-        </CardContent></Card>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {lista.map(ex => {
-            const ativo = rodando === ex.name;
-            return (
-              <Card key={ex.id ?? ex.name} className={ativo ? 'border-primary/50' : ''}>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium leading-tight">{ex.name}</p>
-                    {ex.muscle_group && (
-                      <p className="text-[11px] text-foreground-muted mt-0.5">{ex.muscle_group}</p>
-                    )}
-                  </div>
-
-                  {ativo ? (
-                    <div className="flex items-center gap-2 flex-none">
-                      <span className="font-mono font-bold text-primary tabular-nums text-lg w-10 text-right">{restam}s</span>
-                      <button
-                        onClick={() => { setRodando(null); setRestam(SEGUNDOS); }}
-                        aria-label="Parar"
-                        className="w-9 h-9 rounded-xl bg-surface-light grid place-items-center text-foreground-muted hover:text-foreground"
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => { setRodando(ex.name); setRestam(SEGUNDOS); }}
-                      aria-label={`Cronometrar ${ex.name}`}
-                      className="w-9 h-9 rounded-xl bg-surface-light grid place-items-center text-primary hover:bg-primary/20 transition-colors flex-none"
-                    >
-                      <Play className="w-4 h-4" />
-                    </button>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+      {/* Mesma lista de mobilidade: duas copias divergem na primeira correcao que alguem
+          esquece de aplicar nas duas. */}
+      <ListaComCronometro
+        itens={lista}
+        segundos={SEGUNDOS}
+        vazio="Nenhum alongamento cadastrado para essa região ainda."
+      />
 
       <p className="text-xs text-foreground-muted mt-5 flex items-center gap-2">
         <Clock className="w-3.5 h-3.5 flex-none" />

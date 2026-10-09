@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { Dumbbell, Flame, Trophy, Calendar, Lightbulb, ChevronRight, Activity, Zap, Star, LayoutList, Trash2, CheckCircle2, PlayCircle, Timer } from 'lucide-react';
+import { Dumbbell, Flame, Trophy, Calendar, Lightbulb, ChevronRight, Activity, Zap, Star, LayoutList, Trash2, CheckCircle2, PlayCircle, Timer , Waves, StretchHorizontal} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
@@ -352,6 +352,33 @@ export default function Dashboard() {
               </Card>
             </button>
           )}
+
+          {/* As outras avulsas, no mesmo padrão do aeróbico. Não dependem de plano ativo —
+              dá para alongar num dia de descanso, que é justamente o ponto delas.
+
+              Abdominal saiu da sessão de força (ver route.ts): aparecia 1 vez em 18
+              exercícios, sempre por acaso. Aqui é uma sessão de verdade. */}
+          {[
+            { href: '/abdominal',   icone: Flame,             titulo: 'Abdominal',   sub: '5 exercícios · 3 séries cada' },
+            { href: '/mobilidade',  icone: Waves,             titulo: 'Mobilidade',  sub: 'Solte o corpo, sem carga' },
+            { href: '/alongamento', icone: StretchHorizontal, titulo: 'Alongamento', sub: 'A qualquer hora do dia' },
+          ].map(({ href, icone: Icone, titulo, sub }) => (
+            <button key={href} onClick={() => router.push(href)} className="block w-full text-left mt-3">
+              <Card variant="neon-hover" className="p-4 flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center justify-center shrink-0">
+                  <Icone className="w-5 h-5 text-secondary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-foreground-muted uppercase tracking-wider font-semibold">
+                    Sessão avulsa
+                  </p>
+                  <p className="font-bold text-white truncate">{titulo}</p>
+                  <p className="text-xs text-foreground-muted truncate">{sub}</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-foreground-muted shrink-0" />
+              </Card>
+            </button>
+          ))}
 
           {/* Box de Conquistas (Gamification) */}
         </motion.div>
