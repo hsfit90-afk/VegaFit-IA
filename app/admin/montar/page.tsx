@@ -390,17 +390,37 @@ export default function MontarTreino() {
         </Card>
       )}
 
-      {/* Ponto de partida. Gerar vem primeiro de propósito — ver comentário do componente. */}
-      {sessoes.length === 0 && (
-        <Card className="mb-5 border-primary/30">
-          <CardContent className="p-6 flex flex-col gap-4">
+      {/* O CARD NÃO SOME MAIS depois de gerar.
+          Ele estava dentro de `sessoes.length === 0`, então os quatro campos desapareciam no
+          instante em que o plano chegava. Resultado: dava para gerar com o local errado, ver
+          leg press num treino de casa, e não ter onde corrigir — só apagando tudo. Aconteceu
+          com o treino do Joel em 09/10/2026. Os campos ficam, e o botão vira "Gerar de novo". */}
+      <Card className="mb-5 border-primary/30">
+        <CardContent className="p-6 flex flex-col gap-4">
             <div>
-              <p className="font-outfit font-bold mb-1">Por onde começar</p>
+              <p className="font-outfit font-bold mb-1">
+                {sessoes.length === 0 ? 'Por onde começar' : 'Gerar de novo'}
+              </p>
               <p className="text-sm text-foreground-muted">
-                Gerar com IA traz um plano que já respeita a anamnese, o nível e a academia do aluno.
-                Aí você ajusta o que mudaria — leva uns 10 minutos, contra 40 montando do zero.
+                {sessoes.length === 0
+                  ? 'Gerar com IA traz um plano que já respeita a anamnese, o nível e a academia do aluno. Aí você ajusta o que mudaria — leva uns 10 minutos, contra 40 montando do zero.'
+                  : 'Confira os campos abaixo. Gerar de novo descarta o plano que está na tela e monta outro — nada foi salvo na conta do aluno ainda.'}
               </p>
             </div>
+
+            {/* Sem anamnese e sem local no perfil, o padrão é academia — e padrão silencioso
+                foi exatamente o que entregou leg press para quem treina na sala. Aqui ele
+                para de ser silencioso. */}
+            {alunoId && !temAnamnese && config.equipment === 'Academia completa' && (
+              <div className="flex items-start gap-2.5 rounded-xl border border-warning/40 bg-warning/10 p-3.5 text-sm">
+                <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                <span>
+                  Ninguém informou onde {alunoEscolhido?.name || 'este aluno'} treina, então está
+                  valendo <strong>academia completa</strong>. Se ele treina em casa, troque abaixo
+                  antes de gerar — senão o treino sai com aparelho que ele não tem.
+                </span>
+              </div>
+            )}
 
             {/* Editáveis de propósito: o aluno às vezes te conta por WhatsApp algo que não
                 está na anamnese ("essa semana vou viajar e treinar no hotel"). O padrão é o
@@ -448,16 +468,31 @@ export default function MontarTreino() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={gerarComIA} disabled={gerando || !alunoId} className="flex-1">
-                {gerando ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Gerar com IA e ajustar</>}
+              <Button
+                onClick={() => {
+                  // Confirmação só quando há trabalho na tela para perder. Perguntar sempre
+                  // vira clique automático, e aí a pergunta não protege mais nada.
+                  if (sessoes.length > 0 &&
+                      !confirm('Isso descarta o plano que está na tela e gera outro. Continuar?')) return;
+                  gerarComIA();
+                }}
+                disabled={gerando || !alunoId}
+                className="flex-1"
+              >
+                {gerando
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <><Sparkles className="w-4 h-4" /> {sessoes.length === 0 ? 'Gerar com IA e ajustar' : 'Gerar de novo'}</>}
               </Button>
-              <Button variant="outline" onClick={addSessao} className="flex-1">
-                <Plus className="w-4 h-4" /> Começar do zero
-              </Button>
+              {/* Só enquanto não há plano: depois de gerar, o rodapé já tem "Adicionar dia",
+                  e dois botões com a mesma função em telas diferentes confundem. */}
+              {sessoes.length === 0 && (
+                <Button variant="outline" onClick={addSessao} className="flex-1">
+                  <Plus className="w-4 h-4" /> Começar do zero
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
-      )}
 
       {/* Sessões */}
       <div className="flex flex-col gap-4">
