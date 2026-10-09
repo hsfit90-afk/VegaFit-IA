@@ -116,3 +116,32 @@ describe('resumirCasa — a tela explica o efeito', () => {
     expect(resumirCasa(['halteres', 'banco'])).toContain('banco');
   });
 });
+
+describe('cabeEmCasa — aerobico', () => {
+  it('28 dos 49 do catalogo nao precisam de aparelho', () => {
+    // Quem treina na sala ainda tem polichinelo, burpee, corrida estatica, pular corda.
+    for (const n of ['Polichinelo (Jumping Jack)', 'Meio Burpee', 'Corrida Estática (Parado)',
+                     'Pular Corda', 'Alpinista (Mountain Climber)', 'Caminhada']) {
+      expect(cabeEmCasa(n, []), n).toBe(true);
+    }
+  });
+
+  it('aparelho de cardio nao entra em casa', () => {
+    for (const n of ['Esteira Ergométrica', 'Bicicleta Ergométrica Reclinada', 'Airbike (Bike de Ar)',
+                     'Máquina Simulador Escada']) {
+      expect(cabeEmCasa(n, ['halteres', 'barra']), n).toBe(false);
+    }
+  });
+
+  it('"Eliptico" no masculino tambem sai', () => {
+    // Achado medindo o catalogo em 09/10/2026: a lista tinha "eliptica" mas nao "eliptico", e
+    // o catalogo tem "Eliptico" e "Eliptico com Bracos". Vazavam para quem treina em casa.
+    expect(cabeEmCasa('Elíptico', [])).toBe(false);
+    expect(cabeEmCasa('Elíptico com Braços', [])).toBe(false);
+    expect(cabeEmCasa('Máquina Elíptica', [])).toBe(false);
+  });
+
+  it('plataforma vibratoria e aparelho, nao peso corporal', () => {
+    expect(cabeEmCasa('Plataforma Vibratória', [])).toBe(false);
+  });
+});

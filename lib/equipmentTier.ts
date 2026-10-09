@@ -15,7 +15,7 @@ const MACHINE_KEYWORDS = [
   // solta classificava esses exercícios de peso corporal como "só academia completa" por engano.
   'cadeira extensora', 'cadeira flexora', 'cadeira adutora', 'cadeira abdutora',
   'mesa flexora', 'mesa extensora', 'voador', 'pec deck', 'alavanca', 'multi power',
-  'graviton', 'simulador', 'elíptica', 'eliptica', 'esteira', 'ergométrica', 'ergometrica',
+  'graviton', 'simulador', 'elíptica', 'eliptica', 'elíptico', 'eliptico', 'esteira', 'ergométrica', 'ergometrica',
   // "assistid" sozinho foi removido pelo mesmo motivo: "Barra fixa Assistida com Faixa Elástica"
   // é assistida por elástico (peso corporal), não pela máquina graviton — que já é pega por
   // 'graviton' acima sem precisar da palavra solta.

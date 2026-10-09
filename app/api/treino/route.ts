@@ -126,8 +126,23 @@ export async function POST(req: NextRequest) {
     // faz parseInt nesse campo (app/active/page.tsx:137) e vira "5 repetições com carga alvo".
     //
     // Aeróbico agora tem sessão própria, prescrita por tempo (ver cardioPool abaixo).
-    const cardioPool = availableExercises.filter((ex: any) => ex.muscle_group === 'Cardio');
+    let cardioPool = availableExercises.filter((ex: any) => ex.muscle_group === 'Cardio');
     availableExercises = availableExercises.filter((ex: any) => ex.muscle_group !== 'Cardio');
+
+    // O aeróbico TAMBÉM precisa respeitar onde a pessoa treina.
+    //
+    // Achado em 09/10/2026: o cardioPool era separado aqui, ANTES do filtro de equipamento
+    // rodar — então quem treina em casa recebia esteira e bicicleta ergométrica na prescrição
+    // de cardio. O filtro nunca chegava nele.
+    //
+    // São 28 dos 49 que não precisam de aparelho (polichinelo, burpee, pular corda, corrida
+    // estática), então sobra bastante para quem treina na sala.
+    if (treinaEmCasa(config.equipment)) {
+      const tenho = targetProfileRow?.equipamentos_casa as string[] | null | undefined;
+      const antesCardio = cardioPool.length;
+      cardioPool = filtrarParaCasa(cardioPool, tenho);
+      console.log(`[treino] cardio em casa: ${antesCardio} -> ${cardioPool.length} opções.`);
+    }
 
     // Restringe o catálogo pela EXIGÊNCIA TÉCNICA, pelo mesmo princípio do filtro de equipamento
     // logo abaixo: o que não entra na lista, a IA não tem como escolher.

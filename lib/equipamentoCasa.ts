@@ -58,8 +58,9 @@ const SO_ACADEMIA = [
   'máquina', 'maquina', 'polia', 'cabo', 'pulley', 'smith', 'leg press', 'hack',
   'cadeira extensora', 'cadeira flexora', 'cadeira adutora', 'cadeira abdutora',
   'mesa flexora', 'mesa extensora', 'voador', 'pec deck', 'graviton', 'alavanca',
-  'cross over', 'crossover', 'esteira', 'elíptica', 'eliptica', 'ergométrica', 'ergometrica',
+  'cross over', 'crossover', 'esteira', 'elíptica', 'eliptica', 'elíptico', 'eliptico', 'ergométrica', 'ergometrica',
   'multi power', 'simulador', 'spinning', 'step mill',
+  'plataforma vibratória', 'plataforma vibratoria', 'hands bike', 'bike', 'airbike', 'air bike',
 ];
 
 /**
