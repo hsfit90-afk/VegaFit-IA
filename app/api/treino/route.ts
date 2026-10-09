@@ -10,7 +10,7 @@ import { limparAlvosPorSerie } from "@/lib/metodoTreino";
 import { filtrarPorEquipamentoAusente } from "@/lib/equipamentoAusente";
 import { filtrarParaCasa } from "@/lib/equipamentoCasa";
 import { selecionarMobilidade } from "@/lib/preparoFinalizacao";
-import { treinaEmCasa } from "@/lib/trainingLocation";
+import { treinaEmCasa, mapAnamneseLocationToEquipment } from "@/lib/trainingLocation";
 import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, textoLivreParaPrompt, LIMITE_PREFERENCIAS, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
 import { computeUnlock, type MethodId } from "@/lib/trainingUnlock";
@@ -93,8 +93,24 @@ export async function POST(req: NextRequest) {
         serviceSupabase.from('workout_history').select('date, workout_plan_id').eq('user_id', targetUserId),
         // Papel lido do BANCO, nunca do corpo da requisição: `profile` vem do cliente e poderia
         // chegar com role:'master' forjado pra driblar o desbloqueio por constância.
-        serviceSupabase.from('profiles').select('role, equipamentos_ausentes, equipamentos_casa, banned_exercises, favorite_exercises').eq('id', targetUserId).single(),
+        serviceSupabase.from('profiles').select('role, equipamentos_ausentes, equipamentos_casa, banned_exercises, favorite_exercises, training_location').eq('id', targetUserId).single(),
       ]);
+
+    // ONDE O ALUNO TREINA: o corpo da requisicao manda, o banco e a rede de seguranca.
+    //
+    // A rota decidia casa x academia so por config.equipment, que vem do navegador. Dois
+    // jeitos de isso dar errado, os dois reais:
+    //
+    //   1. O gerador monta o formulario com o perfil ainda carregando, e o campo nasce em
+    //      "Academia completa" mesmo para quem treina na sala.
+    //   2. O montador do admin mandava "Academia completa" chumbado no codigo, para todo
+    //      aluno (corrigido em 09/10/2026).
+    //
+    // Nos dois casos o aluno recebia leg press para fazer na sala. Agora, sem valor explicito
+    // no corpo, vale o que ele respondeu na anamnese.
+    const localDoAluno = config.equipment
+      || mapAnamneseLocationToEquipment(targetProfileRow?.training_location as string | null);
+    const emCasa = treinaEmCasa(localDoAluno);
 
     let availableExercises = dbExercises || [];
 
@@ -164,7 +180,7 @@ export async function POST(req: NextRequest) {
     //
     // São 28 dos 49 que não precisam de aparelho (polichinelo, burpee, pular corda, corrida
     // estática), então sobra bastante para quem treina na sala.
-    if (treinaEmCasa(config.equipment)) {
+    if (emCasa) {
       const tenho = targetProfileRow?.equipamentos_casa as string[] | null | undefined;
       const antesCardio = cardioPool.length;
       cardioPool = filtrarParaCasa(cardioPool, tenho);
@@ -224,7 +240,7 @@ export async function POST(req: NextRequest) {
     // Sem salvaguarda por grupo aqui, ao contrario do filtro de academia: devolver um
     // exercicio de maquina a quem esta na academia e inconveniente; devolver leg press a
     // quem treina na sala e prescrever o impossivel.
-    if (treinaEmCasa(config.equipment)) {
+    if (emCasa) {
       const tenho = targetProfileRow?.equipamentos_casa as string[] | null | undefined;
       const antes = availableExercises.length;
       availableExercises = filtrarParaCasa(availableExercises, tenho);
@@ -235,7 +251,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const allowedTiers = EQUIPMENT_ALLOWED_TIERS[config.equipment as string];
+    const allowedTiers = EQUIPMENT_ALLOWED_TIERS[localDoAluno as string];
 
     if (allowedTiers) {
       const filteredExercises = availableExercises.filter((ex: any) => allowedTiers.includes(classifyEquipmentTier(ex.name)));
@@ -248,7 +264,7 @@ export async function POST(req: NextRequest) {
       const emptiedMuscles = [...allMuscles].filter(m => !musclesWithOptions.has(m));
 
       if (emptiedMuscles.length > 0) {
-        console.warn(`[treino] Filtro de equipamento ("${config.equipment}") zerou ${emptiedMuscles.join(', ')} — liberando sem filtro só pra esses grupos.`);
+        console.warn(`[treino] Filtro de equipamento ("${localDoAluno}") zerou ${emptiedMuscles.join(', ')} — liberando sem filtro só pra esses grupos.`);
         const fallbackExtra = availableExercises.filter((ex: any) => emptiedMuscles.includes(ex.muscle_group));
         availableExercises = [...filteredExercises, ...fallbackExtra];
       } else {
@@ -469,7 +485,7 @@ ${nivelAluno === 'iniciante'
   : 'REGRA DE NÍVEL: este aluno é AVANÇADO e a lista abaixo contém o catálogo completo. Ainda assim, não encha a sessão de movimento exótico: o grosso do volume deve vir de compostos, com o avançado entrando como complemento onde faz sentido.'}
 - Dias por semana: ${config.daysPerWeek}
 - Duração por sessão: ${config.duration} minutos
-- Equipamentos disponíveis: ${config.equipment}
+- Equipamentos disponíveis: ${localDoAluno}
 - Grupos musculares prioritários: ${config.priorities.join(', ')}
 - Método de treino: ${methodLabel.toUpperCase()} — ${methodDesc}
 ${healthBlock}
@@ -546,7 +562,7 @@ ${cardioListStr}
 
 Certifique-se de que a quantidade de sessões (sessions) corresponde a "Dias por semana" informados (${config.daysPerWeek}).
 OBRIGATÓRIO: Cada sessão deve ter EXATAMENTE ${exercisesPerSession} exercícios — nem a mais, nem a menos.
-Gere exercícios compatíveis com os "Equipamentos disponíveis" (${config.equipment}).
+Gere exercícios compatíveis com os "Equipamentos disponíveis" (${localDoAluno}).
 REGRA CRÍTICA SOBRE O CAMPO "reps": o valor no exemplo do JSON acima é ilustrativo, NÃO copie o mesmo número pra todos os exercícios. Classifique CADA exercício como composto ou isolado e defina "reps" com um valor numérico real dentro da faixa correspondente (${compoundReps} para composto, ${isolationReps} para isolado) — exercícios diferentes na mesma sessão DEVEM ter valores de "reps" diferentes quando forem de tipos diferentes.
 REGRA CRÍTICA SOBRE O CAMPO "sets": o valor ${compoundSets} no exemplo do JSON acima também é só o exemplo pra exercício COMPOSTO. Para exercício ISOLADO, "sets" DEVE ser ${isolationSets}. Em AMBOS os casos, esse número tem que ser EXATAMENTE IGUAL ao número escrito em "Semana 1" dentro do campo "method" do mesmo exercício — os dois campos nunca podem contradizer um ao outro. A progressão das semanas seguintes (Semana 2, 3, 4) parte desse número inicial, conforme a REGRA CRÍTICA de Periodização.
 Aplique o método ${methodLabel.toUpperCase()} de forma coerente em todos os exercícios.

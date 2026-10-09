@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle } from 'lucide-react';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
 
 /**
@@ -41,6 +41,20 @@ interface SessaoLinha {
 }
 
 interface Aluno { id: string; name: string | null; role: string | null }
+
+/** O que /api/admin/aluno devolve para a tela mostrar. */
+interface ResumoDoAluno {
+  local: string | null;
+  equipamentosCasa: string[];
+  objetivo: string | null;
+  nivel: string | null;
+  frequencia: string | null;
+  tempoSessao: string | null;
+  dias: string | null;
+  lesoes: string | null;
+  condicoes: string | null;
+  liberacao: string | null;
+}
 interface ExercicioCatalogo { id: string; name: string; muscle_group: string }
 
 const novaLinha = (): ExercicioLinha => ({
@@ -67,6 +81,26 @@ export default function MontarTreino() {
   const [salvando, setSalvando] = useState(false);
   const [carregando, setCarregando] = useState(true);
 
+  const [resumo, setResumo] = useState<ResumoDoAluno | null>(null);
+  const [temAnamnese, setTemAnamnese] = useState(false);
+  const [carregandoAluno, setCarregandoAluno] = useState(false);
+
+  /**
+   * A configuração da geração.
+   *
+   * ERA CHUMBADA NO CÓDIGO até 09/10/2026: 'Academia completa', 'Hipertrofia',
+   * 'Intermediário', 3 dias, 60 min, para todo aluno. A rota de geração decide casa x academia
+   * por este objeto, então um treino montado para quem treina na sala vinha com leg press e
+   * cadeira extensora. Agora o padrão é a anamnese do aluno, e o profissional ajusta.
+   */
+  const [config, setConfig] = useState({
+    equipment: 'Academia completa',
+    goal: 'Hipertrofia',
+    level: 'Intermediário',
+    daysPerWeek: 3,
+    duration: 60,
+  });
+
   useEffect(() => {
     (async () => {
       const supabase = createClient();
@@ -81,6 +115,40 @@ export default function MontarTreino() {
   }, []);
 
   const alunoEscolhido = alunos.find(a => a.id === alunoId);
+
+  /**
+   * Ao escolher o aluno, busca a anamnese dele e pré-preenche a geração.
+   *
+   * Recarrega do banco a cada troca, sem guardar em memória por aluno: o aluno pode ter
+   * refeito a anamnese entre uma montagem e outra, e aqui o custo de estar desatualizado é
+   * entregar um treino que não serve.
+   */
+  useEffect(() => {
+    if (!alunoId) { setResumo(null); setTemAnamnese(false); return; }
+    let cancelado = false;
+    (async () => {
+      setCarregandoAluno(true);
+      try {
+        const r = await fetch(`/api/admin/aluno?userId=${encodeURIComponent(alunoId)}`);
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Não consegui carregar o aluno.');
+        if (cancelado) return;
+        setResumo(d.resumo);
+        setTemAnamnese(Boolean(d.aluno?.temAnamnese));
+        setConfig(c => ({ ...c, ...d.sugestao }));
+      } catch (e) {
+        if (!cancelado) {
+          setResumo(null);
+          setTemAnamnese(false);
+          toast.erro(e instanceof Error ? e.message : 'Não consegui carregar o aluno.');
+        }
+      } finally {
+        if (!cancelado) setCarregandoAluno(false);
+      }
+    })();
+    // Troca rápida de aluno: a resposta antiga não pode sobrescrever a nova.
+    return () => { cancelado = true; };
+  }, [alunoId]);
 
   // ---- montagem ----
 
@@ -133,10 +201,17 @@ export default function MontarTreino() {
         // profile.id manda a rota gerar PARA este aluno: ela lê a anamnese, o histórico e o
         // nível dele do banco, e confere no servidor que quem pede é master.
         body: JSON.stringify({
-          profile: { id: alunoId, name: alunoEscolhido?.name || 'Aluno', level: 'Intermediário', goal: 'Hipertrofia' },
+          profile: {
+            id: alunoId,
+            name: alunoEscolhido?.name || 'Aluno',
+            level: config.level,
+            goal: config.goal,
+          },
           config: {
-            goal: 'Hipertrofia', level: 'Intermediário', daysPerWeek: 3, duration: 60,
-            equipment: 'Academia completa', priorities: [], limitations: '', trainingMethod: 'tradicional',
+            ...config,
+            priorities: [],
+            limitations: '',
+            trainingMethod: 'tradicional',
           },
         }),
       });
@@ -246,6 +321,75 @@ export default function MontarTreino() {
         </CardContent>
       </Card>
 
+      {/* A anamnese do aluno, na tela.
+          Antes disto o montador gerava com tudo chumbado no código: sempre "Academia
+          completa", sempre Hipertrofia, sempre Intermediário. Como a rota decide casa x
+          academia pelo que o corpo da requisição manda, um treino montado para quem treina na
+          sala saía com leg press — e não havia como perceber, porque a anamnese não aparecia
+          em lugar nenhum. Agora aparece, e é ela que pré-preenche a geração. */}
+      {alunoId && carregandoAluno && (
+        <Card className="mb-5">
+          <CardContent className="p-5 flex items-center gap-2 text-sm text-foreground-muted">
+            <Loader2 className="w-4 h-4 animate-spin" /> Buscando a anamnese do aluno…
+          </CardContent>
+        </Card>
+      )}
+
+      {alunoId && !carregandoAluno && resumo && (
+        <Card className="mb-5">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <p className="font-outfit font-bold">O que {alunoEscolhido?.name || 'o aluno'} respondeu</p>
+              {!temAnamnese && (
+                <span className="text-xs px-2.5 py-1 rounded-full bg-warning/15 text-warning font-semibold">
+                  Sem anamnese
+                </span>
+              )}
+            </div>
+
+            {!temAnamnese ? (
+              <p className="text-sm text-foreground-muted">
+                Este aluno ainda não preencheu a anamnese. Os campos abaixo vieram do perfil dele
+                e valem como chute — confirme com ele antes de entregar, principalmente o local
+                de treino e as lesões.
+              </p>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
+                {([
+                  ['Local de treino', resumo.local],
+                  ['Tem em casa', resumo.equipamentosCasa.length > 0 ? resumo.equipamentosCasa.join(', ') : (resumo.local === 'Em casa' ? 'Nada marcado — só peso do corpo' : null)],
+                  ['Objetivo', resumo.objetivo],
+                  ['Nível', resumo.nivel],
+                  ['Frequência atual', resumo.frequencia],
+                  ['Tempo por sessão', resumo.tempoSessao],
+                  ['Dias possíveis', resumo.dias],
+                  ['Liberação médica', resumo.liberacao],
+                ] as [string, string | null][])
+                  .filter(([, v]) => v)
+                  .map(([rotulo, valor]) => (
+                    <div key={rotulo} className="flex justify-between gap-3 border-b border-border/50 pb-1.5">
+                      <span className="text-foreground-muted shrink-0">{rotulo}</span>
+                      <span className="text-right">{valor}</span>
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {/* Saúde separada e em destaque: é o que não pode passar batido na hora de montar. */}
+            {(resumo.lesoes || resumo.condicoes) && (
+              <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3.5 text-sm space-y-1.5">
+                {resumo.lesoes && (
+                  <p><AlertTriangle className="w-4 h-4 inline mr-1.5 text-destructive" /><strong>Lesões:</strong> {resumo.lesoes}</p>
+                )}
+                {resumo.condicoes && (
+                  <p className="pl-[22px]"><strong>Condições:</strong> {resumo.condicoes}</p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Ponto de partida. Gerar vem primeiro de propósito — ver comentário do componente. */}
       {sessoes.length === 0 && (
         <Card className="mb-5 border-primary/30">
@@ -257,6 +401,52 @@ export default function MontarTreino() {
                 Aí você ajusta o que mudaria — leva uns 10 minutos, contra 40 montando do zero.
               </p>
             </div>
+
+            {/* Editáveis de propósito: o aluno às vezes te conta por WhatsApp algo que não
+                está na anamnese ("essa semana vou viajar e treinar no hotel"). O padrão é o
+                que ele respondeu; a palavra final é sua. */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="g-local" className="text-xs font-semibold text-foreground-muted">Onde vai treinar</label>
+                <select id="g-local" value={config.equipment}
+                  onChange={e => setConfig({ ...config, equipment: e.target.value })}
+                  className="w-full bg-surface border border-border rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary/50">
+                  <option>Academia completa</option>
+                  <option>Em casa</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="g-objetivo" className="text-xs font-semibold text-foreground-muted">Objetivo</label>
+                <select id="g-objetivo" value={config.goal}
+                  onChange={e => setConfig({ ...config, goal: e.target.value })}
+                  className="w-full bg-surface border border-border rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary/50">
+                  <option>Hipertrofia</option>
+                  <option>Emagrecimento</option>
+                  <option>Performance</option>
+                  <option>Saúde geral</option>
+                  <option>Definição muscular</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="g-nivel" className="text-xs font-semibold text-foreground-muted">Nível</label>
+                <select id="g-nivel" value={config.level}
+                  onChange={e => setConfig({ ...config, level: e.target.value })}
+                  className="w-full bg-surface border border-border rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary/50">
+                  <option>Iniciante</option>
+                  <option>Intermediário</option>
+                  <option>Avançado</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="g-dias" className="text-xs font-semibold text-foreground-muted">Dias por semana</label>
+                <select id="g-dias" value={config.daysPerWeek}
+                  onChange={e => setConfig({ ...config, daysPerWeek: Number(e.target.value) })}
+                  className="w-full bg-surface border border-border rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary/50">
+                  {[2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-3">
               <Button onClick={gerarComIA} disabled={gerando || !alunoId} className="flex-1">
                 {gerando ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4" /> Gerar com IA e ajustar</>}
