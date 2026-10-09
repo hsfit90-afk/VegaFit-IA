@@ -86,6 +86,14 @@ export interface GeminiRequest {
   json?: boolean;
   maxOutputTokens: number;
   model?: string;
+  /**
+   * Imagens ou PDFs enviados junto do prompt, em base64.
+   *
+   * Usado pela importação de treino: o aluno fotografa a ficha do personal antigo e o modelo
+   * lê. A alternativa seria OCR separado, que devolve texto solto e erra mais em letra
+   * manuscrita — o modelo entende o contexto e sabe que "3x12" é série por repetição.
+   */
+  arquivos?: { mimeType: string; base64: string }[];
 }
 
 export interface GeminiResult {
@@ -143,7 +151,15 @@ export async function generateWithRetry(
       role: turn.role,
       parts: [{ text: turn.text }],
     })),
-    { role: 'user' as const, parts: [{ text: req.prompt }] },
+    {
+      role: 'user' as const,
+      // O arquivo vem ANTES do texto de propósito: o modelo lê melhor quando a instrução
+      // chega depois do material, em vez de ter que lembrar dela enquanto olha a imagem.
+      parts: [
+        ...(req.arquivos || []).map(a => ({ inlineData: { mimeType: a.mimeType, data: a.base64 } })),
+        { text: req.prompt },
+      ],
+    },
   ];
 
   const config: Record<string, unknown> = { maxOutputTokens: req.maxOutputTokens };

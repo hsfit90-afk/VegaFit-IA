@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { computeUnlock, textoBloqueio, type MethodId } from '@/lib/trainingUnlock';
-import { Zap, Loader2 } from 'lucide-react';
+import { Zap, Loader2 , Upload} from 'lucide-react';
 import { Exercise as DbExercise } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { getExercises } from '@/lib/db/exercises';
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
 import { mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
+import Link from 'next/link';
 
 export default function Generator() {
   const { addWorkoutPlan, profile, history } = useAppContext();
@@ -392,6 +393,20 @@ export default function Generator() {
               {loading ? 'Gerando e salvando treino...' : 'Gerar Treino com IA'}
             </Button>
           </form>
+
+          {/* Quem já tem ficha não quer responder um formulário para recriá-la à mão. O
+              caminho fica aqui, abaixo do botão principal, e não acima: gerar continua sendo
+              o padrão, importar é a saída para quem chega com treino na mão. */}
+          <div className="mt-6 pt-6 border-t border-border text-center">
+            <p className="text-sm text-foreground-muted mb-2">Já tem uma ficha de treino?</p>
+            <Link
+              href="/importar"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-hover transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              Importar de uma foto ou PDF
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
