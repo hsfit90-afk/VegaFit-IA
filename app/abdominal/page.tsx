@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/Button';
 import { Loader2, Shuffle, Check, ImageOff, Flame } from 'lucide-react';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 import { PREFIXO_AVULSO } from '@/lib/trainingUnlock';
+import { prescrever, normalizarObjetivo, descreverSemana } from '@/lib/protocolo';
+import { computePeriodization } from '@/lib/periodization';
 
 /**
  * Abdominal como sessão avulsa.
@@ -27,8 +29,6 @@ import { PREFIXO_AVULSO } from '@/lib/trainingUnlock';
  */
 
 const QUANTIDADE = 5;
-const SERIES = 3;
-const REPETICOES = '12-15';
 
 interface ExercicioCore {
   id: string;
@@ -39,12 +39,25 @@ interface ExercicioCore {
 
 export default function Abdominal() {
   const toast = useToast();
-  const { addHistoryEntry } = useAppContext();
+  const { addHistoryEntry, profile, workoutPlans, activePlanId, history } = useAppContext();
 
   const [catalogo, setCatalogo] = useState<ExercicioCore[] | null>(null);
   const [semente, setSemente] = useState(0);
   const [feitos, setFeitos] = useState<Set<string>>(new Set());
   const [salvando, setSalvando] = useState(false);
+
+  /**
+   * A prescrição vem do MESMO protocolo do treino de força (lib/protocolo.ts), que
+   * classifica abdômen como isolado: 4 séries na semana 1, somando uma por semana até o
+   * deload. Antes eu tinha chumbado 3x12-15 aqui, o que contradizia o protocolo do app.
+   *
+   * A semana sai da periodização do plano ativo: o abdominal acompanha o ciclo do treino
+   * em vez de viver num calendário próprio. Sem plano ativo, semana 1.
+   */
+  const planoAtivo = workoutPlans.find(p => p.id === activePlanId) ?? workoutPlans[0];
+  const semana = planoAtivo ? computePeriodization(planoAtivo, history).week : 1;
+  const objetivo = normalizarObjetivo(profile?.goal);
+  const receita = prescrever('isolado', objetivo, semana);
 
   useEffect(() => {
     (async () => {
@@ -102,8 +115,8 @@ export default function Abdominal() {
           exerciseId: e.id,
           name: e.name,
           muscleGroup: e.muscle_group ?? 'Core/Abdômen',
-          targetSets: SERIES,
-          sets: Array.from({ length: SERIES }, () => ({
+          targetSets: receita.series,
+          sets: Array.from({ length: receita.series }, () => ({
             reps: 12, weight: 0, completed: true,
           })),
         })),
@@ -130,12 +143,20 @@ export default function Abdominal() {
           </div>
           <div>
             <h1 className="text-3xl md:text-4xl font-outfit font-bold leading-none">Abdominal</h1>
-            <p className="text-sm text-foreground-muted mt-1">{SERIES} séries de {REPETICOES} em cada</p>
+            <p className="text-sm text-foreground-muted mt-1">{receita.series} séries de {receita.reps} em cada</p>
           </div>
         </div>
         <p className="text-foreground-muted text-sm leading-relaxed max-w-prose">
           Uma sessão curta, para fazer depois do treino ou em dia livre. Não gostou de algum
           exercício? Sorteie outra combinação.
+        </p>
+
+        {/* O número de séries muda ao longo do ciclo. Sem dizer por quê, o aluno acha que o
+            app errou — principalmente na semana de deload, quando o volume DESCE. */}
+        <p className={`text-xs mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+          receita.deload ? 'bg-warning/10 text-warning' : 'bg-surface text-foreground-muted'
+        }`}>
+          {descreverSemana(semana)}
         </p>
       </header>
 
@@ -174,7 +195,7 @@ export default function Abdominal() {
                   {ex.name}
                 </span>
                 <span className="block text-xs text-primary mt-1 font-mono tabular-nums">
-                  {SERIES} × {REPETICOES}
+                  {receita.series} × {receita.reps}
                 </span>
               </span>
             </button>
