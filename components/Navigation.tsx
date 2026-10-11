@@ -103,7 +103,11 @@ export function Navigation() {
           <h1 className="font-outfit text-2xl font-extrabold tracking-tight text-foreground uppercase">VegaFit</h1>
         </div>
         
-        <nav className="flex-1 flex flex-col gap-1 overflow-y-auto hide-scrollbar">
+        {/* barra-fina, não hide-scrollbar: a lista passa de 15 itens para o master e o corte
+            cai no meio de um item. Sem barra, nada diz que existe mais coisa abaixo — e o
+            menu parecia terminar onde a tela terminava. O `pr-1` abre espaço para ela sem
+            empurrar o texto dos itens. */}
+        <nav className="flex-1 flex flex-col gap-1 overflow-y-auto barra-fina pr-1">
           {filteredDesktopNav.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;

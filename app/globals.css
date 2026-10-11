@@ -76,7 +76,46 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
+  /*
+   * Barra de rolagem fina e discreta, para quando ESCONDER é pior que mostrar.
+   *
+   * O menu lateral usava .hide-scrollbar. Funciona bem numa faixa de filtros, onde o conteúdo
+   * cortado é óbvio e o gesto é horizontal. No menu não: a lista chega a 16 itens para o
+   * master, o corte acontece no meio de um item, e sem barra nada na tela diz que existe mais
+   * coisa abaixo. O usuário conclui que o menu acaba ali.
+   *
+   * Fina e translúcida para não brigar com a barra escura; ganha contraste no hover, que é
+   * quando a pessoa está de fato procurando onde arrastar.
+   */
+  /*
+   * As duas sintaxes de propósito. A padrão (scrollbar-width/color) é a que o Chrome 121+ e o
+   * Firefox usam; a ::-webkit- atende Safari e Chrome antigo. E elas não convivem: quando
+   * scrollbar-color está definido, o Chrome novo IGNORA os pseudo-elementos — por isso o
+   * hover está escrito nos dois lugares, senão ele só funcionaria em metade dos navegadores.
+   */
+  .barra-fina {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+  }
+  .barra-fina:hover {
+    scrollbar-color: rgb(255 255 255 / 0.32) transparent;
+  }
+  .barra-fina::-webkit-scrollbar {
+    width: 6px;
+  }
+  .barra-fina::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .barra-fina::-webkit-scrollbar-thumb {
+    background-color: rgb(255 255 255 / 0.18);
+    border-radius: 999px;
+  }
+  .barra-fina:hover::-webkit-scrollbar-thumb {
+    background-color: rgb(255 255 255 / 0.32);
+  }
+
+
   .glass-panel {
     @apply bg-surface/40 backdrop-blur-2xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] relative overflow-hidden;
   }
