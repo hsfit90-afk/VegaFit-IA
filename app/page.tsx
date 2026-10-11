@@ -364,7 +364,7 @@ export default function Dashboard() {
               alongamento antes, aeróbico e abdominal depois — e o card é onde ela aparece. */}
           {[
             { href: '/mobilidade',  icone: Waves,             quando: 'Antes do treino',        titulo: 'Mobilidade',  sub: 'Prepara as articulações do dia' },
-            { href: '/alongamento', icone: StretchHorizontal, quando: 'Antes, ou quando quiser', titulo: 'Alongamento', sub: '3 sugeridos para o treino de hoje' },
+            { href: '/alongamento', icone: StretchHorizontal, quando: 'Quando quiser',    titulo: 'Alongamento', sub: 'Escolha a região que está travada' },
             { href: '/abdominal',   icone: Flame,             quando: 'Depois do treino',        titulo: 'Abdominal',   sub: '3 exercícios de core' },
           ].map(({ href, icone: Icone, quando, titulo, sub }) => (
             <button key={href} onClick={() => router.push(href)} className="block w-full text-left mt-3">

@@ -5,9 +5,11 @@
 //   MOBILIDADE    antes do treino, nas ARTICULAÇÕES que a sessão vai usar. Mobilidade de
 //                 quadril e tornozelo no dia de perna, de ombro no dia de empurrar. A tela
 //                 abre com essa sugestão em vez da lista inteira.
-//   ALONGAMENTO   a tela sugere TRÊS, pré-treino, para os grupos da sessão do dia. O resto do
-//                 catálogo continua logo abaixo, porque alongar segue valendo a qualquer
-//                 hora — a sugestão é um atalho, não uma restrição.
+//   ALONGAMENTO   SOLTO, e de propósito. Chegou a ter sugestão pré-treino amarrada aos
+//                 grupos do dia (11/10/2026); saiu no mesmo dia, por decisão do profissional:
+//                 a pessoa alonga o que quiser, quando quiser, e amarrar ao treino de força
+//                 transformava uma escolha livre em tarefa. É a única das quatro sem hora
+//                 marcada, e a tela existe separada justamente por isso.
 //   AERÓBICO      sempre DEPOIS da força, e a tela diz isso. Fazer antes compromete a carga
 //                 do treino principal, que é o que o aluno veio buscar.
 //

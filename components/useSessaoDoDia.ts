@@ -8,10 +8,14 @@ import { useAppContext } from '@/app/context/AppContext';
  *
  * POR QUE EXISTE
  *
- * Mobilidade e alongamento deixaram de ser listas genéricas: a prescrição do profissional
- * (CREF, 11/10/2026) é que as duas telas sugiram o que serve PARA O TREINO DE HOJE —
- * mobilidade nas articulações que vão ser usadas, alongamento nos grupos que vão ser
- * treinados. As duas telas precisam da mesma resposta, então ela mora num lugar só.
+ * A tela de mobilidade deixou de ser uma lista genérica: a prescrição do profissional
+ * (CREF, 11/10/2026) é que ela sugira o que serve PARA O TREINO DE HOJE — mobilidade nas
+ * articulações que vão receber carga.
+ *
+ * O alongamento chegou a usar isto no mesmo dia e saiu em seguida, por decisão do
+ * profissional: alongar é livre, a qualquer hora, e amarrar ao treino de força transformava
+ * escolha em tarefa. O hook ficou porque a pergunta "qual é o treino de hoje" é genérica e
+ * tende a voltar — o abdominal, por exemplo, é candidato natural.
  *
  * A sessão é a mesma que o dashboard oferece: `currentSessionIndex` do AppContext, que anda
  * sozinho conforme o aluno completa treino. Se ele trocar de dia manualmente no dashboard,
