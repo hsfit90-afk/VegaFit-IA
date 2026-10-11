@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Timer, Play, Pause, Check, ChevronLeft, Info } from 'lucide-react';
 import { useAppContext } from '@/app/context/AppContext';
@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { WorkoutHistoryEntry } from '@/lib/types';
+import { createClient } from '@/utils/supabase/client';
 
 /**
  * Sessão de aeróbico, fora do rodízio A/B/C.
@@ -21,6 +22,11 @@ import { WorkoutHistoryEntry } from '@/lib/types';
  * O aeróbico é prescrito por TEMPO TOTAL, não por exercício — por isso não há série, repetição
  * nem carga em lugar nenhum desta tela.
  */
+/** Nome comparavel: sem acento, sem caixa, sem espaco sobrando. */
+function chaveDeNome(nome: string): string {
+  return nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
+
 export default function CardioPage() {
   const router = useRouter();
   const toast = useToast();
@@ -37,6 +43,40 @@ export default function CardioPage() {
     [workoutPlans, activePlanId]
   );
   const cardio = plano?.cardioSession;
+
+  /**
+   * O catálogo de cardio, só para ilustrar as opções.
+   *
+   * Busca separada e sem bloqueio: se falhar ou demorar, a tela funciona igual, só sem
+   * imagem. Aeróbico que não começa porque um GIF não carregou seria péssimo negócio.
+   */
+  const [midias, setMidias] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('exercises')
+        .select('name, media_url, muscle_group')
+        .limit(1000);
+      const mapa = new Map<string, string>();
+      for (const e of data ?? []) {
+        if (e.media_url) mapa.set(chaveDeNome(e.name), e.media_url);
+      }
+      setMidias(mapa);
+    })();
+  }, []);
+
+  /**
+   * Casa o nome da opção com o catálogo.
+   *
+   * Tolerante de propósito: a opção foi escrita pela IA a partir do pool, então costuma bater
+   * exato — mas um acento a mais ou uma caixa diferente não podem custar a imagem. Primeiro
+   * tenta o nome inteiro; depois, só o que vem antes do parêntese, porque "Alpinista (Mountain
+   * Climber)" e "Alpinista" são o mesmo movimento.
+   */
+  const midiaDaOpcao = (opcao: string): string | undefined =>
+    midias.get(chaveDeNome(opcao)) ?? midias.get(chaveDeNome(opcao.split('(')[0]));
 
   const decorridos = useWorkoutTimer(startTime, pausado);
   const alvoSegundos = (cardio?.durationMinutes || 0) * 60;
@@ -134,23 +174,53 @@ export default function CardioPage() {
         força, ou num dia separado. Antes, ele compromete a carga que você consegue levantar.
       </div>
 
+      {/* GIF quando existe, nome quando não.
+          Os 49 exercícios de cardio do catálogo têm mídia (medido em 11/10/2026), mas a
+          sessão guarda só o NOME da opção, em texto — então a tela não tinha como mostrar
+          nada. Agora ela procura o nome no catálogo e ilustra o que achar.
+
+          Importa mais no aeróbico sem aparelho: "Corda Imaginária (Sem Corda)" e "Alpinista"
+          não se explicam pelo nome, ao contrário de "Esteira Ergométrica". Quem nunca viu o
+          movimento não tem como fazer certo.
+
+          Degrada para texto por decisão, não por acidente: nome que não casa com o catálogo
+          vira o chip de antes. Melhor uma opção sem imagem do que uma opção que some. */}
       {!rodando && cardio.options?.length > 0 && (
         <Card className="p-5 mb-5" glass>
           <p className="text-sm font-semibold text-white mb-3">Escolha o aparelho</p>
-          <div className="flex flex-wrap gap-2">
-            {cardio.options.map(opcao => (
-              <button
-                key={opcao}
-                onClick={() => setAparelho(opcao === aparelho ? null : opcao)}
-                className={`px-4 py-2 rounded-full text-sm border transition-colors ${
-                  aparelho === opcao
-                    ? 'bg-primary text-black border-primary font-semibold'
-                    : 'bg-surface/60 text-foreground-muted border-white/10 hover:border-primary/40'
-                }`}
-              >
-                {opcao}
-              </button>
-            ))}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            {cardio.options.map(opcao => {
+              const ilustracao = midiaDaOpcao(opcao);
+              const escolhido = aparelho === opcao;
+              return (
+                <button
+                  key={opcao}
+                  onClick={() => setAparelho(escolhido ? null : opcao)}
+                  aria-pressed={escolhido}
+                  className={`rounded-2xl border overflow-hidden text-left transition-colors ${
+                    escolhido
+                      ? 'bg-primary/15 border-primary'
+                      : 'bg-surface/60 border-white/10 hover:border-primary/40'
+                  }`}
+                >
+                  {ilustracao && (
+                    <span className="block w-full aspect-square bg-black/40 grid place-items-center overflow-hidden">
+                      {ilustracao.endsWith('.mp4') ? (
+                        <video src={ilustracao} autoPlay loop muted playsInline
+                          className="w-full h-full object-contain" />
+                      ) : (
+                        <img src={ilustracao} alt="" className="w-full h-full object-contain" />
+                      )}
+                    </span>
+                  )}
+                  <span className={`block px-3 py-2.5 text-sm leading-tight ${
+                    escolhido ? 'text-primary font-semibold' : 'text-foreground-muted'
+                  }`}>
+                    {opcao}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </Card>
       )}
