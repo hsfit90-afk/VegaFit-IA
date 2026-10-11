@@ -1,13 +1,15 @@
 // Mobilidade, alongamento e aeróbico: o que vem ANTES, DEPOIS e QUANDO O ALUNO QUISER.
 //
-// A prescrição, definida pelo profissional (CREF) em 08/10/2026:
+// A prescrição, definida pelo profissional (CREF) em 08/10/2026 e refinada em 11/10/2026:
 //
-//   MOBILIDADE    antes do treino. Prepara a articulação que vai ser carregada, então faz
-//                 sentido estar amarrada à sessão do dia — mobilidade de quadril e tornozelo
-//                 no dia de perna, de ombro no dia de empurrar.
-//   AERÓBICO      sempre DEPOIS da força. Fazer antes compromete a carga do treino principal.
-//   ALONGAMENTO   em qualquer momento do dia. Não precisa estar colado ao treino, então tem
-//                 tela própria em vez de bloco dentro da sessão.
+//   MOBILIDADE    antes do treino, nas ARTICULAÇÕES que a sessão vai usar. Mobilidade de
+//                 quadril e tornozelo no dia de perna, de ombro no dia de empurrar. A tela
+//                 abre com essa sugestão em vez da lista inteira.
+//   ALONGAMENTO   a tela sugere TRÊS, pré-treino, para os grupos da sessão do dia. O resto do
+//                 catálogo continua logo abaixo, porque alongar segue valendo a qualquer
+//                 hora — a sugestão é um atalho, não uma restrição.
+//   AERÓBICO      sempre DEPOIS da força, e a tela diz isso. Fazer antes compromete a carga
+//                 do treino principal, que é o que o aluno veio buscar.
 //
 // Por que isso não custa IA: os blocos são montados por regra, lendo os grupos musculares que
 // a sessão já tem. Nada disso vai ao prompt.
@@ -69,6 +71,56 @@ export interface ExercicioSimples {
   id?: string;
   name: string;
   muscle_group?: string | null;
+}
+
+/**
+ * Que articulação cada grupo muscular move.
+ *
+ * O aluno não pensa em "mobilizar o grupo peito" — ele pensa em soltar o ombro. A tela de
+ * mobilidade precisa dizer QUAL ARTICULAÇÃO vai ser usada no treino de hoje, e o catálogo só
+ * guarda grupo muscular; a ponte entre os dois é esta.
+ *
+ * O mapa é anatômico, não exaustivo: lista a articulação que de fato limita o movimento
+ * daquele grupo, não toda articulação que participa de alguma forma. Agachamento envolve o
+ * ombro para segurar a barra, mas quem trava um agachamento é tornozelo, joelho e quadril.
+ */
+const ARTICULACOES_POR_GRUPO: { grupo: string; articulacoes: string[] }[] = [
+  { grupo: 'peito',      articulacoes: ['Ombro'] },
+  { grupo: 'costas',     articulacoes: ['Ombro', 'Coluna torácica'] },
+  { grupo: 'ombro',      articulacoes: ['Ombro'] },
+  { grupo: 'biceps',     articulacoes: ['Cotovelo'] },
+  { grupo: 'triceps',    articulacoes: ['Cotovelo', 'Ombro'] },
+  { grupo: 'quadriceps', articulacoes: ['Quadril', 'Joelho', 'Tornozelo'] },
+  { grupo: 'posterior',  articulacoes: ['Quadril', 'Joelho'] },
+  { grupo: 'gluteos',    articulacoes: ['Quadril'] },
+  { grupo: 'panturrilha', articulacoes: ['Tornozelo'] },
+  { grupo: 'core',       articulacoes: ['Coluna lombar'] },
+  { grupo: 'lombar',     articulacoes: ['Quadril', 'Coluna lombar'] },
+];
+
+/** Tira acento e caixa: o catálogo tem "Pernas (quadríceps)", "PERNAS (QUADRÍCEPS)" e "Perna". */
+function semAcento(texto: string): string {
+  return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+/**
+ * As articulações que a sessão de hoje vai exigir, sem repetição.
+ *
+ * Grupo que não casa com nada é ignorado em silêncio — é melhor mostrar três articulações
+ * certas do que quatro com uma inventada.
+ */
+export function articulacoesDosGrupos(grupos: string[]): string[] {
+  const achadas: string[] = [];
+  for (const g of grupos) {
+    const n = semAcento(g);
+    for (const { grupo, articulacoes } of ARTICULACOES_POR_GRUPO) {
+      if (!n.includes(grupo)) continue;
+      for (const a of articulacoes) {
+        if (!achadas.includes(a)) achadas.push(a);
+      }
+    }
+  }
+  return achadas;
 }
 
 /**

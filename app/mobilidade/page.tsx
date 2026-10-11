@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, Waves } from 'lucide-react';
 import { ListaComCronometro, type ItemDaLista } from '@/components/workout/ListaComCronometro';
-import { classificarTipo } from '@/lib/preparoFinalizacao';
+import { classificarTipo, selecionarMobilidade, articulacoesDosGrupos } from '@/lib/preparoFinalizacao';
+import { useSessaoDoDia } from '@/components/useSessaoDoDia';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 /**
@@ -22,6 +23,7 @@ const SEGUNDOS = 40;
 export default function Mobilidade() {
   const [catalogo, setCatalogo] = useState<ItemDaLista[] | null>(null);
   const [grupo, setGrupo] = useState('Todos');
+  const sessao = useSessaoDoDia();
 
   useEffect(() => {
     (async () => {
@@ -49,6 +51,23 @@ export default function Mobilidade() {
     [todos]
   );
 
+  /**
+   * O bloco do dia, no topo.
+   *
+   * Prescrição de 11/10/2026: a tela abre dizendo quais ARTICULAÇÕES o treino de hoje vai
+   * usar, e já com a mobilidade delas — em vez de uma lista de 20 movimentos em que o aluno
+   * tem que adivinhar o que serve. A lista completa continua logo abaixo, porque soltar o
+   * corpo num dia de descanso também é uso legítimo desta tela.
+   */
+  const doDia = useMemo(
+    () => (sessao ? selecionarMobilidade(todos, sessao.grupos, 4) as ItemDaLista[] : []),
+    [todos, sessao]
+  );
+  const articulacoes = useMemo(
+    () => (sessao ? articulacoesDosGrupos(sessao.grupos) : []),
+    [sessao]
+  );
+
   const lista = grupo === 'Todos' ? todos : todos.filter(e => (e.muscle_group || 'Outros') === grupo);
 
   if (!catalogo) {
@@ -68,10 +87,37 @@ export default function Mobilidade() {
           </div>
         </div>
         <p className="text-foreground-muted text-sm leading-relaxed max-w-prose">
-          Pode ser em dia de descanso ou pela manhã. Antes do treino, você já recebe a
-          mobilidade do dia dentro da própria sessão.
+          Antes do treino, para preparar as articulações que vão receber carga. Também vale
+          em dia de descanso ou pela manhã.
         </p>
       </header>
+
+      {doDia.length > 0 && sessao && (
+        <section className="mb-7">
+          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 mb-3">
+            <p className="text-xs uppercase tracking-wider font-semibold text-primary mb-1.5">
+              Antes do seu treino de hoje
+            </p>
+            <p className="text-sm font-bold mb-1">{sessao.nome}</p>
+            {articulacoes.length > 0 && (
+              <p className="text-sm text-foreground-muted">
+                Articulações que vão trabalhar:{' '}
+                <span className="text-foreground">{articulacoes.join(' · ')}</span>
+              </p>
+            )}
+          </div>
+
+          <ListaComCronometro
+            itens={doDia}
+            segundos={SEGUNDOS}
+            vazio="Sem mobilidade cadastrada para os grupos de hoje."
+          />
+        </section>
+      )}
+
+      {doDia.length > 0 && (
+        <h2 className="text-lg font-outfit font-bold mb-3">Catálogo completo</h2>
+      )}
 
       {grupos.length > 2 && (
         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-1 px-1">

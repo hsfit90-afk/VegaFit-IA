@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { classificarTipo, selecionarMobilidade, selecionarAlongamento } from '@/lib/preparoFinalizacao';
+import { classificarTipo, selecionarMobilidade, selecionarAlongamento, articulacoesDosGrupos } from '@/lib/preparoFinalizacao';
 
 /**
  * A prescricao, definida pelo profissional (CREF):
@@ -89,5 +89,43 @@ describe('selecionarAlongamento', () => {
     // Tela de alongamento vazia parece app quebrado.
     const r = selecionarAlongamento(cat, ['Antebraço']);
     expect(r.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * Prescricao de 11/10/2026: a tela de mobilidade passa a dizer QUAIS ARTICULACOES o treino do
+ * dia vai usar. O catalogo so guarda grupo muscular, entao a ponte e este mapa.
+ */
+describe('articulacoesDosGrupos', () => {
+  it('dia de perna traz quadril, joelho e tornozelo', () => {
+    const r = articulacoesDosGrupos(['Pernas (quadríceps)', 'Posterior de coxa', 'Panturrilhas']);
+    expect(r).toContain('Quadril');
+    expect(r).toContain('Joelho');
+    expect(r).toContain('Tornozelo');
+  });
+
+  it('dia de empurrar traz ombro e cotovelo', () => {
+    const r = articulacoesDosGrupos(['Peito', 'Ombro', 'Tríceps']);
+    expect(r).toContain('Ombro');
+    expect(r).toContain('Cotovelo');
+  });
+
+  it('nao repete articulacao citada por dois grupos', () => {
+    // Peito e Ombro apontam os dois para "Ombro". Listar duas vezes e so ruido na tela.
+    const r = articulacoesDosGrupos(['Peito', 'Ombro']);
+    expect(r.filter(a => a === 'Ombro')).toHaveLength(1);
+  });
+
+  it('le o grupo com e sem acento, em qualquer caixa', () => {
+    // Plano antigo grava "PERNAS (QUADRÍCEPS)"; plano novo grava "Pernas (quadríceps)".
+    expect(articulacoesDosGrupos(['PERNAS (QUADRÍCEPS)'])).toContain('Joelho');
+    expect(articulacoesDosGrupos(['pernas (quadriceps)'])).toContain('Joelho');
+    expect(articulacoesDosGrupos(['Tríceps'])).toContain('Cotovelo');
+    expect(articulacoesDosGrupos(['Triceps'])).toContain('Cotovelo');
+  });
+
+  it('ignora grupo desconhecido em vez de inventar', () => {
+    expect(articulacoesDosGrupos(['Pescoço', 'Antebraço'])).toEqual([]);
+    expect(articulacoesDosGrupos([])).toEqual([]);
   });
 });

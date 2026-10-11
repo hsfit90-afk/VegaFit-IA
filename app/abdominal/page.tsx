@@ -28,7 +28,11 @@ import { computePeriodization } from '@/lib/periodization';
  * novo é um toque, e sai mais barato que qualquer geração.
  */
 
-const QUANTIDADE = 5;
+// Tres, nao cinco (prescricao do CREF, 11/10/2026). Abdominal e complemento do treino de
+// forca, nao sessao propria: cinco exercicios de core somados a um treino completo viram
+// volume que ninguem pediu, e a sessao deixa de caber depois do treino -- que e quando ela
+// de fato acontece.
+const QUANTIDADE = 3;
 
 interface ExercicioCore {
   id: string;

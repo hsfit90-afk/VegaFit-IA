@@ -339,8 +339,8 @@ export default function Dashboard() {
                   <Timer className="w-5 h-5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-foreground-muted uppercase tracking-wider font-semibold">
-                    Sessão avulsa
+                  <p className="text-xs text-primary uppercase tracking-wider font-semibold">
+                    Depois do treino
                   </p>
                   <p className="font-bold text-white truncate">{activePlan.cardioSession.name}</p>
                   <p className="text-xs text-foreground-muted truncate">
@@ -358,19 +358,23 @@ export default function Dashboard() {
 
               Abdominal saiu da sessão de força (ver route.ts): aparecia 1 vez em 18
               exercícios, sempre por acaso. Aqui é uma sessão de verdade. */}
+          {/* O rótulo de cima diz QUANDO, não "sessão avulsa".
+              Todas eram "Sessão avulsa", o que respondia o que a coisa é e não o que o aluno
+              precisa saber na hora de escolher. A prescrição tem uma ordem — mobilidade e
+              alongamento antes, aeróbico e abdominal depois — e o card é onde ela aparece. */}
           {[
-            { href: '/abdominal',   icone: Flame,             titulo: 'Abdominal',   sub: '5 exercícios · 3 séries cada' },
-            { href: '/mobilidade',  icone: Waves,             titulo: 'Mobilidade',  sub: 'Solte o corpo, sem carga' },
-            { href: '/alongamento', icone: StretchHorizontal, titulo: 'Alongamento', sub: 'A qualquer hora do dia' },
-          ].map(({ href, icone: Icone, titulo, sub }) => (
+            { href: '/mobilidade',  icone: Waves,             quando: 'Antes do treino',        titulo: 'Mobilidade',  sub: 'Prepara as articulações do dia' },
+            { href: '/alongamento', icone: StretchHorizontal, quando: 'Antes, ou quando quiser', titulo: 'Alongamento', sub: '3 sugeridos para o treino de hoje' },
+            { href: '/abdominal',   icone: Flame,             quando: 'Depois do treino',        titulo: 'Abdominal',   sub: '3 exercícios de core' },
+          ].map(({ href, icone: Icone, quando, titulo, sub }) => (
             <button key={href} onClick={() => router.push(href)} className="block w-full text-left mt-3">
               <Card variant="neon-hover" className="p-4 flex items-center gap-4">
                 <div className="w-11 h-11 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center justify-center shrink-0">
                   <Icone className="w-5 h-5 text-secondary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-foreground-muted uppercase tracking-wider font-semibold">
-                    Sessão avulsa
+                  <p className="text-xs text-secondary uppercase tracking-wider font-semibold">
+                    {quando}
                   </p>
                   <p className="font-bold text-white truncate">{titulo}</p>
                   <p className="text-xs text-foreground-muted truncate">{sub}</p>

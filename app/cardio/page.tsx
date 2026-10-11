@@ -117,13 +117,21 @@ export default function CardioPage() {
       </button>
 
       <div className="mb-6">
-        <p className="text-xs text-foreground-muted uppercase tracking-wider font-semibold mb-1">
-          Sessão avulsa
+        {/* "Depois do treino" no lugar de "Sessão avulsa": a prescrição é que o aeróbico
+            venha SEMPRE depois da força, e o rótulo antigo não dizia nada sobre isso. Quem
+            faz antes chega no treino principal sem carga — que é o que o aluno veio buscar. */}
+        <p className="text-xs text-primary uppercase tracking-wider font-semibold mb-1">
+          Depois do treino de força
         </p>
         <h1 className="text-3xl font-outfit font-bold text-white">{cardio.name}</h1>
         <p className="text-foreground-muted mt-1">
           {cardio.durationMinutes} minutos · {cardio.intensity}
         </p>
+      </div>
+
+      <div className="rounded-xl border border-border bg-surface p-3.5 mb-5 text-sm text-foreground-muted">
+        Faça este aeróbico <strong className="text-foreground">depois</strong> do treino de
+        força, ou num dia separado. Antes, ele compromete a carga que você consegue levantar.
       </div>
 
       {!rodando && cardio.options?.length > 0 && (

@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { StretchHorizontal, Loader2, Clock } from 'lucide-react';
 import { ListaComCronometro, type ItemDaLista } from '@/components/workout/ListaComCronometro';
 import { selecionarAlongamento } from '@/lib/preparoFinalizacao';
+import { useSessaoDoDia } from '@/components/useSessaoDoDia';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 /**
@@ -28,6 +29,7 @@ const SEGUNDOS = 30;
 export default function Alongamento() {
   const [catalogo, setCatalogo] = useState<ItemDaLista[] | null>(null);
   const [grupo, setGrupo] = useState('Todos');
+  const sessao = useSessaoDoDia();
 
   useEffect(() => {
     (async () => {
@@ -42,6 +44,12 @@ export default function Alongamento() {
       })));
     })();
   }, []);
+
+  /** Tres alongamentos para os grupos da sessao de hoje. Zero se nao ha plano ativo. */
+  const sugestao = useMemo(
+    () => (catalogo && sessao ? selecionarAlongamento(catalogo, sessao.grupos, 3) as ItemDaLista[] : []),
+    [catalogo, sessao]
+  );
 
   const lista = useMemo(() => {
     if (!catalogo) return [];
@@ -69,6 +77,35 @@ export default function Alongamento() {
           por {SEGUNDOS} segundos e respire — sem forçar até doer.
         </p>
       </header>
+
+      {/* Sugestão pré-treino.
+          Prescrição de 11/10/2026: três alongamentos para os grupos que a sessão de hoje vai
+          treinar. É sugestão, não substituição — o catálogo inteiro continua abaixo, porque
+          alongar segue valendo a qualquer hora, que é a razão desta tela existir separada. */}
+      {sugestao.length > 0 && sessao && (
+        <section className="mb-7">
+          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 mb-3">
+            <p className="text-xs uppercase tracking-wider font-semibold text-primary mb-1.5">
+              Sugestão antes do treino de hoje
+            </p>
+            <p className="text-sm font-bold mb-1">{sessao.nome}</p>
+            <p className="text-sm text-foreground-muted">
+              Três alongamentos para o que você vai treinar:{' '}
+              <span className="text-foreground">{sessao.grupos.join(' · ')}</span>
+            </p>
+          </div>
+
+          <ListaComCronometro
+            itens={sugestao}
+            segundos={SEGUNDOS}
+            vazio="Sem alongamento cadastrado para os grupos de hoje."
+          />
+        </section>
+      )}
+
+      {sugestao.length > 0 && (
+        <h2 className="text-lg font-outfit font-bold mb-3">Catálogo completo</h2>
+      )}
 
       <div className="flex gap-2 overflow-x-auto pb-2 mb-5 -mx-1 px-1">
         {GRUPOS.map(g => (
