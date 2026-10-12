@@ -6,6 +6,9 @@ import { Loader2, Waves } from 'lucide-react';
 import { ListaComCronometro, type ItemDaLista } from '@/components/workout/ListaComCronometro';
 import { classificarTipo, selecionarMobilidade, articulacoesDosGrupos } from '@/lib/preparoFinalizacao';
 import { useSessaoDoDia } from '@/components/useSessaoDoDia';
+import { useAppContext } from '@/app/context/AppContext';
+import { filtrarParaCasa } from '@/lib/equipamentoCasa';
+import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 /**
@@ -24,6 +27,7 @@ export default function Mobilidade() {
   const [catalogo, setCatalogo] = useState<ItemDaLista[] | null>(null);
   const [grupo, setGrupo] = useState('Todos');
   const sessao = useSessaoDoDia();
+  const { profile } = useAppContext();
 
   useEffect(() => {
     (async () => {
@@ -39,10 +43,20 @@ export default function Mobilidade() {
     })();
   }, []);
 
-  const todos = useMemo(
-    () => (catalogo ?? []).filter(e => classificarTipo(e.name, e.muscle_group) === 'mobilidade'),
-    [catalogo]
-  );
+  /**
+   * Quem treina em casa não vê mobilidade que exige aparelho.
+   *
+   * Dez dos 24 exercícios de mobilidade pedem rolo de espuma. Mostrá-los a quem declarou não
+   * ter nada é oferecer o que a pessoa não pode fazer — o mesmo erro que o aquecimento
+   * cometia dentro do treino, corrigido em 12/10/2026.
+   */
+  const todos = useMemo(() => {
+    const mob = (catalogo ?? []).filter(e => classificarTipo(e.name, e.muscle_group) === 'mobilidade');
+    // Normaliza antes: perfil antigo gravou "Casa com equipamentos", nao "Em casa".
+    return treinaEmCasa(mapAnamneseLocationToEquipment(profile?.trainingLocation))
+      ? filtrarParaCasa(mob, profile?.equipamentosCasa)
+      : mob;
+  }, [catalogo, profile?.trainingLocation, profile?.equipamentosCasa]);
 
   // Só os grupos que de fato têm mobilidade cadastrada: um filtro que devolve lista vazia é
   // pior que não existir.

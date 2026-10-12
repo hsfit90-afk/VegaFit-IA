@@ -136,4 +136,12 @@ export interface UserProfile {
   waist?: number;
   hip?: number;
   trainingLocation?: string;
+  /**
+   * O que o aluno tem em casa, em ids (ver lib/equipamentoCasa.ts).
+   *
+   * Só de LEITURA no cliente: quem escreve é a anamnese, com update de coluna. Nunca entra no
+   * upsert de perfil do AppContext, pelo mesmo motivo das listas de exercício — o upsert grava
+   * a linha inteira a partir da cópia em memória e apagaria o que foi marcado em outro lugar.
+   */
+  equipamentosCasa?: string[];
 }

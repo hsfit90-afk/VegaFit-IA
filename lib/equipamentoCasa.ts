@@ -52,7 +52,15 @@ export const EQUIPAMENTOS_CASA: ItemDeCasa[] = [
     palavras: ['banco', 'supino', 'crucifixo', 'scott', 'apoio no peito'] },
   { id: 'barra_fixa', rotulo: 'Barra fixa',          ajuda: 'de porta ou de parede', palavras: ['barra fixa'] },
   { id: 'kettlebell', rotulo: 'Kettlebell',          palavras: ['kettlebell'] },
-  { id: 'acessorios', rotulo: 'Bola, TRX ou argolas', palavras: ['trx', 'bola', 'argola'] },
+  // "espuma" entrou em 12/10/2026: o aquecimento vinha com três exercícios de rolo de espuma
+  // para alguém que declarou não ter equipamento nenhum. A palavra pega 14 exercícios e todos
+  // são de rolo — precisa. "ab wheel" e "rolo abdominal" são o mesmo caso, outro aparelho.
+  //
+  // Entraram nesta caixa em vez de virar caixa nova porque são a mesma família: acessório
+  // barato que algumas casas têm e a maioria não. Caixa nova é mais uma pergunta no
+  // formulário que já é o maior obstáculo do app.
+  { id: 'acessorios', rotulo: 'Bola, rolo de espuma, TRX ou argolas',
+    palavras: ['trx', 'bola', 'argola', 'espuma', 'ab wheel', 'rolo abdominal'] },
 ];
 
 export const IDS_CASA = EQUIPAMENTOS_CASA.map(e => e.id);

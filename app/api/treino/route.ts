@@ -715,9 +715,23 @@ ${instrucaoDoMetodo}`;
       }
     }
 
+    // O AQUECIMENTO TAMBÉM RESPEITA O EQUIPAMENTO.
+    //
+    // Erro corrigido em 12/10/2026, e o comentário antigo aqui dizia exatamente a suposição
+    // errada: "mobilidade não usa equipamento, então o filtro de casa não se aplica a ela".
+    // Rolo de espuma é equipamento. Um aluno que declarou não ter NADA recebeu um aquecimento
+    // com três exercícios de rolo — prescrever o impossível, logo na abertura do treino.
+    //
+    // São 10 dos 24 exercícios de mobilidade do catálogo. Sobram 14, e selecionarMobilidade
+    // já completa com mobilidade de outro grupo quando a do dia acaba — então ninguém fica
+    // sem aquecimento, só recebe um que dá para fazer.
+    const poolDeMobilidade = emCasa
+      ? filtrarParaCasa(dbExercises || [], targetProfileRow?.equipamentos_casa as string[] | null | undefined)
+      : (dbExercises || []);
+
     for (const session of json.sessions || []) {
       const grupos = [...new Set((session.exercises || []).map((e: any) => e.muscleGroup).filter(Boolean))] as string[];
-      session.warmup = selecionarMobilidade(dbExercises || [], grupos, 3).map((m: any) => ({
+      session.warmup = selecionarMobilidade(poolDeMobilidade, grupos, 3).map((m: any) => ({
         exerciseId: m.id,
         name: m.name,
         muscleGroup: m.muscle_group || '',

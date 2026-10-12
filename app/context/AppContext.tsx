@@ -86,6 +86,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           waist: profileData.waist || 0,
           hip: profileData.hip || 0,
           trainingLocation: profileData.training_location || undefined,
+          equipamentosCasa: profileData.equipamentos_casa || [],
         });
 
         const path = window.location.pathname;

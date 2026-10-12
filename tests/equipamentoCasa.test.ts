@@ -281,3 +281,42 @@ describe('avaliarParaCasa — improviso', () => {
     expect(mapa.get('Subida no Step com Elevação de Joelhos')).toMatch(/degrau/i);
   });
 });
+
+/**
+ * Rolo de espuma e equipamento — achado em 12/10/2026.
+ *
+ * O aquecimento vinha com TRES exercicios de rolo de espuma para um aluno que declarou nao
+ * ter equipamento nenhum. A causa era uma suposicao escrita no codigo: "mobilidade nao usa
+ * equipamento, entao o filtro de casa nao se aplica a ela".
+ */
+describe('cabeEmCasa — rolo de espuma', () => {
+  it('rolo de espuma nao passa para quem nao marcou acessorios', () => {
+    expect(cabeEmCasa('Rolo de espuma para ombro e peito frontal', [])).toBe(false);
+    expect(cabeEmCasa('Rolamento de espuma nas costas', ['halteres'])).toBe(false);
+    expect(cabeEmCasa('Deslize de parede do serrátil com rolo de espuma', [])).toBe(false);
+  });
+
+  it('passa para quem marcou acessorios', () => {
+    expect(cabeEmCasa('Rolamento de espuma nas costas', ['acessorios'])).toBe(true);
+  });
+
+  it('ab wheel tambem e equipamento', () => {
+    expect(cabeEmCasa('Rolo Abdominal (Ab Wheel)', [])).toBe(false);
+    expect(cabeEmCasa('Rolo Abdominal (Ab Wheel)', ['acessorios'])).toBe(true);
+  });
+
+  it('mobilidade SEM equipamento continua passando', () => {
+    // As 14 que sobram, e que garantem que ninguem fica sem aquecimento.
+    expect(cabeEmCasa('Círculos com os braços', [])).toBe(true);
+    expect(cabeEmCasa('Pêndulo de ombro', [])).toBe(true);
+    expect(cabeEmCasa('Rotação espinhal deitado', [])).toBe(true);
+    expect(cabeEmCasa('Joelho Alternado no Peito', [])).toBe(true);
+    expect(cabeEmCasa('Dorsiflexão plantar', [])).toBe(true);
+  });
+
+  it('rolo de espuma NAO ganha improviso', () => {
+    // Nao ha substituto caseiro honesto para liberacao miofascial, ao contrario de banco e
+    // step. Sai, e o aquecimento se completa com os que nao precisam de nada.
+    expect(avaliarParaCasa('Rolamento de espuma nas costas', []).cabe).toBe(false);
+  });
+});
