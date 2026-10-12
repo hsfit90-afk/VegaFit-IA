@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cabeEmCasa, filtrarParaCasa, tiersDeCasa, resumirCasa, EQUIPAMENTOS_CASA } from '@/lib/equipamentoCasa';
+import { cabeEmCasa, filtrarParaCasa, tiersDeCasa, resumirCasa, EQUIPAMENTOS_CASA, avaliarParaCasa, dicasDeImproviso } from '@/lib/equipamentoCasa';
 
 /**
  * Espelho invertido do filtro de academia:
@@ -216,5 +216,68 @@ describe('cabeEmCasa — vazamentos de 12/10/2026', () => {
     // "puxada alta" e o puxador; "puxada" sozinha pegaria estes, que sao corporais.
     expect(cabeEmCasa('Puxada escapular na barra fixa', ['barra_fixa'])).toBe(true);
     expect(cabeEmCasa('Puxada isométrica', [])).toBe(true);
+  });
+});
+
+/**
+ * Improviso em casa — decisao do profissional (CREF, 12/10/2026).
+ *
+ * Banco e step nao devem simplesmente sumir do treino de quem treina em casa: quase toda casa
+ * tem cadeira, sofa, cama e escada. Cortar sem oferecer a alternativa empobrece o treino por
+ * uma limitacao que nao existe de verdade.
+ */
+describe('avaliarParaCasa — improviso', () => {
+  const soHalteres = ['halteres'];
+
+  it('exercicio de banco volta, com a dica da cadeira', () => {
+    const r = avaliarParaCasa('Supino Inclinado com Halteres', soHalteres);
+    expect(r.cabe).toBe(true);
+    expect(r.dica).toMatch(/cadeira/i);
+  });
+
+  it('nao devolve dica para quem TEM banco', () => {
+    const r = avaliarParaCasa('Supino Inclinado com Halteres', ['halteres', 'banco']);
+    expect(r.cabe).toBe(true);
+    expect(r.dica).toBeUndefined();
+  });
+
+  it('banco COM BARRA continua cortado', () => {
+    // Supino com barra numa cadeira nao tem apoio para os ombros nem suporte para devolver o
+    // peso, e a superficie e estreita. Sao 8 dos 66 exercicios de banco do catalogo.
+    expect(avaliarParaCasa('Supino inclinado com barra', ['halteres', 'barra']).cabe).toBe(false);
+    expect(avaliarParaCasa('Rosca Scott com Barra W', ['halteres', 'barra']).cabe).toBe(false);
+  });
+
+  it('step vira degrau da escada, sempre', () => {
+    const r = avaliarParaCasa('Subida no Step com Elevação de Joelhos', []);
+    expect(r.cabe).toBe(true);
+    expect(r.dica).toMatch(/degrau/i);
+  });
+
+  it('exercicio que nao precisa de nada nao ganha dica', () => {
+    const r = avaliarParaCasa('Flexão de Braço', []);
+    expect(r.cabe).toBe(true);
+    expect(r.dica).toBeUndefined();
+  });
+
+  it('aparelho de academia nao tem improviso', () => {
+    expect(avaliarParaCasa('Puxada Alta Invertida', soHalteres).cabe).toBe(false);
+    expect(avaliarParaCasa('Leg Press', soHalteres).cabe).toBe(false);
+  });
+
+  it('equipamento sem improviso continua cortando', () => {
+    // Nao se improvisa haltere com garrafa de agua numa prescricao seria: a carga nao e
+    // aferivel e a progressao fica impossivel.
+    expect(avaliarParaCasa('Rosca com halteres', []).cabe).toBe(false);
+  });
+
+  it('dicasDeImproviso mapeia so quem precisa', () => {
+    const mapa = dicasDeImproviso(
+      ['Flexão de Braço', 'Supino Inclinado com Halteres', 'Subida no Step com Elevação de Joelhos'],
+      ['halteres']
+    );
+    expect(mapa.has('Flexão de Braço')).toBe(false);
+    expect(mapa.get('Supino Inclinado com Halteres')).toMatch(/cadeira/i);
+    expect(mapa.get('Subida no Step com Elevação de Joelhos')).toMatch(/degrau/i);
   });
 });

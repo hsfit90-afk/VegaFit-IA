@@ -116,6 +116,101 @@ export function cabeEmCasa(nomeDoExercicio: string, tenho: string[] | null | und
 /** O exercício declara no próprio nome que é feito no chão. */
 const DIZ_QUE_E_NO_CHAO = ['no chão', 'no chao', 'no solo', 'deitado no piso'];
 
+// ---------------------------------------------------------------------------------------
+// IMPROVISO EM CASA
+//
+// Decisão do profissional (CREF, 12/10/2026): banco e step não devem simplesmente sumir do
+// treino de quem treina em casa. Quase toda casa tem cadeira, sofá, cama e escada — e para a
+// maioria desses exercícios isso resolve. Cortar sem oferecer a alternativa empobrece o
+// treino por uma limitação que não existe de verdade.
+//
+// O que NÃO se improvisa está em `perigosoCom`: supino com BARRA numa cadeira não tem apoio
+// para os ombros, não tem suporte para devolver o peso, e a superfície é estreita. São 8 dos
+// 66 exercícios de banco do catálogo — os outros 58 voltam, com a dica junto.
+// ---------------------------------------------------------------------------------------
+
+export interface Improviso {
+  /** O que a pessoa usa no lugar. Vai para a dica do exercício na tela. */
+  dica: string;
+  /** Palavras no nome que CANCELAM o improviso — com elas o exercício sai mesmo assim. */
+  perigosoCom?: string[];
+}
+
+/** Para equipamento que É caixa: a pessoa pode ter, e se não tiver, improvisa. */
+const IMPROVISO_POR_ITEM: Record<string, Improviso> = {
+  banco: {
+    dica: 'Sem banco: use uma cadeira firme (sem rodinhas), a beirada da cama ou o sofá. Nos exercícios deitado, o chão também serve — a amplitude diminui um pouco, e tudo bem.',
+    perigosoCom: ['barra', 'anilha'],
+  },
+};
+
+/**
+ * Exige improviso, mas NUNCA vira caixa.
+ *
+ * Ninguém marca "tenho step em casa" — e perguntar aumentaria o formulário para ganhar nada,
+ * porque a resposta é sempre a mesma: usa o degrau.
+ */
+const SO_IMPROVISO: { palavras: string[]; improviso: Improviso }[] = [
+  {
+    palavras: ['step', 'degrau'],
+    improviso: {
+      dica: 'Sem step: use o degrau da escada, um caixote firme ou a soleira da porta. Teste o apoio antes de subir com carga.',
+    },
+  },
+];
+
+export interface AvaliacaoCasa {
+  cabe: boolean;
+  /** Preenchida quando o exercício só cabe porque dá para improvisar. */
+  dica?: string;
+}
+
+/**
+ * Como `cabeEmCasa`, mas devolve a dica de improviso em vez de simplesmente cortar.
+ *
+ * É esta que o filtro usa. `cabeEmCasa` continua existindo com a semântica estrita, porque
+ * "o aluno consegue fazer isto exatamente como está escrito?" é outra pergunta, e há teste
+ * que depende dela.
+ */
+export function avaliarParaCasa(
+  nomeDoExercicio: string,
+  tenho: string[] | null | undefined
+): AvaliacaoCasa {
+  let n = nomeDoExercicio.toLowerCase();
+
+  if (SO_ACADEMIA.some(p => n.includes(p))) return { cabe: false };
+
+  const possui = new Set(tenho ?? []);
+  const dicas: string[] = [];
+
+  if (n.includes('barra fixa')) {
+    if (!possui.has('barra_fixa')) return { cabe: false };
+    n = n.split('barra fixa').join(' ');
+  }
+
+  const noChao = DIZ_QUE_E_NO_CHAO.some(p => n.includes(p));
+
+  for (const item of EQUIPAMENTOS_CASA) {
+    if (item.id === 'barra_fixa') continue;
+    if (item.id === 'banco' && noChao) continue;
+
+    const cita = item.palavras.some(p => n.includes(p));
+    if (!cita || possui.has(item.id)) continue;
+
+    const improviso = IMPROVISO_POR_ITEM[item.id];
+    const perigoso = improviso?.perigosoCom?.some(p => n.includes(p));
+    if (!improviso || perigoso) return { cabe: false };
+
+    dicas.push(improviso.dica);
+  }
+
+  for (const { palavras, improviso } of SO_IMPROVISO) {
+    if (palavras.some(p => n.includes(p))) dicas.push(improviso.dica);
+  }
+
+  return dicas.length > 0 ? { cabe: true, dica: dicas.join(' ') } : { cabe: true };
+}
+
 /**
  * Filtra o catálogo para quem treina em casa.
  *
@@ -128,7 +223,25 @@ export function filtrarParaCasa<T extends { name: string }>(
   exercicios: T[],
   tenho: string[] | null | undefined
 ): T[] {
-  return exercicios.filter(ex => cabeEmCasa(ex.name, tenho));
+  return exercicios.filter(ex => avaliarParaCasa(ex.name, tenho).cabe);
+}
+
+/**
+ * As dicas de improviso dos exercícios que o aluno vai receber, por nome.
+ *
+ * Quem monta o prompt usa isto para colar a dica no exercício — "sem banco, use uma cadeira
+ * firme" só ajuda se aparecer na tela junto do movimento, não num aviso geral que ninguém lê.
+ */
+export function dicasDeImproviso(
+  nomes: string[],
+  tenho: string[] | null | undefined
+): Map<string, string> {
+  const mapa = new Map<string, string>();
+  for (const nome of nomes) {
+    const { cabe, dica } = avaliarParaCasa(nome, tenho);
+    if (cabe && dica) mapa.set(nome, dica);
+  }
+  return mapa;
 }
 
 /**

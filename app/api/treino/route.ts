@@ -8,7 +8,7 @@ import { isMobilityOnly } from "@/lib/exerciseType";
 import { classifyExerciseLevel, normalizarNivel, NIVEIS_PERMITIDOS, GRUPOS_SEM_FILTRO_DE_NIVEL } from "@/lib/exerciseLevel";
 import { limparAlvosPorSerie } from "@/lib/metodoTreino";
 import { filtrarPorEquipamentoAusente } from "@/lib/equipamentoAusente";
-import { filtrarParaCasa } from "@/lib/equipamentoCasa";
+import { filtrarParaCasa, dicasDeImproviso } from "@/lib/equipamentoCasa";
 import { selecionarMobilidade } from "@/lib/preparoFinalizacao";
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from "@/lib/trainingLocation";
 import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, textoLivreParaPrompt, LIMITE_PREFERENCIAS, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
@@ -690,6 +690,31 @@ ${instrucaoDoMetodo}`;
     //
     // Vem do catálogo COMPLETO, não do bolso filtrado: mobilidade não usa equipamento, então
     // o filtro de academia e o de casa não se aplicam a ela.
+    // A DICA DE IMPROVISO, colada no exercício que precisa dela.
+    //
+    // Decisão do profissional (CREF, 12/10/2026): banco e step não devem sumir do treino de
+    // quem treina em casa — quase toda casa tem cadeira, sofá e escada. O exercício volta, e
+    // a alternativa vai junto.
+    //
+    // Na dica do PRÓPRIO exercício, e não num aviso geral no topo: "use uma cadeira firme" só
+    // ajuda se aparecer na tela junto do movimento, na hora de executar.
+    if (emCasa) {
+      const tenho = targetProfileRow?.equipamentos_casa as string[] | null | undefined;
+      const dicas = dicasDeImproviso(
+        (json.sessions || []).flatMap((s: any) => (s.exercises || []).map((e: any) => e.name)),
+        tenho
+      );
+      if (dicas.size > 0) {
+        for (const session of json.sessions || []) {
+          for (const ex of session.exercises || []) {
+            const dica = dicas.get(ex.name);
+            if (dica) ex.tips = ex.tips ? `${ex.tips} ${dica}` : dica;
+          }
+        }
+        console.log(`[treino] ${dicas.size} exercício(s) com dica de improviso em casa.`);
+      }
+    }
+
     for (const session of json.sessions || []) {
       const grupos = [...new Set((session.exercises || []).map((e: any) => e.muscleGroup).filter(Boolean))] as string[];
       session.warmup = selecionarMobilidade(dbExercises || [], grupos, 3).map((m: any) => ({
