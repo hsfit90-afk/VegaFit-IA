@@ -2,11 +2,31 @@ import { createClient } from '@/utils/supabase/client';
 import { Exercise } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
+/**
+ * As colunas que o app de fato usa, nomeadas uma a uma.
+ *
+ * Era `select('*')`, e isso custava 516 KB e ~1s por abertura das telas que chamam esta
+ * função — /active, /generator e /library. Medido em 12/10/2026, coluna por coluna:
+ *
+ *   media_url_backup  138 KB — a mais pesada do catálogo, e NÃO aparece em lugar nenhum do
+ *                              código nem do SQL. Backup de uma migração antiga, baixado por
+ *                              todo aluno em toda abertura, para nada.
+ *   created_at         29 KB — nunca lido no cliente.
+ *
+ * São 167 KB de desperdício puro. O resto é usado: media_url é o GIF, user_id distingue
+ * exercício customizado do global.
+ *
+ * `instructions` e `common_mistakes` estão vazios nas 882 linhas, mas custam 2 KB somados e o
+ * mapeamento abaixo já os espera — tirá-los renderia quase nada e quebraria quem preencher.
+ */
+const COLUNAS_USADAS =
+  'id, name, muscle_group, equipment, difficulty, youtube_id, media_url, instructions, common_mistakes, user_id';
+
 export const getExercises = async (): Promise<Exercise[]> => {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('exercises')
-    .select('*')
+    .select(COLUNAS_USADAS)
     .order('name', { ascending: true });
 
   if (error) {

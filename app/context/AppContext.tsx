@@ -165,11 +165,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Load Body Weight History (tabela criada separadamente)
-      const { data: weightData } = await supabase
+      //
+      // Teto de 365: era sem limite nenhum, e esta consulta roda em TODA abertura do app. Um
+      // aluno que pesa todo dia por três anos traria mil linhas para alimentar um gráfico que
+      // mostra o último ano. Ordem invertida para pegar os mais RECENTES quando houver mais
+      // que isso, e desinvertida depois porque o gráfico espera ordem cronológica.
+      const PESAGENS_NO_CONTEXTO = 365;
+      const { data: weightRows } = await supabase
         .from('body_weight_history')
-        .select('*')
+        .select('id, date, weight')
         .eq('user_id', user.id)
-        .order('date', { ascending: true });
+        .order('date', { ascending: false })
+        .limit(PESAGENS_NO_CONTEXTO);
+      const weightData = weightRows ? [...weightRows].reverse() : null;
       
       if (weightData && mounted) {
         setBodyWeightHistory(weightData.map(w => ({
