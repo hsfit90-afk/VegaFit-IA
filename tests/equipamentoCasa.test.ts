@@ -320,3 +320,37 @@ describe('cabeEmCasa — rolo de espuma', () => {
     expect(avaliarParaCasa('Rolamento de espuma nas costas', []).cabe).toBe(false);
   });
 });
+
+/**
+ * Abdominal e equipamento — 12/10/2026, mesma falha do aquecimento.
+ *
+ * A sessao de abdominal vinha do catalogo inteiro: quem declarou nao ter nada abria com
+ * "Encaixe de Pernas na Bola Suica" e "Abdominal Total na Bola".
+ */
+describe('cabeEmCasa — core', () => {
+  it('abdominal de bola nao passa para quem nao tem bola', () => {
+    expect(cabeEmCasa('Encaixe de Pernas na Bola Suíça', [])).toBe(false);
+    expect(cabeEmCasa('Abdominal Total na Bola', [])).toBe(false);
+    expect(cabeEmCasa('Rollout na Bola Suíça', ['halteres'])).toBe(false);
+  });
+
+  it('passa para quem marcou acessorios', () => {
+    expect(cabeEmCasa('Abdominal Total na Bola', ['acessorios'])).toBe(true);
+  });
+
+  it('"Rolando como uma Bola" NAO e exercicio de bola', () => {
+    // Roll like a ball do Pilates: a pessoa abraca os joelhos e rola nas costas. A palavra e
+    // metafora. Dos 16 exercicios com "bola" no catalogo, 15 usam bola e so este nao.
+    expect(cabeEmCasa('Rolando como uma Bola', [])).toBe(true);
+  });
+
+  it('core de peso corporal continua passando', () => {
+    expect(cabeEmCasa('Rotação do corpo superior deitado', [])).toBe(true);
+    expect(cabeEmCasa('Prancha', [])).toBe(true);
+  });
+
+  it('core de maquina e polia continua cortado', () => {
+    expect(cabeEmCasa('Abdominal na Máquina', ['acessorios'])).toBe(false);
+    expect(cabeEmCasa('Abdominal na Polia em Pé', ['acessorios'])).toBe(false);
+  });
+});

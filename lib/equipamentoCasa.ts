@@ -97,6 +97,9 @@ const SO_ACADEMIA = [
 export function cabeEmCasa(nomeDoExercicio: string, tenho: string[] | null | undefined): boolean {
   let n = nomeDoExercicio.toLowerCase();
 
+  // Tira do texto a palavra que ali é metáfora, antes de checar equipamento.
+  for (const falso of FALSOS_POSITIVOS) n = n.split(falso).join(' ');
+
   if (SO_ACADEMIA.some(p => n.includes(p))) return false;
 
   const possui = new Set(tenho ?? []);
@@ -123,6 +126,16 @@ export function cabeEmCasa(nomeDoExercicio: string, tenho: string[] | null | und
 
 /** O exercício declara no próprio nome que é feito no chão. */
 const DIZ_QUE_E_NO_CHAO = ['no chão', 'no chao', 'no solo', 'deitado no piso'];
+
+/**
+ * Nomes em que a palavra de equipamento é METÁFORA, não aparelho.
+ *
+ * "Rolando como uma Bola" é o roll like a ball do Pilates: a pessoa abraça os joelhos e rola
+ * nas costas. Não existe bola nenhuma. Medido: dos 16 exercícios com "bola" no catálogo, 15
+ * usam bola de verdade e só este não — exceção pequena o bastante para ser escrita à mão, em
+ * vez de enfraquecer a palavra "bola" e deixar passar os outros 15.
+ */
+const FALSOS_POSITIVOS = ['como uma bola'];
 
 // ---------------------------------------------------------------------------------------
 // IMPROVISO EM CASA
@@ -185,6 +198,9 @@ export function avaliarParaCasa(
   tenho: string[] | null | undefined
 ): AvaliacaoCasa {
   let n = nomeDoExercicio.toLowerCase();
+
+  // Tira do texto a palavra que ali é metáfora, antes de checar equipamento.
+  for (const falso of FALSOS_POSITIVOS) n = n.split(falso).join(' ');
 
   if (SO_ACADEMIA.some(p => n.includes(p))) return { cabe: false };
 

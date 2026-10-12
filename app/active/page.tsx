@@ -23,6 +23,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 import { descansoAposSerie, avisoDoProximoPasso, fatorDeCarga, rotuloCurto, ehSerieEspecial, instrucaoDaSerie } from '@/lib/metodoTreino';
 import { BlocoAquecimento } from '@/components/workout/BlocoAquecimento';
+import { BlocoAbdominal } from '@/components/workout/BlocoAbdominal';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
@@ -1257,7 +1258,20 @@ export default function ActiveWorkout() {
         })}
       </div>
 
-      <Button 
+      {/* Abdominal no FIM, antes de finalizar.
+          Core cansado antes do agachamento tira estabilidade de quem mais precisa dela, então
+          vem depois da força — e dentro da sessão, não numa tela que a pessoa teria de ir
+          procurar no dashboard depois de já ter terminado. */}
+      <BlocoAbdominal
+        biblioteca={libraryExercises}
+        semana={currentWeek}
+        objetivo={profile?.goal}
+        trainingLocation={profile?.trainingLocation}
+        equipamentosCasa={profile?.equipamentosCasa}
+        chaveDaSessao={currentSession?.id}
+      />
+
+      <Button
         onClick={finishWorkout}
         fullWidth
         size="lg"

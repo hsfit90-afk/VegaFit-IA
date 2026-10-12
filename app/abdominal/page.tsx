@@ -11,6 +11,8 @@ import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 import { PREFIXO_AVULSO } from '@/lib/trainingUnlock';
 import { prescrever, normalizarObjetivo, descreverSemana } from '@/lib/protocolo';
 import { computePeriodization } from '@/lib/periodization';
+import { filtrarParaCasa } from '@/lib/equipamentoCasa';
+import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 
 /**
  * Abdominal como sessão avulsa.
@@ -70,13 +72,25 @@ export default function Abdominal() {
         .from('exercises')
         .select('id, name, muscle_group, media_url')
         .limit(1000);
+      // QUEM TREINA EM CASA NÃO RECEBE ABDOMINAL DE BOLA SUÍÇA.
+      //
+      // Mesma falha do aquecimento, corrigida em 12/10/2026: a sessão vinha do catálogo
+      // inteiro, e um aluno que declarou não ter equipamento abria o abdominal com "Encaixe
+      // de Pernas na Bola Suíça" e "Abdominal Total na Bola".
+      //
+      // São 20 dos 97 exercícios de core que pedem aparelho — bola, polia, máquina, barra.
+      // Sobram 77 sem nada, então sortear três fazíveis nunca falta.
+      const core = (data ?? [])
+        .filter(e => /core|abd/i.test(e.muscle_group ?? ''))
+        .map(e => ({ id: e.id, name: e.name, muscle_group: e.muscle_group, mediaUrl: e.media_url }));
+
       setCatalogo(
-        (data ?? [])
-          .filter(e => /core|abd/i.test(e.muscle_group ?? ''))
-          .map(e => ({ id: e.id, name: e.name, muscle_group: e.muscle_group, mediaUrl: e.media_url }))
+        treinaEmCasa(mapAnamneseLocationToEquipment(profile?.trainingLocation))
+          ? filtrarParaCasa(core, profile?.equipamentosCasa)
+          : core
       );
     })();
-  }, []);
+  }, [profile?.trainingLocation, profile?.equipamentosCasa]);
 
   // `semente` existe só para o useMemo recalcular quando o aluno pede outro sorteio.
   const sessao = useMemo(() => {
