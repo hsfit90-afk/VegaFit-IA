@@ -14,6 +14,8 @@ import { mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 import Link from 'next/link';
 import { LIMITE_PREFERENCIAS } from '@/lib/aiHealthContext';
+import { faltamEssenciais, ROTULO_ESSENCIAL } from '@/lib/anamneseEssencial';
+import { createClient } from '@/utils/supabase/client';
 
 export default function Generator() {
   const { addWorkoutPlan, profile, history } = useAppContext();
@@ -27,6 +29,31 @@ export default function Generator() {
   useEffect(() => {
     getExercises().then(setDbExercises);
   }, []);
+
+  /**
+   * A anamnese mais recente, só para saber o que ainda falta.
+   *
+   * Vem do histórico e não das colunas do perfil porque objetivo e nível também são
+   * preenchidos no onboarding: quem passou só por ele teria os dois, e o portão deixaria
+   * passar sem nunca ter perguntado sobre LESÃO — que é a resposta de segurança.
+   *
+   * Fica nulo enquanto carrega, para o portão não piscar na tela de quem já respondeu.
+   */
+  const [respostas, setRespostas] = useState<Record<string, any> | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('anamnese_history')
+        .select('answers')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      setRespostas(data?.[0]?.answers ?? {});
+    })();
+  }, []);
+
+  const faltam = respostas === null ? [] : faltamEssenciais(respostas);
 
   const TRAINING_METHODS = [
     { id: 'tradicional', label: 'Tradicional', icon: '🏋️', desc: 'Séries e repetições padrão com descanso entre séries' },
@@ -206,6 +233,36 @@ export default function Generator() {
           Configure e gere seu treino. Após gerar, você irá direto para treinar!
         </p>
       </header>
+
+      {/* O PORTÃO.
+          Medido em 11/10/2026: 1 de 13 pessoas tinha preenchido a anamnese, e as outras doze
+          geraram treino com o app adivinhando local, equipamento, objetivo, nível e lesão —
+          ou seja, todo o filtro de segurança rodava vazio. Pedir antes de gerar é o único
+          momento em que a pessoa tem motivo para responder: ela quer o treino agora.
+
+          Três perguntas, não as quarenta e oito. O resto fica para depois. */}
+      {faltam.length > 0 && (
+        <Card className="mb-6 border-warning/40">
+          <CardContent className="p-6">
+            <h2 className="font-outfit font-bold text-lg mb-2">Faltam três respostas</h2>
+            <p className="text-sm text-foreground-muted leading-relaxed mb-4 max-w-prose">
+              Sem elas o treino sai genérico: o app não sabe se você treina em casa ou na
+              academia, nem o que evitar por causa de lesão. São menos de dois minutos.
+            </p>
+            <ul className="text-sm mb-5 space-y-1.5">
+              {faltam.map(campo => (
+                <li key={campo} className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
+                  {ROTULO_ESSENCIAL[campo] ?? campo}
+                </li>
+              ))}
+            </ul>
+            <Link href="/anamnese?essencial=1">
+              <Button size="lg">Responder agora</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="p-6 md:p-8">

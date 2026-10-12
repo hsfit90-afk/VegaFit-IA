@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/app/context/AppContext';
 import { Check } from 'lucide-react';
 import { anamneseSteps as steps, type AnamneseStep, type AnamneseField } from '@/lib/anamneseSteps';
 import { EQUIPAMENTOS_CASA } from '@/lib/equipamentoCasa';
+import { passosEssenciais } from '@/lib/anamneseEssencial';
 
 export default function AnamnesePage() {
   const router = useRouter();
@@ -22,8 +23,22 @@ export default function AnamnesePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [consentAccepted, setConsentAccepted] = useState(false);
 
+  /**
+   * MODO CURTO (?essencial=1): só as perguntas que mudam o treino.
+   *
+   * Medido em 11/10/2026: 1 de 13 pessoas tinha preenchido a anamnese. Nove passos e quase
+   * cinquenta campos antes do primeiro treino é barreira, não triagem — e sem as respostas
+   * todo o filtro de equipamento e toda a regra de lesão rodavam adivinhando.
+   *
+   * O resto da anamnese não sumiu: continua aqui, pedido depois, quando a pessoa já tem
+   * motivo para voltar. Ver lib/anamneseEssencial.ts para o critério da separação.
+   */
+  const params = useSearchParams();
+  const modoCurto = params.get('essencial') === '1';
+
   // Filtra apenas os passos ativos (ex: ciclo feminino)
-  const activeSteps = steps.filter(s => !s.condition || s.condition(answers));
+  const base = modoCurto ? passosEssenciais(steps) : steps;
+  const activeSteps = base.filter(s => !s.condition || s.condition(answers));
   const currentStep = activeSteps[currentStepIndex] || activeSteps[0];
 
   // Configura valores default (ex: sliders)
@@ -243,9 +258,18 @@ export default function AnamnesePage() {
       {/* HEADER */}
       <header className="sticky top-0 bg-background z-10 px-5 pt-5 pb-3">
         <p className="font-outfit font-semibold text-[13px] tracking-[0.14em] uppercase text-primary mb-3">
-          Anamnese de treino
+          {modoCurto ? 'Antes do seu primeiro treino' : 'Anamnese de treino'}
         </p>
-        
+
+        {/* Dizer o tamanho adianta. Formulário sem fim é o que faz a pessoa fechar a aba —
+            saber que são duas perguntas e meia muda a decisão de começar. */}
+        {modoCurto && !reviewMode && (
+          <p className="text-sm text-foreground-muted leading-relaxed mb-3">
+            Só o que muda o seu treino — leva menos de dois minutos. O resto do questionário
+            fica para depois, quando você quiser.
+          </p>
+        )}
+
         {/* Progress Bar */}
         <div className="h-[6px] bg-surface-hover rounded-full overflow-hidden flex gap-[3px]">
           {reviewMode ? (

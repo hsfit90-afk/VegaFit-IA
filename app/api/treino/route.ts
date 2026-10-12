@@ -15,6 +15,7 @@ import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, textoLivreParaProm
 import { generateWithRetry } from "@/lib/geminiClient";
 import { computeUnlock, type MethodId } from "@/lib/trainingUnlock";
 import { normalizarListas } from "@/lib/listasDoAluno";
+import { calcularNivel } from "@/lib/progressaoDeNivel";
 
 // Teto de execução da função no host. A geração de treino levou ~15s medidos, e a fila de
 // capacidade (utils/rate-limit.ts) pode somar até AI_MAX_QUEUE_WAIT_MS em cima disso. Sem esta
@@ -198,7 +199,27 @@ export async function POST(req: NextRequest) {
     // O campo `difficulty` da tabela não serve: os 882 exercícios têm difficulty = 1, nunca foi
     // preenchido. Classificamos pelo NOME (ver lib/exerciseLevel.ts), como já é feito com
     // equipamento e com composto/isolado.
-    const nivelAluno = normalizarNivel(config.level || profile?.level);
+    // NÍVEL EFETIVO: o declarado OU o conquistado pela constância, o que for maior.
+    //
+    // O nível era escolhido uma vez no onboarding e nunca mais mudava sozinho. Como ele corta
+    // o catálogo por exigência técnica, quem marcou "Iniciante" no primeiro dia recebia
+    // movimento guiado para sempre — inclusive depois de um ano treinando. O app travava a
+    // pessoa no degrau em que ela entrou.
+    //
+    // Nunca rebaixa: quem se declarou avançado continua avançado mesmo sem histórico aqui,
+    // porque pode treinar há dez anos e ter acabado de instalar o app.
+    const progressao = calcularNivel(
+      config.level || profile?.level,
+      (historyRows || []).map((h: any) => ({
+        date: new Date(h.date).getTime(),
+        workoutPlanId: h.workout_plan_id,
+      }))
+    );
+    if (progressao.subiu) {
+      console.log(`[treino] ${targetUserId} evoluiu de ${progressao.declarado} para ${progressao.conquistado} (${progressao.treinosFeitos} treinos).`);
+    }
+
+    const nivelAluno = normalizarNivel(progressao.efetivo);
     const niveisPermitidos = NIVEIS_PERMITIDOS[nivelAluno];
     const porNivel = availableExercises.filter((ex: any) =>
       // Alguns grupos passam inteiros, sem filtro de nível — ver GRUPOS_SEM_FILTRO_DE_NIVEL.
@@ -375,7 +396,7 @@ export async function POST(req: NextRequest) {
     const instrucaoDoMetodo = instrucoesPorMetodo[methodLabel] ?? '';
 
     const durationMinutes = parseInt(config.duration) || 60;
-    const level = (config.level || profile?.level || 'Iniciante').toLowerCase();
+    const level = progressao.efetivo.toLowerCase();
     
     // Calcula exercícios por sessão baseado em duração e nível
     let exercisesPerSession: number;
@@ -477,7 +498,7 @@ O aluno marcou como prioritários: ${config.priorities.join(', ')}.
 ${scientificBasis}
 Crie um plano de treino estruturado em JSON para um aluno com o seguinte perfil:
 - Objetivo: ${userGoal}
-- Nível de experiência: ${config.level || profile?.level || 'Iniciante'}
+- Nível de experiência: ${progressao.efetivo}
 ${nivelAluno === 'iniciante'
   ? 'REGRA DE NÍVEL: este aluno é INICIANTE. A lista de exercícios abaixo já foi filtrada para conter apenas movimentos compatíveis — não tente contornar pedindo variação mais difícil de um exercício da lista. Prefira movimentos guiados (máquina, polia) e padrões simples, e escreva as dicas de execução assumindo que ele nunca fez o exercício antes.'
   : nivelAluno === 'intermediario'

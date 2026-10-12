@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/Toast';
 import Link from 'next/link';
 import { isPushSupported, getCurrentPushSubscription, subscribeToPush, unsubscribeFromPush } from '@/utils/push';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { AtivarLembretes } from '@/components/AtivarLembretes';
 import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
 import { MinhaAcademia } from '@/components/MinhaAcademia';
 
@@ -251,6 +252,16 @@ export default function Settings() {
             </CardContent>
           </Card>
         )}
+
+        {/* Lembretes.
+            O pedido principal fica na tela de treino concluído, que é onde ele converte.
+            Aqui é a porta de quem mudou de ideia depois — e o único lugar onde dá para
+            DESLIGAR, que precisa existir para o pedido lá ser honesto. */}
+        <Card className="mt-8">
+          <CardContent className="py-5">
+            <AtivarLembretes />
+          </CardContent>
+        </Card>
 
         {/* Privacidade */}
         <Card className="mt-8">

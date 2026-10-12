@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
+import { AtivarLembretes } from '@/components/AtivarLembretes';
 import { computePeriodization } from '@/lib/periodization';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart } from 'lucide-react';
@@ -789,6 +790,15 @@ export default function ActiveWorkout() {
               </div>
             </div>
           )}
+
+          {/* O PEDIDO DE LEMBRETE VIVE AQUI, e não na primeira visita.
+              O navegador dá UMA chance: quem bloqueia não vê o pedido de novo, e desbloquear
+              exige mexer nas configurações do site — ninguém faz. Este é o melhor momento do
+              app: a pessoa acabou de terminar um treino, e "quer que eu te lembre do próximo?"
+              faz sentido para ela. Quem já ativou não vê nada (ver `compacto`). */}
+          <div className="w-full mt-2 mb-2">
+            <AtivarLembretes compacto />
+          </div>
 
           {/* Botões de ação */}
           <div className="flex flex-col gap-3 w-full mt-4">
