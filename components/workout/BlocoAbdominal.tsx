@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Flame, ChevronDown, Check, ImageOff } from 'lucide-react';
-import { prescrever, normalizarObjetivo } from '@/lib/protocolo';
+import { prescrever, normalizarObjetivo, temAbdominalNoDia } from '@/lib/protocolo';
 import { filtrarParaCasa } from '@/lib/equipamentoCasa';
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 
@@ -44,6 +44,7 @@ export function BlocoAbdominal({
   trainingLocation,
   equipamentosCasa,
   chaveDaSessao,
+  indiceDaSessao,
 }: {
   biblioteca?: ExercicioDaBiblioteca[];
   semana?: number;
@@ -52,6 +53,8 @@ export function BlocoAbdominal({
   equipamentosCasa?: string[] | null;
   /** Mantém os mesmos três exercícios enquanto a sessão for a mesma. */
   chaveDaSessao?: string;
+  /** Posição da sessão no plano. Decide se hoje é dia de abdominal. */
+  indiceDaSessao?: number;
 }) {
   const [aberto, setAberto] = useState(false);
   const [feitos, setFeitos] = useState<Set<string>>(new Set());
@@ -79,6 +82,8 @@ export function BlocoAbdominal({
       .slice(0, QUANTIDADE);
   }, [biblioteca, trainingLocation, equipamentosCasa, chaveDaSessao]);
 
+  // Dias alternados: num plano A-B-C, abdominal é no A e no C. Ver temAbdominalNoDia.
+  if (!temAbdominalNoDia(indiceDaSessao ?? 0)) return null;
   if (escolhidos.length === 0) return null;
 
   const alternar = (nome: string) =>

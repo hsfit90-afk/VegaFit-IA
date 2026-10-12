@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
-  prescrever, normalizarObjetivo, SERIES_INICIAIS, REPETICOES, descreverSemana,
+  prescrever,
+  normalizarObjetivo,
+  SERIES_INICIAIS,
+  REPETICOES,
+  descreverSemana,
+  temAbdominalNoDia,
 } from '@/lib/protocolo';
 
 /**
@@ -79,5 +84,39 @@ describe('descreverSemana', () => {
   it('avisa quando e deload, para o aluno nao achar que o app errou', () => {
     expect(descreverSemana(4)).toMatch(/deload/i);
     expect(descreverSemana(2)).toBe('Semana 2 de 4');
+  });
+});
+
+/**
+ * Abdominal em dias alternados — prescricao do CREF em 12/10/2026.
+ *
+ * Antes aparecia em todo treino. Core trabalhado todo dia nao recupera: abdomen e musculo
+ * como os outros e precisa de intervalo entre estimulos.
+ */
+describe('temAbdominalNoDia', () => {
+  it('alterna pela posicao da sessao no plano', () => {
+    // Plano A-B-C: abdominal no A e no C, sempre. O aluno aprende a regra dele.
+    expect(temAbdominalNoDia(0)).toBe(true);   // Treino A
+    expect(temAbdominalNoDia(1)).toBe(false);  // Treino B
+    expect(temAbdominalNoDia(2)).toBe(true);   // Treino C
+    expect(temAbdominalNoDia(3)).toBe(false);  // Treino D
+    expect(temAbdominalNoDia(4)).toBe(true);   // Treino E
+  });
+
+  it('nunca da dois dias seguidos de core', () => {
+    for (let i = 0; i < 10; i++) {
+      expect(temAbdominalNoDia(i) && temAbdominalNoDia(i + 1)).toBe(false);
+    }
+  });
+
+  it('entrada invalida nao vira dia de abdominal', () => {
+    // Na duvida, nao prescreve: e o lado seguro de errar.
+    expect(temAbdominalNoDia(-1)).toBe(false);
+    expect(temAbdominalNoDia(NaN)).toBe(false);
+    expect(temAbdominalNoDia(Infinity)).toBe(false);
+  });
+
+  it('indice fracionado cai no inteiro abaixo', () => {
+    expect(temAbdominalNoDia(2.7)).toBe(true);
   });
 });

@@ -73,6 +73,25 @@ export function prescrever(
   };
 }
 
+/**
+ * O abdominal entra em DIAS ALTERNADOS (prescrição do CREF, 12/10/2026).
+ *
+ * Antes aparecia em todo treino. Core trabalhado todo dia não recupera — e, ao contrário do
+ * que muita gente acha, abdômen é músculo como os outros: precisa de intervalo entre
+ * estímulos para adaptar.
+ *
+ * ALTERNA PELO ÍNDICE DA SESSÃO, não pela data. Assim a regra é previsível e o aluno aprende
+ * a dele: num plano A-B-C, abdominal é no A e no C, sempre. Alternar pelo calendário
+ * dependeria de ele treinar sem falhar, e no primeiro dia pulado a conta viraria loteria.
+ *
+ * A tela avulsa de abdominal continua disponível todo dia — quem quiser mais, faz por lá.
+ * Esta regra governa só o bloco que aparece dentro do treino.
+ */
+export function temAbdominalNoDia(indiceDaSessao: number): boolean {
+  if (!Number.isFinite(indiceDaSessao) || indiceDaSessao < 0) return false;
+  return Math.floor(indiceDaSessao) % 2 === 0;
+}
+
 /** Texto curto da semana, para a tela explicar por que o número mudou. */
 export function descreverSemana(semana: number): string {
   const s = Math.min(Math.max(Math.round(semana) || 1, 1), SEMANAS_DO_CICLO);

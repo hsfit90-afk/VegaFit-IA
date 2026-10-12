@@ -1269,6 +1269,7 @@ export default function ActiveWorkout() {
         trainingLocation={profile?.trainingLocation}
         equipamentosCasa={profile?.equipamentosCasa}
         chaveDaSessao={currentSession?.id}
+        indiceDaSessao={safeIndex}
       />
 
       <Button
