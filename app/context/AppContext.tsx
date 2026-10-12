@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, WorkoutPlan, WorkoutHistoryEntry } from '@/lib/types';
+import { proximaSessaoDoPlano } from '@/lib/rotacaoDeSessao';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -310,17 +311,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await supabase.from('workout_plans').delete().eq('id', planId).eq('user_id', userId);
   };
 
+  /**
+   * Troca o plano ativo e RETOMA a rotação dele, em vez de zerar.
+   *
+   * Zerava antes, e o índice é guardado por USUÁRIO e não por plano (`user_session_index` tem
+   * `user_id` como chave primária) — então não havia onde lembrar o ponto de cada um.
+   *
+   * Na prática, quem tinha dois planos fazia Treino A, trocava, Treino A de novo, trocava de
+   * volta, Treino A outra vez. Peito a vida inteira, e o dia de perna nunca chegava.
+   *
+   * A retomada vem do HISTÓRICO, não de uma coluna nova: o dado já existe, não pode
+   * dessincronizar, e um plano editado continua retomando no lugar certo. Ver
+   * lib/rotacaoDeSessao.ts.
+   */
   const setActivePlan = (planId: string) => {
     setActivePlanIdState(planId);
-    setCurrentSessionIndex(0);
+
+    const plano = workoutPlans.find(p => p.id === planId);
+    const retomada = proximaSessaoDoPlano(planId, plano?.sessions ?? [], history);
+    setCurrentSessionIndex(retomada);
+
     if (userId) {
       localStorage.setItem(`vegafit_active_plan_${userId}`, planId);
-    }
-    // Reset session index no Supabase
-    if (userId) {
       supabase.from('user_session_index').upsert({
         user_id: userId,
-        current_session_index: 0
+        current_session_index: retomada
       });
     }
   };
