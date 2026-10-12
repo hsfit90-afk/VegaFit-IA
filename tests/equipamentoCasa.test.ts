@@ -33,7 +33,17 @@ describe('cabeEmCasa — libera so o que foi marcado', () => {
 
   it('quem tem os dois recebe os dois', () => {
     expect(cabeEmCasa('Rosca bíceps com halteres', ['halteres', 'barra'])).toBe(true);
-    expect(cabeEmCasa('Supino reto com barra', ['halteres', 'barra'])).toBe(true);
+    expect(cabeEmCasa('Remada curvada com barra', ['halteres', 'barra'])).toBe(true);
+  });
+
+  it('supino exige banco, mesmo tendo a barra', () => {
+    // Esta asserção MUDOU em 12/10/2026, e a mudança é a correção: antes o teste afirmava
+    // que "Supino reto com barra" passava para quem tinha só halteres e barra. Não passa —
+    // supino com barra sem banco não existe; no chão vira floor press, que é outro exercício
+    // e tem outro nome. O teste codificava a suposição que deixou banco vazar para quem
+    // treina em casa.
+    expect(cabeEmCasa('Supino reto com barra', ['halteres', 'barra'])).toBe(false);
+    expect(cabeEmCasa('Supino reto com barra', ['halteres', 'barra', 'banco'])).toBe(true);
   });
 
   it('exercicio que pede DOIS equipamentos exige os dois', () => {
@@ -143,5 +153,68 @@ describe('cabeEmCasa — aerobico', () => {
 
   it('plataforma vibratoria e aparelho, nao peso corporal', () => {
     expect(cabeEmCasa('Plataforma Vibratória', [])).toBe(false);
+  });
+});
+
+/**
+ * Vazamentos achados num treino REAL, em 12/10/2026. Perfil novo, "Em casa", so halteres
+ * marcados -- e o plano veio com banco inclinado e puxador alto.
+ *
+ * As palavras abaixo foram medidas uma a uma no catalogo JA sem os de academia, que e o
+ * conjunto em que elas de fato atuam. Medir contra o catalogo inteiro foi o erro que fez o
+ * "inclinado" parecer ruim e o "frontal" parecer bom.
+ */
+describe('cabeEmCasa — vazamentos de 12/10/2026', () => {
+  const soHalteres = ['halteres'];
+
+  it('exercicio de banco nao passa para quem so tem halteres', () => {
+    // Os dois do print do profissional.
+    expect(cabeEmCasa('Elevação lateral com halteres com apoio no peito', soHalteres)).toBe(false);
+    expect(cabeEmCasa('Puxada Alta Invertida', soHalteres)).toBe(false);
+  });
+
+  it('supino, crucifixo e scott pedem banco mesmo sem dizer a palavra', () => {
+    expect(cabeEmCasa('Supino Inclinado com Halteres', soHalteres)).toBe(false);
+    expect(cabeEmCasa('Crucifixo com Halteres Inclinado', soHalteres)).toBe(false);
+    expect(cabeEmCasa('Rosca scott com halteres', soHalteres)).toBe(false);
+  });
+
+  it('com banco marcado, os mesmos passam', () => {
+    const comBanco = ['halteres', 'banco'];
+    expect(cabeEmCasa('Supino Inclinado com Halteres', comBanco)).toBe(true);
+    expect(cabeEmCasa('Crucifixo com Halteres Inclinado', comBanco)).toBe(true);
+  });
+
+  it('"no chao" dispensa o banco', () => {
+    // Floor press existe e e legitimo: era o unico falso positivo entre os 25 de "supino".
+    expect(cabeEmCasa('Supino com kettlebell no chão', ['kettlebell'])).toBe(true);
+  });
+
+  it('tronco inclinado em pe CONTINUA passando', () => {
+    // O motivo de "inclinado" nao ter virado palavra de banco. Estes nao precisam de nada.
+    expect(cabeEmCasa('Elevação lateral com tronco inclinado', soHalteres)).toBe(true);
+    expect(cabeEmCasa('Remada Curvada Inclinada com Barra', ['halteres', 'barra'])).toBe(true);
+    expect(cabeEmCasa('Flexão inclinada', [])).toBe(true);
+  });
+
+  it('nome em ingles de aparelho tambem e cortado', () => {
+    expect(cabeEmCasa('Remada invertida com cable inclinado', soHalteres)).toBe(false);
+    expect(cabeEmCasa('Pulldown com corda', soHalteres)).toBe(false);
+  });
+
+  it('"dumbbell" conta como haltere', () => {
+    // Dumbbell-Raise escapava de tudo e caia como peso corporal.
+    expect(cabeEmCasa('Dumbbell-Raise', [])).toBe(false);
+    expect(cabeEmCasa('Dumbbell-Raise', soHalteres)).toBe(true);
+  });
+
+  it('calistenia com "lever" no nome NAO e confundida com maquina', () => {
+    expect(cabeEmCasa('Back Lever', [])).toBe(true);
+  });
+
+  it('puxada corporal continua valendo', () => {
+    // "puxada alta" e o puxador; "puxada" sozinha pegaria estes, que sao corporais.
+    expect(cabeEmCasa('Puxada escapular na barra fixa', ['barra_fixa'])).toBe(true);
+    expect(cabeEmCasa('Puxada isométrica', [])).toBe(true);
   });
 });

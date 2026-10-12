@@ -37,10 +37,19 @@ export interface ItemDeCasa {
  *              "banco", com 31.
  */
 export const EQUIPAMENTOS_CASA: ItemDeCasa[] = [
-  { id: 'halteres',   rotulo: 'Halteres',            palavras: ['haltere', 'halter'] },
+  { id: 'halteres',   rotulo: 'Halteres',            palavras: ['haltere', 'halter', 'dumbbell'] },
   { id: 'barra',      rotulo: 'Barra e anilhas',     ajuda: 'barra olímpica ou comum, com peso', palavras: ['barra', 'anilha'] },
   { id: 'elastico',   rotulo: 'Elástico ou faixa',   palavras: ['elástico', 'elastico', 'faixa', 'banda'] },
-  { id: 'banco',      rotulo: 'Banco',               ajuda: 'para supino, remada e apoio', palavras: ['banco'] },
+  // "supino", "crucifixo", "scott" e "apoio no peito" entram junto de "banco" porque pedem
+  // banco sem dizer a palavra. Medido um a um em 12/10/2026, no catálogo JÁ sem os de
+  // academia: supino 25 (todos de banco, menos o "no chão", tratado em NO_CHAO), crucifixo 5,
+  // scott 7 (todos de banco scott), "apoio no peito" 1.
+  //
+  // "inclinado" ficou DE FORA apesar de pegar 33: metade é tronco inclinado em pé — remada
+  // curvada, elevação lateral com tronco inclinado, alongamento —, não banco. Seria repetir o
+  // erro do "frontal", que pegou 17 errados para acertar 6.
+  { id: 'banco',      rotulo: 'Banco',               ajuda: 'para supino, remada e apoio',
+    palavras: ['banco', 'supino', 'crucifixo', 'scott', 'apoio no peito'] },
   { id: 'barra_fixa', rotulo: 'Barra fixa',          ajuda: 'de porta ou de parede', palavras: ['barra fixa'] },
   { id: 'kettlebell', rotulo: 'Kettlebell',          palavras: ['kettlebell'] },
   { id: 'acessorios', rotulo: 'Bola, TRX ou argolas', palavras: ['trx', 'bola', 'argola'] },
@@ -56,6 +65,13 @@ export const IDS_CASA = EQUIPAMENTOS_CASA.map(e => e.id);
  */
 const SO_ACADEMIA = [
   'máquina', 'maquina', 'polia', 'cabo', 'pulley', 'smith', 'leg press', 'hack',
+  // "puxada alta" são os 5 do puxador alto; a palavra "puxada" sozinha NÃO serve, porque
+  // pega puxada escapular na barra fixa, front lever e puxada isométrica, que são corporais.
+  'puxada alta',
+  // Nome em inglês que escapava do corte: o catálogo mistura idiomas. "cable" e "pulldown"
+  // são aparelho; "lever" ficou de fora de propósito, porque Back Lever e Front Lever são
+  // calistenia pura, não alavanca de máquina.
+  'cable', 'pulldown',
   'cadeira extensora', 'cadeira flexora', 'cadeira adutora', 'cadeira abdutora',
   'mesa flexora', 'mesa extensora', 'voador', 'pec deck', 'graviton', 'alavanca',
   'cross over', 'crossover', 'esteira', 'elíptica', 'eliptica', 'elíptico', 'eliptico', 'ergométrica', 'ergometrica',
@@ -83,14 +99,22 @@ export function cabeEmCasa(nomeDoExercicio: string, tenho: string[] | null | und
     n = n.split('barra fixa').join(' ');
   }
 
+  // O nome que diz "no chão" dispensa o banco, mesmo citando supino: "Supino com kettlebell
+  // no chão" é floor press, e era o único falso positivo entre os 25 de "supino".
+  const noChao = DIZ_QUE_E_NO_CHAO.some(p => n.includes(p));
+
   for (const item of EQUIPAMENTOS_CASA) {
     if (item.id === 'barra_fixa') continue; // já tratado acima
+    if (item.id === 'banco' && noChao) continue;
     const cita = item.palavras.some(p => n.includes(p));
     if (cita && !possui.has(item.id)) return false;
   }
 
   return true;
 }
+
+/** O exercício declara no próprio nome que é feito no chão. */
+const DIZ_QUE_E_NO_CHAO = ['no chão', 'no chao', 'no solo', 'deitado no piso'];
 
 /**
  * Filtra o catálogo para quem treina em casa.
