@@ -37,8 +37,20 @@ export interface ItemDeCasa {
  *              "banco", com 31.
  */
 export const EQUIPAMENTOS_CASA: ItemDeCasa[] = [
-  { id: 'halteres',   rotulo: 'Halteres',            palavras: ['haltere', 'halter', 'dumbbell'] },
-  { id: 'barra',      rotulo: 'Barra e anilhas',     ajuda: 'barra olímpica ou comum, com peso', palavras: ['barra', 'anilha'] },
+  { id: 'halteres',   rotulo: 'Halteres',            palavras: ['haltere', 'halter', 'dumbbell', 'arnold'] },
+  // OS QUE NÃO DIZEM "BARRA" NO NOME, mas são barra.
+  //
+  // "Levantamento Terra" e "Agachamento Frontal" apareceram num treino de casa de quem só
+  // marcou halteres — e passaram porque o nome não cita aparelho nenhum. O filtro lê o nome,
+  // e esses nomes não nomeiam o que usam.
+  //
+  // Medidos em 12/10/2026 contra os 368 exercícios que o filtro assumia como peso corporal.
+  // Cada padrão pega só exercício de barra, zero falso positivo:
+  // levantamento terra 7, arnold 3 (esse é haltere), zercher 2, landmine 2, e os demais 1.
+  { id: 'barra',      rotulo: 'Barra e anilhas',     ajuda: 'barra olímpica ou comum, com peso',
+    palavras: ['barra', 'anilha', 'levantamento terra', 'zercher', 'landmine',
+               'remada alta', 'militar', 'remada curvada em t', 'remada t com',
+               'agachamento frontal', 'com trava'] },
   { id: 'elastico',   rotulo: 'Elástico ou faixa',   palavras: ['elástico', 'elastico', 'faixa', 'banda'] },
   // "supino", "crucifixo", "scott" e "apoio no peito" entram junto de "banco" porque pedem
   // banco sem dizer a palavra. Medido um a um em 12/10/2026, no catálogo JÁ sem os de
@@ -80,6 +92,9 @@ const SO_ACADEMIA = [
   // são aparelho; "lever" ficou de fora de propósito, porque Back Lever e Front Lever são
   // calistenia pura, não alavanca de máquina.
   'cable', 'pulldown',
+  // Aparelho que o nome nao nomeia: "Levantamento com Suporte" e rack, "no cross" e
+  // crossover, "com cinto" e cadeira de cinto. Medidos: 1 cada, sem falso positivo.
+  'levantamento com suporte', 'no cross', 'com cinto',
   'cadeira extensora', 'cadeira flexora', 'cadeira adutora', 'cadeira abdutora',
   'mesa flexora', 'mesa extensora', 'voador', 'pec deck', 'graviton', 'alavanca',
   'cross over', 'crossover', 'esteira', 'elíptica', 'eliptica', 'elíptico', 'eliptico', 'ergométrica', 'ergometrica',

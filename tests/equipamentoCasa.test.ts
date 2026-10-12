@@ -354,3 +354,48 @@ describe('cabeEmCasa — core', () => {
     expect(cabeEmCasa('Abdominal na Polia em Pé', ['acessorios'])).toBe(false);
   });
 });
+
+/**
+ * Nomes que NAO nomeiam o aparelho — 12/10/2026.
+ *
+ * "Levantamento Terra" e "Levantamento com Suporte" apareceram num treino de casa de quem so
+ * marcou halteres. Passaram porque o nome nao cita equipamento nenhum, e o filtro le o nome.
+ *
+ * E o teto do metodo por palavra-chave: aqui ele nao erra a palavra, ele nao TEM palavra.
+ */
+describe('cabeEmCasa — nomes que escondem o aparelho', () => {
+  it('levantamento terra e barra, em todas as variantes', () => {
+    for (const n of ['Levantamento Terra', 'Levantamento Terra Romeno', 'Levantamento Terra Sumô',
+                     'Levantamento Terra Zercher', 'Levantamento Terra Unilateral']) {
+      expect(cabeEmCasa(n, ['halteres'])).toBe(false);
+      expect(cabeEmCasa(n, ['halteres', 'barra'])).toBe(true);
+    }
+  });
+
+  it('agachamento frontal e zercher sao barra', () => {
+    expect(cabeEmCasa('Agachamento Frontal', ['halteres'])).toBe(false);
+    expect(cabeEmCasa('Agachamento Zercher', ['halteres'])).toBe(false);
+    expect(cabeEmCasa('Agachamento Frontal', ['barra'])).toBe(true);
+  });
+
+  it('arnold e HALTERE, nao barra', () => {
+    expect(cabeEmCasa('Desenvolvimento Arnold', [])).toBe(false);
+    expect(cabeEmCasa('Desenvolvimento Arnold', ['halteres'])).toBe(true);
+  });
+
+  it('rack, crossover e cadeira de cinto nao existem em casa', () => {
+    // Nem com todo o equipamento marcado: nao sao coisas de casa.
+    const tudo = ['halteres','barra','elastico','banco','barra_fixa','kettlebell','acessorios'];
+    expect(cabeEmCasa('Levantamento com Suporte', tudo)).toBe(false);
+    expect(cabeEmCasa('Remada cruzada no cross', tudo)).toBe(false);
+    expect(cabeEmCasa('Agachamento com Cinto', tudo)).toBe(false);
+  });
+
+  it('agachamento corporal de verdade continua passando', () => {
+    // O contraponto: nem todo agachamento de nome exotico precisa de barra.
+    expect(cabeEmCasa('Agachamento pistola', [])).toBe(true);
+    expect(cabeEmCasa('Agachamento Skater', [])).toBe(true);
+    expect(cabeEmCasa('Agachamento Sumô sem Pesos', [])).toBe(true);
+    expect(cabeEmCasa('Agachamento com Salto', [])).toBe(true);
+  });
+});
