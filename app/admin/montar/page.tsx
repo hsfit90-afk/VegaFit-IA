@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark } from 'lucide-react';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { prescrever, normalizarObjetivo } from '@/lib/protocolo';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
@@ -43,6 +43,16 @@ interface SessaoLinha {
 }
 
 interface Aluno { id: string; name: string | null; role: string | null }
+
+/** Um dia de treino salvo para reuso, organizado por objetivo. */
+interface ModeloDeSessao {
+  id: string;
+  nome: string;
+  objetivo: string;
+  nota: string | null;
+  exercicios: { name: string; muscleGroup: string; sets: number; reps: string; restSeconds: number; tips: string }[];
+  created_at: string;
+}
 
 /** O que /api/admin/aluno devolve para a tela mostrar. */
 interface ResumoDoAluno {
@@ -84,6 +94,8 @@ export default function MontarTreino() {
   const [carregando, setCarregando] = useState(true);
 
   const [ampliado, setAmpliado] = useState<ExercicioCatalogo | null>(null);
+  const [modelos, setModelos] = useState<ModeloDeSessao[]>([]);
+  const [salvandoModelo, setSalvandoModelo] = useState<string | null>(null);
   const [resumo, setResumo] = useState<ResumoDoAluno | null>(null);
   const [temAnamnese, setTemAnamnese] = useState(false);
   const [carregandoAluno, setCarregandoAluno] = useState(false);
@@ -180,6 +192,92 @@ export default function MontarTreino() {
       : x)));
 
   /** Ao escolher um exercício do catálogo, traz o grupo muscular junto — um campo a menos. */
+  // ---- modelos de sessão ----
+
+  /**
+   * Recarrega os modelos do objetivo escolhido.
+   *
+   * Depende de `config.goal`: trocar o objetivo no topo troca a lista aqui embaixo. É a razão
+   * de organizar por objetivo — o profissional vê só o que serve para este aluno, em vez de
+   * rolar uma lista que mistura hipertrofia com emagrecimento.
+   */
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`/api/admin/modelos?objetivo=${encodeURIComponent(config.goal)}`);
+        if (!r.ok) return;
+        setModelos((await r.json()).modelos ?? []);
+      } catch {
+        // Silencioso de propósito: modelo é conveniência. Falhar ao carregar não pode
+        // atrapalhar quem só quer montar o treino na mão.
+      }
+    })();
+  }, [config.goal]);
+
+  const salvarComoModelo = async (sessao: SessaoLinha) => {
+    const exercicios = sessao.exercises.filter(e => e.name.trim());
+    if (exercicios.length === 0) { toast.erro('Este dia não tem exercício para salvar.'); return; }
+
+    const nome = prompt('Nome do modelo:', sessao.name || `Modelo de ${config.goal}`);
+    if (!nome?.trim()) return;
+
+    setSalvandoModelo(sessao.id);
+    try {
+      const r = await fetch('/api/admin/modelos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: nome.trim(), objetivo: config.goal, exercicios }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Não consegui salvar.');
+      setModelos(m => [d.modelo, ...m]);
+      toast.sucesso(`Modelo "${d.modelo.nome}" salvo em ${config.goal}.`);
+    } catch (e) {
+      toast.erro(e instanceof Error ? e.message : 'Não consegui salvar o modelo.');
+    } finally {
+      setSalvandoModelo(null);
+    }
+  };
+
+  /**
+   * Carrega um modelo como um dia novo do plano.
+   *
+   * O modelo guarda o NOME do exercício, não o id — então o id é reencontrado no catálogo
+   * aqui. É o que faz um modelo antigo sobreviver a recadastro de exercício: no pior caso a
+   * linha vem sem id e quem monta reescolhe, em vez de o modelo inteiro virar lixo.
+   */
+  const carregarModelo = (modelo: ModeloDeSessao) => {
+    setSessoes(s => [...s, {
+      id: crypto.randomUUID(),
+      name: modelo.nome,
+      exercises: modelo.exercicios.map(e => ({
+        id: crypto.randomUUID(),
+        exerciseId: catalogo.find(c => c.name === e.name)?.id ?? '',
+        name: e.name,
+        muscleGroup: e.muscleGroup,
+        sets: e.sets,
+        reps: e.reps,
+        restSeconds: e.restSeconds,
+        tips: e.tips,
+      })),
+    }]);
+    const semId = modelo.exercicios.filter(e => !catalogo.some(c => c.name === e.name)).length;
+    toast.sucesso(semId > 0
+      ? `"${modelo.nome}" carregado. ${semId} exercício(s) saíram do catálogo — reescolha.`
+      : `"${modelo.nome}" carregado como novo dia.`);
+  };
+
+  const apagarModelo = async (modelo: ModeloDeSessao) => {
+    if (!confirm(`Apagar o modelo "${modelo.nome}"?`)) return;
+    try {
+      const r = await fetch(`/api/admin/modelos?id=${modelo.id}`, { method: 'DELETE' });
+      if (!r.ok) throw new Error('Não consegui apagar.');
+      setModelos(m => m.filter(x => x.id !== modelo.id));
+    } catch {
+      toast.erro('Não consegui apagar o modelo.');
+    }
+  };
+
   /** O GIF do exercicio, pelo id que a escolha no catalogo gravou. */
   const midiaDoExercicio = (exerciseId: string): string | null =>
     (exerciseId ? catalogo.find(c => c.id === exerciseId)?.media_url : null) ?? null;
@@ -520,6 +618,46 @@ export default function MontarTreino() {
                 </Button>
               )}
             </div>
+
+            {/* OS MODELOS DO OBJETIVO ESCOLHIDO.
+                Filtrados por objetivo de propósito: o profissional vê só o que serve para
+                este aluno, em vez de rolar uma lista que mistura hipertrofia com
+                emagrecimento. Trocar o objetivo acima troca a lista aqui.
+
+                Carregar ACRESCENTA um dia, não substitui o plano: montar um treino de quatro
+                dias a partir de quatro modelos é o caso que mais economiza tempo. */}
+            {modelos.length > 0 && (
+              <div className="border-t border-border pt-4">
+                <p className="text-xs uppercase tracking-wider font-semibold text-foreground-muted mb-2.5">
+                  Seus modelos de {config.goal.toLowerCase()}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {modelos.map(m => (
+                    <span
+                      key={m.id}
+                      className="inline-flex items-center rounded-xl border border-white/10 bg-surface-light overflow-hidden"
+                    >
+                      <button
+                        onClick={() => carregarModelo(m)}
+                        title={`Acrescentar "${m.nome}" como um novo dia (${m.exercicios.length} exercícios)`}
+                        className="flex items-center gap-1.5 pl-3 pr-2.5 py-2 text-sm hover:text-primary transition-colors"
+                      >
+                        <Bookmark className="w-3.5 h-3.5" />
+                        {m.nome}
+                        <span className="text-[11px] text-foreground-muted">({m.exercicios.length})</span>
+                      </button>
+                      <button
+                        onClick={() => apagarModelo(m)}
+                        aria-label={`Apagar modelo ${m.nome}`}
+                        className="px-2 py-2 border-l border-white/10 text-foreground-muted hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -537,6 +675,19 @@ export default function MontarTreino() {
                   maxLength={80}
                   aria-label={`Nome do dia ${si + 1}`}
                 />
+                {/* Salvar o dia como modelo. Fica no cabeçalho do dia, e não no rodapé da
+                    tela, porque o que se salva é ESTE dia — e quem monta decide isso olhando
+                    para ele, não para o plano inteiro. */}
+                <button
+                  onClick={() => salvarComoModelo(sessao)}
+                  disabled={salvandoModelo === sessao.id}
+                  title="Salvar este dia como modelo, para reusar em outro aluno"
+                  className="p-2 text-foreground-muted hover:text-primary transition-colors flex-none disabled:opacity-40"
+                >
+                  {salvandoModelo === sessao.id
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <BookmarkPlus className="w-4 h-4" />}
+                </button>
                 <button
                   onClick={() => removeSessao(sessao.id)}
                   aria-label={`Remover ${sessao.name}`}
