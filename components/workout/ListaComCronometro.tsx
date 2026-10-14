@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
-import { Play, RotateCcw, ImageOff, Check } from 'lucide-react';
+import { Play, RotateCcw, ImageOff, Check , Maximize2 } from 'lucide-react';
+import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 
 /**
  * Lista de exercícios feitos POR TEMPO, com GIF e cronômetro.
@@ -37,6 +38,7 @@ export function ListaComCronometro({
   const [rodando, setRodando] = useState<string | null>(null);
   const [restam, setRestam] = useState(segundos);
   const [feitos, setFeitos] = useState<Set<string>>(new Set());
+  const [ampliado, setAmpliado] = useState<ItemDaLista | null>(null);
 
   useEffect(() => {
     if (!rodando) return;
@@ -61,6 +63,12 @@ export function ListaComCronometro({
 
   return (
     <div className="flex flex-col gap-2">
+      <VisualizadorDeMidia
+        midia={ampliado?.mediaUrl ?? null}
+        titulo={ampliado?.name ?? ''}
+        subtitulo={ampliado?.muscle_group}
+        onFechar={() => setAmpliado(null)}
+      />
       {itens.map(item => {
         const chave = item.id ?? item.name;
         const ativo = rodando === chave;
@@ -69,19 +77,33 @@ export function ListaComCronometro({
         return (
           <Card key={chave} className={ativo ? 'border-primary/50' : feito ? 'border-primary/25' : ''}>
             <CardContent className="p-3 flex items-center gap-3">
-              {/* object-contain, não cover: a correção de 23/09, quando o gif cortava os pés. */}
-              <div className="w-20 h-20 rounded-xl bg-black/40 grid place-items-center overflow-hidden flex-none">
+              {/* object-contain, não cover: a correção de 23/09, quando o gif cortava os pés.
+                  TOQUE AMPLIA: 96px no celular ainda é pouco para julgar se o cotovelo abre
+                  ou fecha. Aumentar a lista inteira resolveria para quem olha um e atrapalharia
+                  quem percorre seis. */}
+              <button
+                type="button"
+                onClick={() => item.mediaUrl && setAmpliado(item)}
+                disabled={!item.mediaUrl}
+                aria-label={item.mediaUrl ? `Ver ${item.name} ampliado` : undefined}
+                className="w-24 h-24 rounded-xl bg-black/40 grid place-items-center overflow-hidden flex-none relative group"
+              >
                 {item.mediaUrl ? (
-                  item.mediaUrl.endsWith('.mp4') ? (
-                    <video src={item.mediaUrl} autoPlay loop muted playsInline
-                      className="w-full h-full object-contain opacity-90" />
-                  ) : (
-                    <img src={item.mediaUrl} alt="" className="w-full h-full object-contain opacity-90" />
-                  )
+                  <>
+                    {item.mediaUrl.endsWith('.mp4') ? (
+                      <video src={item.mediaUrl} autoPlay loop muted playsInline
+                        className="w-full h-full object-contain opacity-90" />
+                    ) : (
+                      <img src={item.mediaUrl} alt="" className="w-full h-full object-contain opacity-90" />
+                    )}
+                    <span className="absolute bottom-1 right-1 w-6 h-6 rounded-md bg-black/60 grid place-items-center">
+                      <Maximize2 className="w-3 h-3 text-white/80" />
+                    </span>
+                  </>
                 ) : (
                   <ImageOff className="w-5 h-5 text-foreground-muted/40" />
                 )}
-              </div>
+              </button>
 
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-medium leading-tight ${feito ? 'text-foreground-muted' : ''}`}>

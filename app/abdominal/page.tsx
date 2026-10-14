@@ -6,7 +6,8 @@ import { useAppContext } from '@/app/context/AppContext';
 import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Loader2, Shuffle, Check, ImageOff, Flame } from 'lucide-react';
+import { Loader2, Shuffle, Check, ImageOff, Flame, Maximize2 } from 'lucide-react';
+import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 import { PREFIXO_AVULSO } from '@/lib/trainingUnlock';
 import { prescrever, normalizarObjetivo, descreverSemana } from '@/lib/protocolo';
@@ -51,6 +52,7 @@ export default function Abdominal() {
   const [semente, setSemente] = useState(0);
   const [feitos, setFeitos] = useState<Set<string>>(new Set());
   const [salvando, setSalvando] = useState(false);
+  const [ampliado, setAmpliado] = useState<ExercicioCore | null>(null);
 
   /**
    * A prescrição vem do MESMO protocolo do treino de força (lib/protocolo.ts), que
@@ -154,6 +156,12 @@ export default function Abdominal() {
 
   return (
     <div className={`${PADDING_TELA} ${LARGURA_FOCO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
+      <VisualizadorDeMidia
+        midia={ampliado?.mediaUrl ?? null}
+        titulo={ampliado?.name ?? ''}
+        subtitulo={ampliado?.muscle_group}
+        onFechar={() => setAmpliado(null)}
+      />
       <header className="mb-5">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg">
@@ -182,41 +190,59 @@ export default function Abdominal() {
         {sessao.map(ex => {
           const feito = feitos.has(ex.id);
           return (
-            <button
+            <div
               key={ex.id}
-              onClick={() => alternar(ex.id)}
-              aria-pressed={feito}
-              className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${
-                feito ? 'border-primary/40 bg-primary/10' : 'border-border bg-surface hover:bg-surface-hover'
+              className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                feito ? 'border-primary/40 bg-primary/10' : 'border-border bg-surface'
               }`}
             >
-              <span className={`w-5 h-5 rounded-md flex-none grid place-items-center border ${
-                feito ? 'bg-primary border-primary' : 'border-border-light'
-              }`}>
-                {feito && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
-              </span>
-
-              <span className="w-20 h-20 rounded-xl bg-black/40 grid place-items-center overflow-hidden flex-none">
+              {/* Toque amplia: 80px no celular não mostra se o quadril sobe ou a lombar
+                  descola do chão, que é o que decide se o abdominal está certo. */}
+              <button
+                type="button"
+                onClick={() => ex.mediaUrl && setAmpliado(ex)}
+                disabled={!ex.mediaUrl}
+                aria-label={ex.mediaUrl ? `Ver ${ex.name} ampliado` : undefined}
+                className="w-24 h-24 rounded-xl bg-black/40 grid place-items-center overflow-hidden flex-none relative"
+              >
                 {ex.mediaUrl ? (
-                  ex.mediaUrl.endsWith('.mp4') ? (
-                    <video src={ex.mediaUrl} autoPlay loop muted playsInline className="w-full h-full object-contain opacity-90" />
-                  ) : (
-                    <img src={ex.mediaUrl} alt="" className="w-full h-full object-contain opacity-90" />
-                  )
+                  <>
+                    {ex.mediaUrl.endsWith('.mp4') ? (
+                      <video src={ex.mediaUrl} autoPlay loop muted playsInline className="w-full h-full object-contain opacity-90" />
+                    ) : (
+                      <img src={ex.mediaUrl} alt="" className="w-full h-full object-contain opacity-90" />
+                    )}
+                    <span className="absolute bottom-1 right-1 w-6 h-6 rounded-md bg-black/60 grid place-items-center">
+                      <Maximize2 className="w-3 h-3 text-white/80" />
+                    </span>
+                  </>
                 ) : (
                   <ImageOff className="w-5 h-5 text-foreground-muted/40" />
                 )}
-              </span>
+              </button>
 
-              <span className="flex-1 min-w-0">
-                <span className={`block text-sm font-medium leading-tight ${feito ? 'text-foreground-muted' : ''}`}>
-                  {ex.name}
+              <button
+                type="button"
+                onClick={() => alternar(ex.id)}
+                aria-pressed={feito}
+                className="flex items-center gap-3 flex-1 min-w-0 text-left"
+              >
+                <span className={`w-5 h-5 rounded-md flex-none grid place-items-center border ${
+                  feito ? 'bg-primary border-primary' : 'border-border-light'
+                }`}>
+                  {feito && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
                 </span>
-                <span className="block text-xs text-primary mt-1 font-mono tabular-nums">
-                  {receita.series} × {receita.reps}
+
+                <span className="flex-1 min-w-0">
+                  <span className={`block text-sm font-medium leading-tight ${feito ? 'text-foreground-muted' : ''}`}>
+                    {ex.name}
+                  </span>
+                  <span className="block text-xs text-primary mt-1 font-mono tabular-nums">
+                    {receita.series} × {receita.reps}
+                  </span>
                 </span>
-              </span>
-            </button>
+              </button>
+            </div>
           );
         })}
       </div>

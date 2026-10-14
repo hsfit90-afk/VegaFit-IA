@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Flame, ChevronDown, Check, ImageOff } from 'lucide-react';
+import { Flame, ChevronDown, Check, ImageOff, Maximize2 } from 'lucide-react';
+import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { prescrever, normalizarObjetivo, temAbdominalNoDia } from '@/lib/protocolo';
 import { filtrarParaCasa } from '@/lib/equipamentoCasa';
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
@@ -58,6 +59,7 @@ export function BlocoAbdominal({
 }) {
   const [aberto, setAberto] = useState(false);
   const [feitos, setFeitos] = useState<Set<string>>(new Set());
+  const [ampliado, setAmpliado] = useState<ExercicioDaBiblioteca | null>(null);
 
   const receita = prescrever('isolado', normalizarObjetivo(objetivo), semana);
 
@@ -97,6 +99,12 @@ export function BlocoAbdominal({
 
   return (
     <div className="mt-5 rounded-2xl border border-accent/30 bg-accent/5 overflow-hidden">
+      <VisualizadorDeMidia
+        midia={ampliado?.mediaUrl ?? null}
+        titulo={ampliado?.name ?? ''}
+        subtitulo={ampliado?.muscleGroup}
+        onFechar={() => setAmpliado(null)}
+      />
       <button
         onClick={() => setAberto(a => !a)}
         aria-expanded={aberto}
@@ -126,42 +134,60 @@ export function BlocoAbdominal({
         <div className="px-4 pb-4 flex flex-col gap-2 animate-fade-in">
           {escolhidos.map(ex => {
             const feito = feitos.has(ex.name);
+            // Mesma estrutura do aquecimento: a imagem abre o visualizador, o resto marca
+            // como feito. Dois alvos, e botão dentro de botão é HTML inválido.
             return (
-              <button
+              <div
                 key={ex.name}
-                onClick={() => alternar(ex.name)}
-                aria-pressed={feito}
-                className={`flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all ${
-                  feito ? 'border-primary/40 bg-primary/10' : 'border-border bg-surface hover:bg-surface-hover'
+                className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all ${
+                  feito ? 'border-primary/40 bg-primary/10' : 'border-border bg-surface'
                 }`}
               >
-                <span className={`w-5 h-5 rounded-md flex-none grid place-items-center border ${
-                  feito ? 'bg-primary border-primary' : 'border-border-light'
-                }`}>
-                  {feito && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
-                </span>
-
-                <span className="w-16 h-16 rounded-lg bg-black/40 flex-none grid place-items-center overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => ex.mediaUrl && setAmpliado(ex)}
+                  disabled={!ex.mediaUrl}
+                  aria-label={ex.mediaUrl ? `Ver ${ex.name} ampliado` : undefined}
+                  className="w-20 h-20 rounded-lg bg-black/40 flex-none grid place-items-center overflow-hidden relative"
+                >
                   {ex.mediaUrl ? (
-                    ex.mediaUrl.endsWith('.mp4') ? (
-                      <video src={ex.mediaUrl} autoPlay loop muted playsInline className="w-full h-full object-contain opacity-90" />
-                    ) : (
-                      <img src={ex.mediaUrl} alt="" className="w-full h-full object-contain opacity-90" />
-                    )
+                    <>
+                      {ex.mediaUrl.endsWith('.mp4') ? (
+                        <video src={ex.mediaUrl} autoPlay loop muted playsInline className="w-full h-full object-contain opacity-90" />
+                      ) : (
+                        <img src={ex.mediaUrl} alt="" className="w-full h-full object-contain opacity-90" />
+                      )}
+                      <span className="absolute bottom-0.5 right-0.5 w-5 h-5 rounded bg-black/60 grid place-items-center">
+                        <Maximize2 className="w-2.5 h-2.5 text-white/80" />
+                      </span>
+                    </>
                   ) : (
                     <ImageOff className="w-4 h-4 text-foreground-muted/40" />
                   )}
-                </span>
+                </button>
 
-                <span className="flex-1 min-w-0">
-                  <span className={`block text-sm leading-tight ${feito ? 'line-through text-foreground-muted' : ''}`}>
-                    {ex.name}
+                <button
+                  type="button"
+                  onClick={() => alternar(ex.name)}
+                  aria-pressed={feito}
+                  className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                >
+                  <span className={`w-5 h-5 rounded-md flex-none grid place-items-center border ${
+                    feito ? 'bg-primary border-primary' : 'border-border-light'
+                  }`}>
+                    {feito && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
                   </span>
-                  <span className="block text-[11px] text-primary mt-0.5 font-mono tabular-nums">
-                    {receita.series} × {receita.reps}
+
+                  <span className="flex-1 min-w-0">
+                    <span className={`block text-sm leading-tight ${feito ? 'line-through text-foreground-muted' : ''}`}>
+                      {ex.name}
+                    </span>
+                    <span className="block text-[11px] text-primary mt-0.5 font-mono tabular-nums">
+                      {receita.series} × {receita.reps}
+                    </span>
                   </span>
-                </span>
-              </button>
+                </button>
+              </div>
             );
           })}
 
