@@ -7,7 +7,9 @@ import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff } from 'lucide-react';
+import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
+import { prescrever, normalizarObjetivo } from '@/lib/protocolo';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
 
 /**
@@ -55,7 +57,7 @@ interface ResumoDoAluno {
   condicoes: string | null;
   liberacao: string | null;
 }
-interface ExercicioCatalogo { id: string; name: string; muscle_group: string }
+interface ExercicioCatalogo { id: string; name: string; muscle_group: string; media_url: string | null }
 
 const novaLinha = (): ExercicioLinha => ({
   id: crypto.randomUUID(),
@@ -81,6 +83,7 @@ export default function MontarTreino() {
   const [salvando, setSalvando] = useState(false);
   const [carregando, setCarregando] = useState(true);
 
+  const [ampliado, setAmpliado] = useState<ExercicioCatalogo | null>(null);
   const [resumo, setResumo] = useState<ResumoDoAluno | null>(null);
   const [temAnamnese, setTemAnamnese] = useState(false);
   const [carregandoAluno, setCarregandoAluno] = useState(false);
@@ -106,7 +109,7 @@ export default function MontarTreino() {
       const supabase = createClient();
       const [r, cat] = await Promise.all([
         fetch('/api/admin/plano'),
-        supabase.from('exercises').select('id, name, muscle_group').order('name').limit(1000),
+        supabase.from('exercises').select('id, name, muscle_group, media_url').order('name').limit(1000),
       ]);
       if (r.ok) setAlunos((await r.json()).alunos ?? []);
       if (cat.data) setCatalogo(cat.data);
@@ -177,6 +180,26 @@ export default function MontarTreino() {
       : x)));
 
   /** Ao escolher um exercício do catálogo, traz o grupo muscular junto — um campo a menos. */
+  /** O GIF do exercicio, pelo id que a escolha no catalogo gravou. */
+  const midiaDoExercicio = (exerciseId: string): string | null =>
+    (exerciseId ? catalogo.find(c => c.id === exerciseId)?.media_url : null) ?? null;
+
+  /**
+   * Preenche series, reps e descanso com o protocolo do app.
+   *
+   * Usa o OBJETIVO escolhido para a geracao, nao um valor fixo: montar a mao para um aluno de
+   * emagrecimento com numeros de hipertrofia e o tipo de divergencia que ninguem percebe
+   * revisando, porque os campos estao preenchidos e parecem certos.
+   */
+  const aplicarProtocolo = (sessaoId: string, exId: string, tipo: 'composto' | 'isolado') => {
+    const r = prescrever(tipo, normalizarObjetivo(config.goal));
+    setSessoes(s => s.map(x => (x.id === sessaoId
+      ? { ...x, exercises: x.exercises.map(e => (e.id === exId
+          ? { ...e, sets: r.series, reps: r.reps, restSeconds: r.descansoSegundos }
+          : e)) }
+      : x)));
+  };
+
   const escolheExercicio = (sessaoId: string, exId: string, nomeEscolhido: string) => {
     const achado = catalogo.find(c => c.name === nomeEscolhido);
     setSessoes(s => s.map(x => (x.id === sessaoId
@@ -287,6 +310,12 @@ export default function MontarTreino() {
 
   return (
     <div className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
+      <VisualizadorDeMidia
+        midia={ampliado?.media_url ?? null}
+        titulo={ampliado?.name ?? ''}
+        subtitulo={ampliado?.muscle_group}
+        onFechar={() => setAmpliado(null)}
+      />
       <header className="mb-6">
         <h1 className="text-3xl md:text-4xl font-outfit font-bold">Montar treino</h1>
         <p className="text-sm text-foreground-muted mt-1">
@@ -520,7 +549,32 @@ export default function MontarTreino() {
               <div className="flex flex-col gap-2">
                 {sessao.exercises.map(ex => (
                   <div key={ex.id} className="grid grid-cols-12 gap-2 items-start bg-surface/60 rounded-xl p-2.5 border border-border">
-                    <div className="col-span-12 md:col-span-5 flex flex-col gap-1">
+                    {/* A MINIATURA. Montar treino às cegas significa digitar um nome e torcer
+                        para ser o movimento que você tem na cabeça — e o catálogo tem
+                        "Puxada Alta", "Puxada Alta Invertida" e "Puxada Alta com Triângulo".
+                        Ver o GIF ao lado confirma na hora, e o toque amplia. */}
+                    <div className="col-span-2 md:col-span-1">
+                      <button
+                        type="button"
+                        onClick={() => midiaDoExercicio(ex.exerciseId) && setAmpliado(catalogo.find(c => c.id === ex.exerciseId)!)}
+                        disabled={!midiaDoExercicio(ex.exerciseId)}
+                        aria-label={ex.name ? `Ver ${ex.name} ampliado` : undefined}
+                        className="w-full aspect-square rounded-lg bg-black/40 grid place-items-center overflow-hidden relative"
+                      >
+                        {midiaDoExercicio(ex.exerciseId) ? (
+                          <>
+                            <img src={midiaDoExercicio(ex.exerciseId)!} alt="" className="w-full h-full object-contain opacity-90" />
+                            <span className="absolute bottom-0.5 right-0.5 w-4 h-4 rounded bg-black/60 grid place-items-center">
+                              <Maximize2 className="w-2 h-2 text-white/80" />
+                            </span>
+                          </>
+                        ) : (
+                          <ImageOff className="w-4 h-4 text-foreground-muted/30" />
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="col-span-10 md:col-span-4 flex flex-col gap-1">
                       <div className="relative">
                         <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted pointer-events-none" />
                         <input
@@ -534,6 +588,26 @@ export default function MontarTreino() {
                       {ex.muscleGroup && (
                         <span className="text-[11px] text-foreground-muted pl-1">{ex.muscleGroup}</span>
                       )}
+
+                      {/* PRESETS DO PROTOCOLO.
+                          Os padrões da linha eram 3 / 8-12 / 60, que não são o protocolo do
+                          app: hipertrofia pede 3×6-10 com 75s no composto e 4×12-15 no
+                          isolado. Digitar isso a cada linha é o grosso do tempo de montagem,
+                          e é onde escapa a divergência entre o que o app prescreve sozinho e
+                          o que o profissional monta à mão. Um toque resolve os três campos. */}
+                      <div className="flex gap-1.5 pt-0.5">
+                        {(['composto', 'isolado'] as const).map(tipo => (
+                          <button
+                            key={tipo}
+                            type="button"
+                            onClick={() => aplicarProtocolo(sessao.id, ex.id, tipo)}
+                            title={`Preenche séries, reps e descanso do protocolo para ${tipo}`}
+                            className="text-[11px] px-2 py-1 rounded-md bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors capitalize"
+                          >
+                            {tipo}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="col-span-3 md:col-span-2 flex flex-col gap-1">
