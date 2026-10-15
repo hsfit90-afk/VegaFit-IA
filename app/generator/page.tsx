@@ -75,6 +75,38 @@ export default function Generator() {
     trainingMethod: 'tradicional',
   });
 
+  /**
+   * SINCRONIZA O FORMULÁRIO QUANDO O PERFIL CHEGA.
+   *
+   * O bug que isto corrige, achado em 15/10/2026 olhando planos reais: o perfil dizia "Em
+   * casa" e o treino saía com Leg Press, Mesa flexora e Cadeira extensora.
+   *
+   * A cadeia era esta. O `useState` acima roda na MONTAGEM, e nessa hora `profile` ainda é
+   * null — o AppContext busca do Supabase de forma assíncrona. Então o campo nascia em
+   * "Academia completa" (o padrão de mapAnamneseLocationToEquipment para entrada vazia), o
+   * perfil chegava depois e nada corrigia o formulário. O aluno clicava em gerar e o corpo da
+   * requisição levava "Academia completa" EXPLÍCITO.
+   *
+   * E por isso a rede de segurança da rota não salvava: ela só busca o local no banco quando
+   * `config.equipment` vem vazio, e aqui vinha preenchido com o valor errado. Uma rede de
+   * segurança embaixo do lugar errado.
+   *
+   * SÓ HIDRATA UMA VEZ, e só o que o aluno ainda não tocou: sincronizar a cada render
+   * desfaria a escolha dele no meio do preenchimento. `hidratado` é a trava.
+   */
+  const [hidratado, setHidratado] = useState(false);
+  useEffect(() => {
+    if (hidratado || !profile) return;
+    setForm(prev => ({
+      ...prev,
+      goal: profile.goal || prev.goal,
+      level: profile.level || prev.level,
+      equipment: mapAnamneseLocationToEquipment(profile.trainingLocation),
+      limitations: prev.limitations || profile.intent || '',
+    }));
+    setHidratado(true);
+  }, [profile, hidratado]);
+
   // Métodos liberados pela constância real do aluno (lib/trainingUnlock.ts). O master vê tudo,
   // pra conseguir testar os métodos sem esperar 6 meses.
   const unlock = useMemo(
