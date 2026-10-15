@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
     const [{ data: perfil }, respostas] = await Promise.all([
       cliente
         .from('profiles')
-        .select('id, name, goal, level, training_location, equipamentos_casa')
+        .select('id, name, goal, level, training_location, equipamentos_casa, active_plan_id')
         .eq('id', alvo)
         .maybeSingle(),
       fetchLatestAnamneseAnswers(cliente, alvo),
@@ -82,6 +82,9 @@ export async function GET(req: NextRequest) {
         id: perfil.id,
         nome: perfil.name,
         temAnamnese: Boolean(respostas),
+        // Qual plano o aluno realmente abre. A previa usa isto para mostrar o treino certo,
+        // em vez de assumir que e o mais recente -- os dois divergem quando ele troca.
+        activePlanId: perfil.active_plan_id ?? null,
       },
       // O que o montador mostra na tela.
       resumo: {

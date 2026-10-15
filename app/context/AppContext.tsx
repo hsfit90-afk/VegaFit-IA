@@ -122,11 +122,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }));
         setWorkoutPlans(parsedPlans);
         
-        // Load activePlanId from localStorage, fallback to first plan
-        const storedActivePlanId = localStorage.getItem(`vegafit_active_plan_${user.id}`);
-        const validActivePlan = parsedPlans.find(p => p.id === storedActivePlanId);
+        /**
+         * O PLANO ATIVO VEM DO BANCO, com o localStorage como reserva.
+         *
+         * Era só localStorage, e isso deixava o profissional sem alcance: ele entregava um
+         * Treino do Personal e, se o aluno já tivesse trocado de plano alguma vez, o aparelho
+         * dele continuava apontando para o antigo. O aluno abria no treino velho sem entender
+         * por quê, e não havia como consertar do lado de cá.
+         *
+         * A ordem é: banco → localStorage → plano mais recente. O localStorage ainda serve,
+         * para o caso de o perfil não ter carregado; e o mais recente é a rede final, que é o
+         * comportamento que já existia.
+         *
+         * Em qualquer um dos casos, o id só vale se o plano EXISTIR entre os carregados —
+         * plano apagado não pode deixar o aluno com a tela vazia.
+         */
+        const doBanco = profileData?.active_plan_id as string | null | undefined;
+        const doAparelho = localStorage.getItem(`vegafit_active_plan_${user.id}`);
+        const existe = (id: string | null | undefined) =>
+          !!id && parsedPlans.some(p => p.id === id);
+
+        const escolhido = existe(doBanco) ? doBanco!
+          : existe(doAparelho) ? doAparelho!
+          : (parsedPlans[0]?.id || null);
+
         if (mounted) {
-          setActivePlanIdState(validActivePlan ? storedActivePlanId : (parsedPlans[0]?.id || null));
+          setActivePlanIdState(escolhido);
+          // Realinha o aparelho com o banco, para a próxima abertura não divergir.
+          if (escolhido) localStorage.setItem(`vegafit_active_plan_${user.id}`, escolhido);
         }
       }
 
@@ -255,15 +278,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await supabase.from('profiles').update({ favorite_exercises: newFavorites }).eq('id', userId);
   };
 
+  /**
+   * Grava o plano ativo no BANCO e no aparelho.
+   *
+   * Os dois, sempre: o banco e a fonte da verdade e o que da alcance ao profissional; o
+   * localStorage e o que faz a proxima abertura ser instantanea, antes de o perfil chegar.
+   */
+  const gravarPlanoAtivo = async (planId: string | null) => {
+    setActivePlanIdState(planId);
+    if (!userId) return;
+    if (planId) localStorage.setItem(`vegafit_active_plan_${userId}`, planId);
+    else localStorage.removeItem(`vegafit_active_plan_${userId}`);
+    await supabase.from('profiles').update({ active_plan_id: planId }).eq('id', userId);
+  };
+
   const addWorkoutPlan = async (plan: WorkoutPlan) => {
     setWorkoutPlans(prev => [plan, ...prev]);
-    setActivePlanIdState(plan.id);
     setCurrentSessionIndex(0);
+    gravarPlanoAtivo(plan.id);
     if (!userId) return;
-
-    if (userId) {
-      localStorage.setItem(`vegafit_active_plan_${userId}`, plan.id);
-    }
 
     await supabase.from('workout_plans').insert({
       id: plan.id,
@@ -300,11 +333,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     
     // Se deletou o plano ativo, muda para o próximo
     if (activePlanId === planId) {
-      const newActivePlanId = remaining[0]?.id || null;
-      setActivePlanIdState(newActivePlanId);
-      if (userId && newActivePlanId) {
-        localStorage.setItem(`vegafit_active_plan_${userId}`, newActivePlanId);
-      }
+      gravarPlanoAtivo(remaining[0]?.id || null);
     }
     
     if (!userId) return;
@@ -325,14 +354,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
    * lib/rotacaoDeSessao.ts.
    */
   const setActivePlan = (planId: string) => {
-    setActivePlanIdState(planId);
-
     const plano = workoutPlans.find(p => p.id === planId);
     const retomada = proximaSessaoDoPlano(planId, plano?.sessions ?? [], history);
     setCurrentSessionIndex(retomada);
 
+    gravarPlanoAtivo(planId);
+
     if (userId) {
-      localStorage.setItem(`vegafit_active_plan_${userId}`, planId);
       supabase.from('user_session_index').upsert({
         user_id: userId,
         current_session_index: retomada

@@ -8,7 +8,7 @@ import { useSomenteMaster } from '@/components/useSomenteMaster';
 import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
-import { Loader2, ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriangle } from 'lucide-react';
+import { Loader2, ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriangle, Check, Trash2 } from 'lucide-react';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 /**
@@ -68,6 +68,9 @@ export default function PreviaDoAluno() {
   const [nomeDoAluno, setNomeDoAluno] = useState('');
   const [midias, setMidias] = useState<Map<string, string>>(new Map());
   const [ampliado, setAmpliado] = useState<{ midia: string; titulo: string; sub?: string | null } | null>(null);
+  const [ativoId, setAtivoId] = useState<string | null>(null);
+  const [vendo, setVendo] = useState<string | null>(null);
+  const [mexendo, setMexendo] = useState(false);
 
   useEffect(() => {
     if (!alunoId) return;
@@ -92,7 +95,11 @@ export default function PreviaDoAluno() {
       }
       setMidias(mapa);
 
-      if (alunoR.ok) setNomeDoAluno((await alunoR.json()).aluno?.nome ?? '');
+      if (alunoR.ok) {
+        const d = await alunoR.json();
+        setNomeDoAluno(d.aluno?.nome ?? '');
+        setAtivoId(d.aluno?.activePlanId ?? null);
+      }
     })();
   }, [alunoId]);
 
@@ -101,7 +108,52 @@ export default function PreviaDoAluno() {
     ?? midias.get(ex.name.trim().toLowerCase())
     ?? null;
 
-  const plano = useMemo(() => planos?.[0] ?? null, [planos]);
+  /**
+   * O plano mostrado e o que o aluno realmente vai abrir: o ATIVO, nao simplesmente o mais
+   * recente. Eram a mesma coisa enquanto o ativo so existia no aparelho dele; agora que o
+   * banco manda, mostrar o mais recente seria mentir quando os dois divergem.
+   */
+  const plano = useMemo(
+    () => planos?.find(p => p.id === (vendo ?? ativoId)) ?? planos?.[0] ?? null,
+    [planos, vendo, ativoId]
+  );
+
+  const ativar = async (planoId: string) => {
+    setMexendo(true);
+    try {
+      const r = await fetch('/api/admin/plano', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: alunoId, planoId }),
+      });
+      if (!r.ok) throw new Error((await r.json()).error || 'Nao consegui ativar.');
+      setAtivoId(planoId);
+      setVendo(planoId);
+      toast.sucesso('Este passou a ser o treino que o aluno abre.');
+    } catch (e) {
+      toast.erro(e instanceof Error ? e.message : 'Nao consegui ativar.');
+    } finally {
+      setMexendo(false);
+    }
+  };
+
+  const apagar = async (pl: PlanoDoAluno) => {
+    if (!confirm(`Apagar "${pl.name}" da conta do aluno? O historico de treinos feitos continua.`)) return;
+    setMexendo(true);
+    try {
+      const r = await fetch(`/api/admin/plano?userId=${alunoId}&planoId=${pl.id}`, { method: 'DELETE' });
+      if (!r.ok) throw new Error('Nao consegui apagar.');
+      const sobraram = (planos ?? []).filter(x => x.id !== pl.id);
+      setPlanos(sobraram);
+      if (vendo === pl.id) setVendo(null);
+      if (ativoId === pl.id) setAtivoId(sobraram[0]?.id ?? null);
+      toast.sucesso('Plano apagado da conta.');
+    } catch {
+      toast.erro('Nao consegui apagar.');
+    } finally {
+      setMexendo(false);
+    }
+  };
 
   if (!ehMaster) {
     return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
@@ -157,15 +209,70 @@ export default function PreviaDoAluno() {
         </CardContent></Card>
       )}
 
-      {/* Plano antigo esquecido na conta e algo que o aluno pode abrir sem entender por que. */}
-      {planos.length > 1 && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-warning/40 bg-warning/10 p-3.5 text-sm mb-5">
-          <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-          <span>
-            Este aluno tem <strong>{planos.length} treinos</strong> na conta. O app dele abre no
-            mais recente, mostrado aqui — mas ele consegue trocar para os antigos.
-          </span>
-        </div>
+      {/* DOMÍNIO SOBRE A CONTA.
+          Plano antigo esquecido é coisa que o aluno abre sem entender por quê — e, até agora,
+          o profissional não tinha como nem saber qual deles o aluno estava usando, porque o
+          ativo vivia só no aparelho dele. */}
+      {planos.length > 0 && (
+        <Card className="mb-5">
+          <CardContent className="p-4">
+            <p className="text-xs uppercase tracking-wider font-semibold text-foreground-muted mb-3">
+              Treinos na conta ({planos.length})
+            </p>
+            <div className="flex flex-col gap-2">
+              {planos.map(pl => {
+                const ativo = pl.id === (ativoId ?? planos[0]?.id);
+                const olhando = pl.id === (vendo ?? ativoId ?? planos[0]?.id);
+                return (
+                  <div
+                    key={pl.id}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-sm ${
+                      olhando ? 'border-primary/40 bg-primary/5' : 'border-border bg-surface'
+                    }`}
+                  >
+                    <button onClick={() => setVendo(pl.id)} className="flex-1 min-w-0 text-left">
+                      <span className="block font-medium truncate">{pl.name}</span>
+                      <span className="block text-[11px] text-foreground-muted">
+                        {pl.sessions?.length ?? 0} dias · {new Date(pl.created_at).toLocaleDateString('pt-BR')}
+                      </span>
+                    </button>
+
+                    {ativo ? (
+                      <span className="text-[11px] font-semibold text-primary flex items-center gap-1 shrink-0 px-2">
+                        <Check className="w-3.5 h-3.5" /> o aluno abre neste
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => ativar(pl.id)}
+                        disabled={mexendo}
+                        className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-surface-light border border-white/10 hover:text-primary hover:border-primary/40 disabled:opacity-40 transition-colors shrink-0"
+                      >
+                        Tornar este o ativo
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => apagar(pl)}
+                      disabled={mexendo}
+                      aria-label={`Apagar ${pl.name}`}
+                      className="p-1.5 text-foreground-muted hover:text-destructive disabled:opacity-40 transition-colors shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {planos.length > 1 && (
+              <p className="flex items-start gap-2 text-[11px] text-foreground-muted mt-3">
+                <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
+                O aluno consegue trocar entre os treinos que estão na conta. Se os antigos não
+                servem mais, apague — evita que ele abra o errado.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {plano?.cardio_session && (

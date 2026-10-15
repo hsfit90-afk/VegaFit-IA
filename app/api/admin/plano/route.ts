@@ -172,12 +172,128 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Nao consegui salvar o treino.' }, { status: 500 });
     }
 
+    /**
+     * O TREINO ENTREGUE JÁ NASCE ATIVO.
+     *
+     * Sem isto, o profissional entregava e o aluno continuava no treino antigo: o plano ativo
+     * vivia só no localStorage do aparelho dele, e quem já tinha trocado de plano alguma vez
+     * ficava apontando para o velho. O aluno abria o app, não via o treino novo, e não havia
+     * como consertar do lado de cá.
+     *
+     * Falha aqui não derruba a entrega: o plano JÁ está salvo na conta, e um ativo que não
+     * gravou ainda cai no mais recente — que é este. O log fica para quem for investigar.
+     */
+    const { error: erroAtivo } = await admin()
+      .from('profiles')
+      .update({ active_plan_id: id })
+      .eq('id', alvo);
+    if (erroAtivo) {
+      console.error('[admin/plano] plano salvo mas nao ativado:', erroAtivo.message);
+    }
+
     // Rastro: entrega de treino personalizado é o que você vai querer conferir depois, quando
     // um aluno disser que não recebeu.
     console.log(`[admin/plano] ${user.id} salvou o plano ${id} para ${alvo} (${limpas.length} dias)`);
-    return NextResponse.json({ ok: true, planoId: id, dias: limpas.length });
+    return NextResponse.json({ ok: true, planoId: id, dias: limpas.length, ativado: !erroAtivo });
   } catch (e) {
     console.error('[admin/plano] erro:', e instanceof Error ? e.message : e);
     return NextResponse.json({ error: 'Nao consegui salvar o treino.' }, { status: 500 });
   }
+}
+
+/**
+ * Domínio sobre a conta do aluno: tornar um plano ativo, ou apagá-lo.
+ *
+ * Por que isso é do profissional e não só do aluno: ele entrega o Treino do Personal e
+ * precisa garantir que é AQUELE que o aluno vai abrir — e precisa poder limpar os antigos,
+ * que ficam na conta e o aluno pode abrir sem entender por quê.
+ *
+ * PATCH ativa, DELETE apaga. Os dois exigem master e conferem que o plano é do aluno
+ * indicado: service_role ignora RLS, então o filtro por user_id aqui não é redundante — sem
+ * ele, um id trocado mexeria na conta de outra pessoa.
+ */
+export async function PATCH(req: NextRequest) {
+  const { user, error: authError } = await requireAuth();
+  if (authError) return authError;
+  if (!(await souMaster(user.id))) return NextResponse.json({ error: 'Nao encontrado.' }, { status: 404 });
+
+  const body = await req.json().catch(() => ({}));
+  const alvo = String(body?.userId ?? '');
+  const planoId = String(body?.planoId ?? '');
+
+  if (!/^[0-9a-f-]{36}$/i.test(alvo) || !planoId) {
+    return NextResponse.json({ error: 'Aluno ou plano invalido.' }, { status: 400 });
+  }
+
+  // Confere que o plano é mesmo deste aluno antes de apontar o perfil para ele.
+  const { data: plano } = await admin()
+    .from('workout_plans')
+    .select('id')
+    .eq('id', planoId)
+    .eq('user_id', alvo)
+    .maybeSingle();
+
+  if (!plano) {
+    return NextResponse.json({ error: 'Plano nao encontrado para este aluno.' }, { status: 404 });
+  }
+
+  const { error } = await admin()
+    .from('profiles')
+    .update({ active_plan_id: planoId })
+    .eq('id', alvo);
+
+  if (error) {
+    console.error('[admin/plano] PATCH:', error.message);
+    return NextResponse.json({ error: 'Nao consegui ativar.' }, { status: 500 });
+  }
+
+  console.log(`[admin/plano] ${user.id} ativou o plano ${planoId} para ${alvo}`);
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(req: NextRequest) {
+  const { user, error: authError } = await requireAuth();
+  if (authError) return authError;
+  if (!(await souMaster(user.id))) return NextResponse.json({ error: 'Nao encontrado.' }, { status: 404 });
+
+  const alvo = req.nextUrl.searchParams.get('userId') ?? '';
+  const planoId = req.nextUrl.searchParams.get('planoId') ?? '';
+
+  if (!/^[0-9a-f-]{36}$/i.test(alvo) || !planoId) {
+    return NextResponse.json({ error: 'Aluno ou plano invalido.' }, { status: 400 });
+  }
+
+  const { error } = await admin()
+    .from('workout_plans')
+    .delete()
+    .eq('id', planoId)
+    .eq('user_id', alvo);
+
+  if (error) {
+    console.error('[admin/plano] DELETE:', error.message);
+    return NextResponse.json({ error: 'Nao consegui apagar.' }, { status: 500 });
+  }
+
+  /**
+   * Se o apagado era o ativo, aponta para o mais recente que sobrou.
+   *
+   * Sem isto o perfil ficaria apontando para um plano que não existe mais. O app cai no mais
+   * recente de qualquer forma (AppContext só aceita id que exista), mas deixar lixo no banco
+   * é o tipo de coisa que confunde quem for depurar daqui a seis meses.
+   */
+  const { data: restantes } = await admin()
+    .from('workout_plans')
+    .select('id')
+    .eq('user_id', alvo)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  await admin()
+    .from('profiles')
+    .update({ active_plan_id: restantes?.[0]?.id ?? null })
+    .eq('id', alvo)
+    .eq('active_plan_id', planoId);
+
+  console.log(`[admin/plano] ${user.id} apagou o plano ${planoId} de ${alvo}`);
+  return NextResponse.json({ ok: true });
 }
