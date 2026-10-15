@@ -154,15 +154,28 @@ export default function Generator() {
   const MINIMO_DE_INTENCAO = 20;
   const intencaoCurta = form.limitations.trim().length < MINIMO_DE_INTENCAO;
 
+  /**
+   * Se o aluno já tentou gerar e foi barrado.
+   *
+   * Existe porque a primeira versão disto, de 15/10/2026, era inutilizável: a mensagem de
+   * erro renderiza no TOPO do formulário e o campo fica no fim, e eu rolava a tela até o
+   * campo. O aluno clicava em "Gerar", a tela se mexia e ele não via mensagem nenhuma — o
+   * app parecia simplesmente não responder. Nenhuma tentativa chegou sequer ao servidor.
+   *
+   * A mensagem agora nasce ao lado do campo, onde a pessoa está olhando.
+   */
+  const [tentouGerar, setTentouGerar] = useState(false);
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (intencaoCurta) {
-      setError('Escreva em "Limitações, Foco ou Intenção" antes de gerar. É o que o app não tem como adivinhar sobre você.');
+      setTentouGerar(true);
       document.getElementById('limitacoes')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       document.getElementById('limitacoes')?.focus();
       return;
     }
+    setTentouGerar(false);
 
     setLoading(true);
     setError('');
@@ -520,6 +533,17 @@ export default function Generator() {
                   onChange={e => setForm({ ...form, limitations: e.target.value })}
                   className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors min-h-[150px] leading-relaxed"
                 />
+                {/* O ERRO NASCE AQUI, ao lado do campo.
+                    O alerta geral do formulário fica lá no topo, e rolar a tela até o campo
+                    deixava o aluno de frente para um campo sem explicação nenhuma. */}
+                {tentouGerar && intencaoCurta && (
+                  <div role="alert" className="mt-2 p-3 rounded-xl bg-destructive/10 border border-destructive/50 text-destructive text-sm">
+                    Escreva aqui antes de gerar. Uma frase basta — onde e quando você treina, o
+                    que você quer, o que não gosta de fazer. É o que o app não tem como
+                    adivinhar sobre você.
+                  </div>
+                )}
+
                 <div className="flex items-start justify-between gap-3">
                   {/* O aviso muda de tom conforme falta: dizer "obrigatório" só quando o
                       aluno tenta gerar seria descobrir a regra do jeito ruim. */}
@@ -556,6 +580,15 @@ export default function Generator() {
               }
               {loading ? 'Gerando e salvando treino...' : 'Gerar Treino com IA'}
             </Button>
+
+            {/* O botão continua CLICÁVEL de propósito. Desabilitado, ele não explicaria nada
+                e o aluno ficaria olhando para um botão morto sem saber o que falta; clicável,
+                o clique leva direto ao campo com a mensagem. */}
+            {intencaoCurta && (
+              <p className="text-xs text-foreground-muted text-center -mt-2">
+                Falta escrever em “Limitações, Foco ou Intenção” logo acima.
+              </p>
+            )}
           </form>
         </CardContent>
       </Card>
