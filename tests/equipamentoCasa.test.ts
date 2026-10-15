@@ -399,3 +399,27 @@ describe('cabeEmCasa — nomes que escondem o aparelho', () => {
     expect(cabeEmCasa('Agachamento com Salto', [])).toBe(true);
   });
 });
+
+/**
+ * Vazou num treino de casa REAL em 15/10/2026, com o filtro de local ja funcionando.
+ *
+ * "Puxada para o Rosto de Joelhos" e face pull de polia. Eu tinha medido "puxada" em 12/10 e
+ * julgado este como corporal olhando so o nome -- o GIF mostra a polia. Erro de julgamento
+ * meu, nao do metodo: medir quantos a palavra pega nao diz se o exercicio precisa de
+ * aparelho.
+ */
+describe('cabeEmCasa — face pull', () => {
+  it('face pull e polia, nao peso corporal', () => {
+    const tudo = ['halteres','barra','elastico','banco','barra_fixa','kettlebell','acessorios'];
+    expect(cabeEmCasa('Puxada para o Rosto de Joelhos', tudo)).toBe(false);
+    expect(cabeEmCasa('Face Pull', tudo)).toBe(false);
+    expect(cabeEmCasa('Meio Agachado com Puxada para o Rosto no Cabo', tudo)).toBe(false);
+  });
+
+  it('as outras puxadas corporais continuam passando', () => {
+    // O contraponto: "puxada" sozinha pegaria estas, que sao de barra fixa ou isometricas.
+    expect(cabeEmCasa('Puxada escapular na barra fixa', ['barra_fixa'])).toBe(true);
+    expect(cabeEmCasa('Puxada isométrica', [])).toBe(true);
+    expect(cabeEmCasa('Puxada Front Lever', ['barra_fixa'])).toBe(true);
+  });
+});

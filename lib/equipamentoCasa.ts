@@ -95,6 +95,10 @@ const SO_ACADEMIA = [
   // Aparelho que o nome nao nomeia: "Levantamento com Suporte" e rack, "no cross" e
   // crossover, "com cinto" e cadeira de cinto. Medidos: 1 cada, sem falso positivo.
   'levantamento com suporte', 'no cross', 'com cinto',
+  // Face pull. "Puxada para o Rosto de Joelhos" vazou num treino de casa em 15/10/2026 — eu
+  // tinha medido "puxada" em 12/10 e julgado este como corporal, olhando so o nome. O GIF
+  // mostra polia. Medido agora: "para o rosto" pega 2, "face pull" 1, todos de cabo.
+  'para o rosto', 'face pull',
   'cadeira extensora', 'cadeira flexora', 'cadeira adutora', 'cadeira abdutora',
   'mesa flexora', 'mesa extensora', 'voador', 'pec deck', 'graviton', 'alavanca',
   'cross over', 'crossover', 'esteira', 'elíptica', 'eliptica', 'elíptico', 'eliptico', 'ergométrica', 'ergometrica',

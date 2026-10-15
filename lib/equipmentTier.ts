@@ -43,6 +43,20 @@ export function classifyEquipmentTier(name: string): EquipmentTier {
   return 'peso_corporal';
 }
 
+/**
+ * ATENÇÃO AO LER ESTE MAPA: ele NÃO cobre "Em casa".
+ *
+ * As chaves abaixo são do dropdown ANTIGO, de quatro opções. Em 08/10/2026 ele virou duas —
+ * "Academia completa" e "Em casa" — e ninguém atualizou este mapa. Resultado: em
+ * app/api/swap/route.ts, `EQUIPMENT_ALLOWED_TIERS['Em casa']` dava undefined, o filtro não
+ * rodava e a troca ofereceu máquina a quem treina em casa por seis dias.
+ *
+ * "Em casa" NÃO entra aqui de propósito. Tier é um balde grosso e não sabe distinguir quem
+ * tem halteres de quem tem só o peso do corpo — para isso existe filtrarParaCasa, que lê o
+ * inventário real do aluno. As duas rotas que importam usam ele.
+ *
+ * Este mapa fica para os valores legados, que ainda aparecem em planos antigos.
+ */
 export const EQUIPMENT_ALLOWED_TIERS: Record<string, EquipmentTier[]> = {
   'Academia completa': ['maquina', 'barra', 'halteres', 'peso_corporal'],
   'Halteres em casa': ['halteres', 'peso_corporal'],

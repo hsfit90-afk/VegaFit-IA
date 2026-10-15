@@ -4,6 +4,8 @@ import { requireAuth } from "@/utils/supabase/auth-guard";
 import { requireSubscription } from "@/utils/supabase/subscription-guard";
 import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentTier";
+import { filtrarParaCasa } from "@/lib/equipamentoCasa";
+import { decidirLocal } from "@/lib/localEfetivo";
 import { isMobilityOnly } from "@/lib/exerciseType";
 import { fetchLatestAnamneseAnswers, campoAnamneseParaPrompt, AVISO_CONTEUDO_DO_ALUNO } from "@/lib/aiHealthContext";
 import { generateWithRetry } from "@/lib/geminiClient";
@@ -60,12 +62,53 @@ export async function POST(req: NextRequest) {
       if (sameGroup.length > 0) candidates = sameGroup;
     }
 
-    // Mesmo filtro de equipamento da geração — não sugerir exercício de máquina pra quem treina
-    // em casa/ar livre (lib/equipmentTier.ts, compartilhado com app/api/treino/route.ts).
-    const allowedTiers = equipment ? EQUIPMENT_ALLOWED_TIERS[equipment] : undefined;
-    if (allowedTiers) {
-      const filtered = candidates.filter((e) => allowedTiers.includes(classifyEquipmentTier(e.name)));
-      if (filtered.length > 0) candidates = filtered;
+    /**
+     * O FILTRO DE EQUIPAMENTO, que estava desligado sem ninguém saber.
+     *
+     * Achado em 15/10/2026: o aluno trocava um exercício e recebia máquina, treinando em casa.
+     *
+     * A causa: EQUIPMENT_ALLOWED_TIERS tem as chaves antigas do dropdown de quatro opções —
+     * 'Halteres em casa', 'Barra e anilhas', 'Sem equipamento (calistenia)'. Em 08/10 o
+     * dropdown virou duas opções e passou a mandar 'Em casa', que NÃO EXISTE nesse mapa.
+     * `allowedTiers` ficava undefined, o `if` não entrava, e nenhum filtro rodava. Seis dias
+     * oferecendo leg press a quem treina na sala.
+     *
+     * A geração não sofria disso porque tem `filtrarParaCasa`, que lê o inventário real. A
+     * troca ficou para trás.
+     *
+     * Agora usa o MESMO filtro, e lê o perfil do BANCO e não do corpo da requisição — mesmo
+     * princípio de papel e exercício banido: o que decide prescrição não vem do navegador.
+     */
+    const { createClient: createServiceClient } = await import("@supabase/supabase-js");
+    const servico = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data: perfilDoAluno } = await servico
+      .from('profiles')
+      .select('training_location, equipamentos_casa')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const { emCasa } = decidirLocal(equipment, perfilDoAluno?.training_location as string | null);
+
+    if (emCasa) {
+      const antes = candidates.length;
+      const filtrados = filtrarParaCasa(
+        candidates,
+        perfilDoAluno?.equipamentos_casa as string[] | null
+      );
+      // Salvaguarda: a lista já está restrita a um grupo muscular, então pode esvaziar de vez.
+      // Vazia, devolver o pool sem filtro é pior que não trocar — mas trocar por nada quebra a
+      // tela, então mantém o que havia e o aluno escolhe outro exercício para trocar.
+      if (filtrados.length > 0) candidates = filtrados;
+      console.log(`[swap] em casa: ${antes} -> ${candidates.length} candidatos.`);
+    } else {
+      const allowedTiers = equipment ? EQUIPMENT_ALLOWED_TIERS[equipment] : undefined;
+      if (allowedTiers) {
+        const filtered = candidates.filter((e) => allowedTiers.includes(classifyEquipmentTier(e.name)));
+        if (filtered.length > 0) candidates = filtered;
+      }
     }
 
     // Tira alongamento/postura/liberação miofascial das opções de troca — mesmo motivo do gerador
