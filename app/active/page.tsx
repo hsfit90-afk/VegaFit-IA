@@ -24,6 +24,7 @@ import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 import { descansoAposSerie, avisoDoProximoPasso, fatorDeCarga, rotuloCurto, ehSerieEspecial, instrucaoDaSerie } from '@/lib/metodoTreino';
 import { BlocoAquecimento } from '@/components/workout/BlocoAquecimento';
 import { BlocoAbdominal } from '@/components/workout/BlocoAbdominal';
+import { BlocoAlongamento } from '@/components/workout/BlocoAlongamento';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
@@ -1271,6 +1272,11 @@ export default function ActiveWorkout() {
         chaveDaSessao={currentSession?.id}
         indiceDaSessao={safeIndex}
       />
+
+      {/* Alongamento prescrito, quando existe. Depois do abdominal porque é a última coisa do
+          treino — e só aparece se o profissional tiver montado à mão, porque alongar no app
+          é livre para todo mundo. */}
+      <BlocoAlongamento itens={currentSession?.alongamento} biblioteca={libraryExercises} />
 
       <Button
         onClick={finishWorkout}

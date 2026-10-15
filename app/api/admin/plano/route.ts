@@ -104,7 +104,24 @@ function normalizarSessoes(sessoes: any[]) {
         targetWeights: e?.targetWeights,
       })
     ),
+
+    // O que o profissional escolheu à mão para este dia. Lista VAZIA é resposta válida e
+    // significa "decidi não prescrever" — diferente de ausente, que significa "preencha
+    // automaticamente". Sem essa distinção, quem apagasse o aquecimento de um dia o veria
+    // voltar sozinho no salvamento seguinte, sem entender por quê.
+    warmup: Array.isArray(s?.warmup) ? s.warmup.slice(0, 8).map(limparPreparo) : undefined,
+    alongamento: Array.isArray(s?.alongamento) ? s.alongamento.slice(0, 8).map(limparPreparo) : undefined,
   })).filter((s: any) => s.exercises.length > 0);
+}
+
+/** Um item de aquecimento ou alongamento, normalizado. */
+function limparPreparo(e: any) {
+  return {
+    exerciseId: String(e?.exerciseId || ''),
+    name: String(e?.name || '').slice(0, 160),
+    muscleGroup: String(e?.muscleGroup || '').slice(0, 60),
+    segundos: Math.min(300, Math.max(10, Number(e?.segundos) || 40)),
+  };
 }
 
 /**
@@ -130,6 +147,10 @@ async function aplicarAquecimento(limpas: any[], alunoId: string) {
     : (catalogo ?? []);
 
   for (const sessao of limpas) {
+    // O automático só preenche o que a tela NÃO mandou. Ver o comentário de normalizarSessoes
+    // sobre a diferença entre lista vazia e ausente.
+    if ((sessao as any).warmup !== undefined) continue;
+
     const grupos = [...new Set(
       (sessao.exercises ?? []).map((e: any) => e.muscleGroup).filter(Boolean)
     )] as string[];

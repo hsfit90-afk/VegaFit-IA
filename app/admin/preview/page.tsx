@@ -8,7 +8,7 @@ import { useSomenteMaster } from '@/components/useSomenteMaster';
 import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
-import { Loader2, ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriangle, Check, Trash2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriangle, Check, Trash2, StretchHorizontal } from 'lucide-react';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 /**
@@ -44,11 +44,19 @@ interface ExercicioPrescrito {
   tips?: string;
 }
 
+interface ItemDePreparoPrescrito {
+  name: string;
+  muscleGroup?: string;
+  segundos?: number;
+  exerciseId?: string;
+}
+
 interface SessaoPrescrita {
   id?: string;
   name: string;
   exercises?: ExercicioPrescrito[];
-  warmup?: { name: string; muscleGroup?: string; segundos?: number; exerciseId?: string }[];
+  warmup?: ItemDePreparoPrescrito[];
+  alongamento?: ItemDePreparoPrescrito[];
 }
 
 interface PlanoDoAluno {
@@ -351,6 +359,18 @@ export default function PreviaDoAluno() {
                   );
                 })}
               </div>
+
+              {/* Só aparece quando foi prescrito à mão: no app, alongar é livre. */}
+              {sessao.alongamento && sessao.alongamento.length > 0 && (
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 mt-4">
+                  <p className="text-xs font-semibold flex items-center gap-1.5 mb-2">
+                    <StretchHorizontal className="w-3.5 h-3.5 text-primary" /> Alongamento · no fim
+                  </p>
+                  <p className="text-xs text-foreground-muted">
+                    {sessao.alongamento.map(a => `${a.name} (${a.segundos ?? 40}s)`).join(' · ')}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

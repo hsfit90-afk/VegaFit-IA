@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark, Eye, Pencil } from 'lucide-react';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
+import { EditorDePreparo, type ItemDePreparo } from '@/components/admin/EditorDePreparo';
+import { classificarTipo } from '@/lib/preparoFinalizacao';
 
 import { prescrever, normalizarObjetivo } from '@/lib/protocolo';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
@@ -41,6 +43,12 @@ interface SessaoLinha {
   id: string;
   name: string;
   exercises: ExercicioLinha[];
+  /**
+   * undefined = o servidor monta sozinho (o padrão, e o que serve na maioria dos dias).
+   * Array, inclusive vazio = o profissional decidiu. Ver normalizarSessoes na rota.
+   */
+  warmup?: ItemDePreparo[];
+  alongamento?: ItemDePreparo[];
 }
 
 interface Aluno { id: string; name: string | null; role: string | null }
@@ -146,6 +154,22 @@ export default function MontarTreino() {
   const alunoEscolhido = alunos.find(a => a.id === alunoId);
 
   /**
+   * Catálogos separados para cada lista.
+   *
+   * Mobilidade e alongamento são coisas diferentes e o catálogo mistura as duas —
+   * lib/preparoFinalizacao.ts já sabe separar. Oferecer o catálogo inteiro faria o
+   * profissional escolher supino como aquecimento sem querer.
+   */
+  const catalogoDeMobilidade = useMemo(
+    () => catalogo.filter(c => classificarTipo(c.name, c.muscle_group) === 'mobilidade'),
+    [catalogo]
+  );
+  const catalogoDeAlongamento = useMemo(
+    () => catalogo.filter(c => classificarTipo(c.name, c.muscle_group) === 'alongamento'),
+    [catalogo]
+  );
+
+  /**
    * Ao escolher o aluno, busca a anamnese dele e pré-preenche a geração.
    *
    * Recarrega do banco a cada troca, sem guardar em memória por aluno: o aluno pode ter
@@ -228,6 +252,8 @@ export default function MontarTreino() {
     setSessoes((pl.sessions ?? []).map((sx: any, i: number) => ({
       id: crypto.randomUUID(),
       name: sx.name || `Treino ${String.fromCharCode(65 + i)}`,
+      warmup: Array.isArray(sx.warmup) ? sx.warmup : undefined,
+      alongamento: Array.isArray(sx.alongamento) ? sx.alongamento : undefined,
       exercises: (sx.exercises ?? []).map((e: any) => ({
         id: crypto.randomUUID(),
         // Reencontra o id no catálogo pelo nome, como os modelos fazem: plano antigo pode ter
@@ -437,6 +463,9 @@ export default function MontarTreino() {
           sessions: sessoes.map(s => ({
             ...s,
             exercises: s.exercises.filter(e => e.name.trim()),
+            // Vão como estão: undefined deixa o servidor preencher, array manda respeitar.
+            warmup: s.warmup,
+            alongamento: s.alongamento,
           })),
         }),
       });
@@ -905,6 +934,30 @@ export default function MontarTreino() {
               >
                 <Plus className="w-4 h-4" /> Adicionar exercício
               </button>
+
+              {/* ANTES e DEPOIS do treino, por dia.
+                  O aquecimento vinha montado só pelo servidor; agora dá para escolher. O
+                  alongamento não existia na sessão — a tela livre continua livre para todo
+                  aluno, e isto é para quem pagou por prescrição. */}
+              <EditorDePreparo
+                titulo="Aquecimento · mobilidade"
+                ajuda="Antes do treino, para preparar as articulações do dia. Deixe no automático e o servidor escolhe pela musculatura do dia; escolha à mão quando este aluno precisar de algo específico."
+                itens={sessao.warmup}
+                catalogo={catalogoDeMobilidade}
+                listaId="catalogo-mobilidade"
+                classesDaMoldura="border-secondary/25 bg-secondary/5"
+                onMudar={novos => mudaSessao(sessao.id, 'warmup', novos)}
+              />
+
+              <EditorDePreparo
+                titulo="Alongamento · no fim"
+                ajuda="Depois do treino. Fica vazio por padrão: no app, alongar é livre e o aluno escolhe o que quiser. Prescreva aqui quando quiser que ele faça algo específico."
+                itens={sessao.alongamento ?? []}
+                catalogo={catalogoDeAlongamento}
+                listaId="catalogo-alongamento"
+                classesDaMoldura="border-primary/25 bg-primary/5"
+                onMudar={novos => mudaSessao(sessao.id, 'alongamento', novos)}
+              />
             </CardContent>
           </Card>
         ))}
@@ -952,6 +1005,12 @@ export default function MontarTreino() {
           deixariam a tela pesada sem necessidade. */}
       <datalist id="catalogo-exercicios">
         {catalogo.map(c => <option key={c.id} value={c.name} />)}
+      </datalist>
+      <datalist id="catalogo-mobilidade">
+        {catalogoDeMobilidade.map(c => <option key={c.id} value={c.name} />)}
+      </datalist>
+      <datalist id="catalogo-alongamento">
+        {catalogoDeAlongamento.map(c => <option key={c.id} value={c.name} />)}
       </datalist>
     </div>
   );

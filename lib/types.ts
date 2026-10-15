@@ -51,8 +51,20 @@ export interface WorkoutSession {
   /**
    * Mobilidade do dia, montada no servidor a partir dos grupos desta sessão — não vem da
    * IA e não custa token. Ausente em planos gerados antes de 08/10/2026.
+   *
+   * Desde 15/10/2026 o profissional pode escolher à mão no montador; nesse caso o servidor
+   * não sobrescreve.
    */
   warmup?: ExercicioDePreparo[];
+
+  /**
+   * Alongamento do fim, PRESCRITO à mão no Treino do Personal.
+   *
+   * Nunca é preenchido automaticamente, e isso é decisão do profissional (CREF): no app,
+   * alongar é livre e o aluno escolhe o que quiser na tela própria. Prescrever só faz sentido
+   * quando alguém pagou para que a escolha fosse feita por ele.
+   */
+  alongamento?: ExercicioDePreparo[];
 }
 
 /**
