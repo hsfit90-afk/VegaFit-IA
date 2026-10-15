@@ -106,8 +106,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Load Plans
-      const { data: plansData } = await supabase.from('workout_plans').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+      /**
+       * Load Plans — com TETO, e trazendo o ativo mesmo que ele seja antigo.
+       *
+       * Era `select('*')` sem limite, e isso roda em TODA abertura do app. Medido em
+       * 15/10/2026: um plano pesa 13 KB em média, e as contas já acumulavam 29, 10 e 9 planos
+       * — 340 KB, 148 KB e 134 KB baixados por abertura, quase tudo de planos antigos que
+       * ninguém vai abrir. Nada limpa isso, e só cresce a cada treino gerado.
+       *
+       * Cinco cobre o uso real: o atual e os poucos anteriores que alguém revisita. O ativo
+       * entra fora do teto porque pode ser mais velho que os cinco — o profissional pode ter
+       * reativado um antigo pelo painel, e perder justo o plano que o aluno usa seria o pior
+       * resultado possível.
+       *
+       * Os planos antigos NÃO são apagados: continuam no banco e aparecem no painel do
+       * profissional. Deixar de BAIXAR é diferente de deixar de ter.
+       */
+      const PLANOS_NO_CONTEXTO = 5;
+      const [{ data: recentes }, { data: ativoForaDoTeto }] = await Promise.all([
+        supabase.from('workout_plans').select('*').eq('user_id', user.id)
+          .order('created_at', { ascending: false }).limit(PLANOS_NO_CONTEXTO),
+        profileData?.active_plan_id
+          ? supabase.from('workout_plans').select('*')
+              .eq('user_id', user.id).eq('id', profileData.active_plan_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+
+      const plansData = (ativoForaDoTeto && !(recentes ?? []).some(p => p.id === ativoForaDoTeto.id))
+        ? [ativoForaDoTeto, ...(recentes ?? [])]
+        : recentes;
       if (plansData && mounted) {
         const parsedPlans = plansData.map(p => ({
           id: p.id,
