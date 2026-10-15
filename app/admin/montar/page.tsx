@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark, Eye } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark, Eye, Pencil } from 'lucide-react';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 
 import { prescrever, normalizarObjetivo } from '@/lib/protocolo';
@@ -98,6 +98,18 @@ export default function MontarTreino() {
   const [modelos, setModelos] = useState<ModeloDeSessao[]>([]);
   const [salvandoModelo, setSalvandoModelo] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
+
+  /**
+   * O plano que esta sendo EDITADO, se houver.
+   *
+   * Com id, "Salvar" atualiza o plano existente no lugar; sem id, cria um novo. A diferenca
+   * nao e cosmetica: a periodizacao e por plano (computePeriodization filtra o historico por
+   * workoutPlanId), entao salvar um ajuste como plano novo zeraria o ciclo do aluno -- ele
+   * voltaria para a semana 1 estando na terceira. Mexer em dois exercicios nao pode custar
+   * isso.
+   */
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [planosDoAluno, setPlanosDoAluno] = useState<{ id: string; name: string; sessions: any[]; created_at: string }[]>([]);
   const [resumo, setResumo] = useState<ResumoDoAluno | null>(null);
   const [temAnamnese, setTemAnamnese] = useState(false);
   const [carregandoAluno, setCarregandoAluno] = useState(false);
@@ -146,7 +158,11 @@ export default function MontarTreino() {
     (async () => {
       setCarregandoAluno(true);
       try {
-        const r = await fetch(`/api/admin/aluno?userId=${encodeURIComponent(alunoId)}`);
+        const [r, rPlanos] = await Promise.all([
+          fetch(`/api/admin/aluno?userId=${encodeURIComponent(alunoId)}`),
+          fetch(`/api/admin/plano?userId=${encodeURIComponent(alunoId)}`),
+        ]);
+        if (rPlanos.ok) setPlanosDoAluno((await rPlanos.json()).planos ?? []);
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || 'Não consegui carregar o aluno.');
         if (cancelado) return;
@@ -198,6 +214,36 @@ export default function MontarTreino() {
   };
 
   /** Ao escolher um exercício do catálogo, traz o grupo muscular junto — um campo a menos. */
+  /**
+   * Traz um plano que o aluno já tem para a tela, para editar no lugar.
+   *
+   * O id fica guardado: salvar vai ATUALIZAR este plano, não criar outro. Assim a
+   * periodização e o histórico continuam apontando para ele.
+   */
+  const editarPlano = (pl: { id: string; name: string; sessions: any[] }) => {
+    if (sessoes.length > 0 && !confirm('Isso descarta o que está na tela. Continuar?')) return;
+    setEditandoId(pl.id);
+    setNome(pl.name);
+    setSalvo(false);
+    setSessoes((pl.sessions ?? []).map((sx: any, i: number) => ({
+      id: crypto.randomUUID(),
+      name: sx.name || `Treino ${String.fromCharCode(65 + i)}`,
+      exercises: (sx.exercises ?? []).map((e: any) => ({
+        id: crypto.randomUUID(),
+        // Reencontra o id no catálogo pelo nome, como os modelos fazem: plano antigo pode ter
+        // sido salvo antes de um recadastro de exercício.
+        exerciseId: e.exerciseId || catalogo.find(c => c.name === e.name)?.id || '',
+        name: e.name ?? '',
+        muscleGroup: e.muscleGroup ?? '',
+        sets: Number(e.sets) || 3,
+        reps: String(e.reps || '8-12'),
+        restSeconds: Number(e.restSeconds) || 60,
+        tips: String(e.tips || ''),
+      })),
+    })));
+    toast.sucesso(`"${pl.name}" aberto para edição. Salvar atualiza este treino.`);
+  };
+
   // ---- modelos de sessão ----
 
   /**
@@ -381,10 +427,11 @@ export default function MontarTreino() {
     setSalvando(true);
     try {
       const res = await fetch('/api/admin/plano', {
-        method: 'POST',
+        method: editandoId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: alunoId,
+          planoId: editandoId ?? undefined,
           name: nome,
           split: `${sessoes.length} dias`,
           sessions: sessoes.map(s => ({
@@ -395,7 +442,9 @@ export default function MontarTreino() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Não consegui salvar.');
-      toast.sucesso(`Treino salvo na conta de ${alunoEscolhido?.name || 'aluno'} (${data.dias} dias).`);
+      toast.sucesso(editandoId
+        ? `Treino atualizado na conta de ${alunoEscolhido?.name || 'aluno'} (${data.dias} dias).`
+        : `Treino salvo na conta de ${alunoEscolhido?.name || 'aluno'} (${data.dias} dias).`);
       // Conferir o que chegou do outro lado e parte da entrega, nao um extra.
       setSalvo(true);
     } catch (e) {
@@ -626,6 +675,43 @@ export default function MontarTreino() {
                 </Button>
               )}
             </div>
+
+            {/* O TREINO QUE O ALUNO JÁ TEM, para editar no lugar.
+                Abrir e salvar ATUALIZA o plano existente — a periodização é por plano, e
+                salvar um ajuste como plano novo devolveria o aluno para a semana 1 do ciclo. */}
+            {planosDoAluno.length > 0 && (
+              <div className="border-t border-border pt-4">
+                <p className="text-xs uppercase tracking-wider font-semibold text-foreground-muted mb-2.5">
+                  Treinos que {alunoEscolhido?.name || 'o aluno'} já tem
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {planosDoAluno.map(pl => (
+                    <button
+                      key={pl.id}
+                      onClick={() => editarPlano(pl)}
+                      title={`Abrir "${pl.name}" para editar — salvar atualiza este treino`}
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm transition-colors ${
+                        editandoId === pl.id
+                          ? 'border-primary bg-primary/10 text-primary font-semibold'
+                          : 'border-white/10 bg-surface-light hover:text-primary hover:border-primary/40'
+                      }`}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      {pl.name}
+                      <span className="text-[11px] text-foreground-muted">
+                        ({pl.sessions?.length ?? 0}d)
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {editandoId && (
+                  <p className="text-[11px] text-primary mt-2.5">
+                    Editando um treino existente. Salvar atualiza ele — a periodização e o
+                    histórico do aluno continuam de onde estão.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* OS MODELOS DO OBJETIVO ESCOLHIDO.
                 Filtrados por objetivo de propósito: o profissional vê só o que serve para

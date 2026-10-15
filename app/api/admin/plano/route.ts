@@ -72,6 +72,76 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ planos: data ?? [] });
 }
 
+
+/**
+ * Normaliza o que veio da tela, para POST e PUT.
+ *
+ * Sanidade de número aqui e não só no formulário: um "sets": 0 ou um descanso negativo viram
+ * sessão quebrada na tela do aluno, e ele não tem como consertar sozinho.
+ *
+ * Uma função só porque criar e atualizar precisam EXATAMENTE da mesma limpeza — duas cópias
+ * divergiriam no primeiro limite que alguém ajustasse num lado só.
+ */
+function normalizarSessoes(sessoes: any[]) {
+  // "sets": 0 ou um descanso negativo viram sessão quebrada na tela do aluno, e ele não tem
+  // como consertar sozinho.
+  return sessoes.slice(0, 7).map((s: any, i: number) => ({
+    id: String(s?.id || `s${i + 1}`),
+    name: String(s?.name || `Treino ${String.fromCharCode(65 + i)}`).slice(0, 80),
+    exercises: (Array.isArray(s?.exercises) ? s.exercises : []).slice(0, 20).map((e: any, j: number) =>
+      limparAlvosPorSerie({
+        id: String(e?.id || `${i}-${j}`),
+        exerciseId: String(e?.exerciseId || ''),
+        name: String(e?.name || '').slice(0, 160),
+        muscleGroup: String(e?.muscleGroup || '').slice(0, 60),
+        sets: Math.min(10, Math.max(1, Number(e?.sets) || 3)),
+        reps: String(e?.reps || '8-12').slice(0, 20),
+        restSeconds: Math.min(600, Math.max(0, Number(e?.restSeconds) || 60)),
+        tips: String(e?.tips || '').slice(0, 500),
+        youtubeSearchTerm: String(e?.name || '').slice(0, 120),
+        targetLabels: e?.targetLabels,
+        targetReps: e?.targetReps,
+        targetWeights: e?.targetWeights,
+      })
+    ),
+  })).filter((s: any) => s.exercises.length > 0);
+}
+
+/**
+ * O AQUECIMENTO, que faltava aqui.
+ *
+ * Achado em 15/10/2026, ao construir a prévia do aluno: o plano gerado pela IA recebia
+ * `session.warmup` no servidor, e o montado à mão não recebia nada. Ou seja, o Treino do
+ * Personal — o produto de R$ 147 — chegava ao aluno com MENOS que o treino gerado de
+ * graça. Ninguém tinha percebido porque nunca se via o resultado do outro lado.
+ *
+ * Mesma regra da geração: mobilidade dos grupos que o dia carrega, escolhida em código, do
+ * catálogo completo, sem custo de IA. Quem treina em casa recebe só o que cabe no que tem
+ * — rolo de espuma é equipamento, e isso já nos mordeu uma vez.
+ */
+async function aplicarAquecimento(limpas: any[], alunoId: string) {
+  const [{ data: catalogo }, { data: perfilDoAluno }] = await Promise.all([
+    admin().from('exercises').select('id, name, muscle_group'),
+    admin().from('profiles').select('training_location, equipamentos_casa').eq('id', alunoId).maybeSingle(),
+  ]);
+
+  const poolDeMobilidade = treinaEmCasa(mapAnamneseLocationToEquipment(perfilDoAluno?.training_location))
+    ? filtrarParaCasa(catalogo ?? [], perfilDoAluno?.equipamentos_casa as string[] | null)
+    : (catalogo ?? []);
+
+  for (const sessao of limpas) {
+    const grupos = [...new Set(
+      (sessao.exercises ?? []).map((e: any) => e.muscleGroup).filter(Boolean)
+    )] as string[];
+    (sessao as any).warmup = selecionarMobilidade(poolDeMobilidade, grupos, 3).map((m: any) => ({
+      exerciseId: m.id,
+      name: m.name,
+      muscleGroup: m.muscle_group || '',
+      segundos: 40,
+    }));
+  }
+}
+
 export async function POST(req: NextRequest) {
   const { user, error: authError } = await requireAuth();
   if (authError) return authError;
@@ -94,66 +164,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'O treino precisa de pelo menos um dia.' }, { status: 400 });
     }
 
-    // Normaliza o que veio da tela. Sanidade de número aqui e não só no formulário: um
-    // "sets": 0 ou um descanso negativo viram sessão quebrada na tela do aluno, e ele não tem
-    // como consertar sozinho.
-    const limpas = sessoes.slice(0, 7).map((s: any, i: number) => ({
-      id: String(s?.id || `s${i + 1}`),
-      name: String(s?.name || `Treino ${String.fromCharCode(65 + i)}`).slice(0, 80),
-      exercises: (Array.isArray(s?.exercises) ? s.exercises : []).slice(0, 20).map((e: any, j: number) =>
-        limparAlvosPorSerie({
-          id: String(e?.id || `${i}-${j}`),
-          exerciseId: String(e?.exerciseId || ''),
-          name: String(e?.name || '').slice(0, 160),
-          muscleGroup: String(e?.muscleGroup || '').slice(0, 60),
-          sets: Math.min(10, Math.max(1, Number(e?.sets) || 3)),
-          reps: String(e?.reps || '8-12').slice(0, 20),
-          restSeconds: Math.min(600, Math.max(0, Number(e?.restSeconds) || 60)),
-          tips: String(e?.tips || '').slice(0, 500),
-          youtubeSearchTerm: String(e?.name || '').slice(0, 120),
-          targetLabels: e?.targetLabels,
-          targetReps: e?.targetReps,
-          targetWeights: e?.targetWeights,
-        })
-      ),
-    })).filter((s: any) => s.exercises.length > 0);
+    const limpas = normalizarSessoes(sessoes);
 
     if (limpas.length === 0) {
       return NextResponse.json({ error: 'Nenhum dia tem exercício.' }, { status: 400 });
     }
 
-    /**
-     * O AQUECIMENTO, que faltava aqui.
-     *
-     * Achado em 15/10/2026, ao construir a prévia do aluno: o plano gerado pela IA recebia
-     * `session.warmup` no servidor, e o montado à mão não recebia nada. Ou seja, o Treino do
-     * Personal — o produto de R$ 147 — chegava ao aluno com MENOS que o treino gerado de
-     * graça. Ninguém tinha percebido porque nunca se via o resultado do outro lado.
-     *
-     * Mesma regra da geração: mobilidade dos grupos que o dia carrega, escolhida em código, do
-     * catálogo completo, sem custo de IA. Quem treina em casa recebe só o que cabe no que tem
-     * — rolo de espuma é equipamento, e isso já nos mordeu uma vez.
-     */
-    const [{ data: catalogo }, { data: perfilDoAluno }] = await Promise.all([
-      admin().from('exercises').select('id, name, muscle_group'),
-      admin().from('profiles').select('training_location, equipamentos_casa').eq('id', alvo).maybeSingle(),
-    ]);
-
-    const poolDeMobilidade = treinaEmCasa(mapAnamneseLocationToEquipment(perfilDoAluno?.training_location))
-      ? filtrarParaCasa(catalogo ?? [], perfilDoAluno?.equipamentos_casa as string[] | null)
-      : (catalogo ?? []);
-
-    for (const sessao of limpas) {
-      const grupos = [...new Set(
-        (sessao.exercises ?? []).map((e: any) => e.muscleGroup).filter(Boolean)
-      )] as string[];
-      (sessao as any).warmup = selecionarMobilidade(poolDeMobilidade, grupos, 3).map((m: any) => ({
-        exerciseId: m.id,
-        name: m.name,
-        muscleGroup: m.muscle_group || '',
-        segundos: 40,
-      }));
-    }
+    await aplicarAquecimento(limpas, alvo);
 
     const id = crypto.randomUUID();
     const { error } = await admin().from('workout_plans').insert({
@@ -276,7 +293,7 @@ export async function DELETE(req: NextRequest) {
 
   /**
    * Se o apagado era o ativo, aponta para o mais recente que sobrou.
-   *
+ *
    * Sem isto o perfil ficaria apontando para um plano que não existe mais. O app cai no mais
    * recente de qualquer forma (AppContext só aceita id que exista), mas deixar lixo no banco
    * é o tipo de coisa que confunde quem for depurar daqui a seis meses.
@@ -296,4 +313,81 @@ export async function DELETE(req: NextRequest) {
 
   console.log(`[admin/plano] ${user.id} apagou o plano ${planoId} de ${alvo}`);
   return NextResponse.json({ ok: true });
+}
+
+/**
+ * Atualiza um plano que o aluno JÁ TEM, no lugar.
+ *
+ * POR QUE NÃO SALVAR COMO PLANO NOVO
+ *
+ * A periodização é por plano: `computePeriodization` filtra o histórico por workoutPlanId.
+ * Salvar as alterações como plano novo zeraria o ciclo do aluno — ele voltaria para a semana 1
+ * mesmo estando na terceira, e perderia o deload que vinha construindo. Ajustar dois
+ * exercícios não pode custar isso.
+ *
+ * Em troca, o id se mantém, o histórico continua apontando para ele e a progressão de carga
+ * segue intacta.
+ *
+ * O aquecimento é remontado: se o profissional trocou os grupos do dia, a mobilidade tem que
+ * acompanhar — mobilidade de ombro num dia que virou perna não prepara nada.
+ */
+export async function PUT(req: NextRequest) {
+  const { user, error: authError } = await requireAuth();
+  if (authError) return authError;
+  if (!(await souMaster(user.id))) return NextResponse.json({ error: 'Nao encontrado.' }, { status: 404 });
+
+  try {
+    const body = await req.json().catch(() => ({}));
+    const alvo = String(body?.userId ?? '');
+    const planoId = String(body?.planoId ?? '');
+    const nome = String(body?.name ?? '').trim().slice(0, 120);
+    const sessoes = body?.sessions;
+
+    if (!/^[0-9a-f-]{36}$/i.test(alvo) || !planoId) {
+      return NextResponse.json({ error: 'Aluno ou plano invalido.' }, { status: 400 });
+    }
+    if (!nome) {
+      return NextResponse.json({ error: 'De um nome ao treino.' }, { status: 400 });
+    }
+    if (!Array.isArray(sessoes) || sessoes.length === 0) {
+      return NextResponse.json({ error: 'O treino precisa de pelo menos um dia.' }, { status: 400 });
+    }
+
+    // O plano tem que ser deste aluno. service_role ignora RLS, então sem este filtro um id
+    // trocado reescreveria o treino de outra pessoa.
+    const { data: existente } = await admin()
+      .from('workout_plans')
+      .select('id')
+      .eq('id', planoId)
+      .eq('user_id', alvo)
+      .maybeSingle();
+
+    if (!existente) {
+      return NextResponse.json({ error: 'Plano nao encontrado para este aluno.' }, { status: 404 });
+    }
+
+    const limpas = normalizarSessoes(sessoes);
+    if (limpas.length === 0) {
+      return NextResponse.json({ error: 'Nenhum dia tem exercício.' }, { status: 400 });
+    }
+
+    await aplicarAquecimento(limpas, alvo);
+
+    const { error } = await admin()
+      .from('workout_plans')
+      .update({ name: nome, split: String(body?.split ?? '').trim() || `${limpas.length} dias`, sessions: limpas })
+      .eq('id', planoId)
+      .eq('user_id', alvo);
+
+    if (error) {
+      console.error('[admin/plano] PUT:', error.message);
+      return NextResponse.json({ error: 'Nao consegui salvar as alteracoes.' }, { status: 500 });
+    }
+
+    console.log(`[admin/plano] ${user.id} atualizou o plano ${planoId} de ${alvo} (${limpas.length} dias)`);
+    return NextResponse.json({ ok: true, planoId, dias: limpas.length });
+  } catch (e) {
+    console.error('[admin/plano] PUT erro:', e instanceof Error ? e.message : e);
+    return NextResponse.json({ error: 'Nao consegui salvar as alteracoes.' }, { status: 500 });
+  }
 }
