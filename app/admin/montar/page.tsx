@@ -7,8 +7,9 @@ import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark, Eye } from 'lucide-react';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
+
 import { prescrever, normalizarObjetivo } from '@/lib/protocolo';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
 
@@ -96,6 +97,7 @@ export default function MontarTreino() {
   const [ampliado, setAmpliado] = useState<ExercicioCatalogo | null>(null);
   const [modelos, setModelos] = useState<ModeloDeSessao[]>([]);
   const [salvandoModelo, setSalvandoModelo] = useState<string | null>(null);
+  const [salvo, setSalvo] = useState(false);
   const [resumo, setResumo] = useState<ResumoDoAluno | null>(null);
   const [temAnamnese, setTemAnamnese] = useState(false);
   const [carregandoAluno, setCarregandoAluno] = useState(false);
@@ -186,10 +188,14 @@ export default function MontarTreino() {
       ? { ...x, exercises: x.exercises.filter(e => e.id !== exId) }
       : x)));
 
-  const mudaExercicio = (sessaoId: string, exId: string, campo: keyof ExercicioLinha, valor: any) =>
+  const mudaExercicio = (sessaoId: string, exId: string, campo: keyof ExercicioLinha, valor: any) => {
+    // Editar depois de salvar invalida o "ver como o aluno": o que está na tela deixou de ser
+    // o que está na conta dele, e oferecer a prévia ali enganaria quem confia nela.
+    setSalvo(false);
     setSessoes(s => s.map(x => (x.id === sessaoId
       ? { ...x, exercises: x.exercises.map(e => (e.id === exId ? { ...e, [campo]: valor } : e)) }
       : x)));
+  };
 
   /** Ao escolher um exercício do catálogo, traz o grupo muscular junto — um campo a menos. */
   // ---- modelos de sessão ----
@@ -390,6 +396,8 @@ export default function MontarTreino() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Não consegui salvar.');
       toast.sucesso(`Treino salvo na conta de ${alunoEscolhido?.name || 'aluno'} (${data.dias} dias).`);
+      // Conferir o que chegou do outro lado e parte da entrega, nao um extra.
+      setSalvo(true);
     } catch (e) {
       toast.erro(e instanceof Error ? e.message : 'Não consegui salvar.');
     } finally {
@@ -825,6 +833,25 @@ export default function MontarTreino() {
           <Button onClick={salvar} disabled={salvando} className="sm:w-auto">
             {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4" /> Salvar na conta do aluno</>}
           </Button>
+        </div>
+      )}
+
+      {/* Aparece DEPOIS de salvar, e some ao editar de novo: a prévia mostra o que está na
+          conta do aluno, não o que está na tela. Oferecê-la com edição pendente enganaria
+          quem confia nela — que é o ponto de ela existir. */}
+      {salvo && alunoId && (
+        <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 flex flex-wrap items-center gap-3">
+          <Eye className="w-4 h-4 text-primary shrink-0" />
+          <p className="text-sm flex-1 min-w-[200px]">
+            Treino na conta de <strong>{alunoEscolhido?.name || 'aluno'}</strong>. Confira como
+            ele vai receber antes de avisar.
+          </p>
+          <a
+            href={`/admin/preview?userId=${alunoId}`}
+            className="text-sm font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors"
+          >
+            Ver como o aluno
+          </a>
         </div>
       )}
 

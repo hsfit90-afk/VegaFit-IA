@@ -233,6 +233,16 @@ export default function AdminDashboard() {
                         >
                           Cortar
                         </button>
+                        {/* A previa: entregar um treino sem nunca ter visto o resultado do
+                            outro lado e como mandar um bolo pelo correio sem olhar se assou.
+                            O profissional nao tem a senha do aluno, e nao deve ter. */}
+                        <a
+                          href={`/admin/preview?userId=${u.id}`}
+                          title="Ver o treino deste aluno como ele ve"
+                          className="text-xs bg-surface-light hover:bg-primary/20 hover:text-primary transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
+                        >
+                          Ver treino
+                        </a>
                         {u.role === 'trainer' && (
                           <button
                             onClick={() => updateLimit(u.id, u.max_clients || 5)}

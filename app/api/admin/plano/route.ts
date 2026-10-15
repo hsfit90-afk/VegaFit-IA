@@ -3,6 +3,9 @@ import { requireAuth } from '@/utils/supabase/auth-guard';
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { limparAlvosPorSerie } from '@/lib/metodoTreino';
+import { selecionarMobilidade } from '@/lib/preparoFinalizacao';
+import { filtrarParaCasa } from '@/lib/equipamentoCasa';
+import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 
 /**
  * Salva um plano de treino montado à mão pelo profissional, na conta de um aluno.
@@ -117,6 +120,39 @@ export async function POST(req: NextRequest) {
 
     if (limpas.length === 0) {
       return NextResponse.json({ error: 'Nenhum dia tem exercício.' }, { status: 400 });
+    }
+
+    /**
+     * O AQUECIMENTO, que faltava aqui.
+     *
+     * Achado em 15/10/2026, ao construir a prévia do aluno: o plano gerado pela IA recebia
+     * `session.warmup` no servidor, e o montado à mão não recebia nada. Ou seja, o Treino do
+     * Personal — o produto de R$ 147 — chegava ao aluno com MENOS que o treino gerado de
+     * graça. Ninguém tinha percebido porque nunca se via o resultado do outro lado.
+     *
+     * Mesma regra da geração: mobilidade dos grupos que o dia carrega, escolhida em código, do
+     * catálogo completo, sem custo de IA. Quem treina em casa recebe só o que cabe no que tem
+     * — rolo de espuma é equipamento, e isso já nos mordeu uma vez.
+     */
+    const [{ data: catalogo }, { data: perfilDoAluno }] = await Promise.all([
+      admin().from('exercises').select('id, name, muscle_group'),
+      admin().from('profiles').select('training_location, equipamentos_casa').eq('id', alvo).maybeSingle(),
+    ]);
+
+    const poolDeMobilidade = treinaEmCasa(mapAnamneseLocationToEquipment(perfilDoAluno?.training_location))
+      ? filtrarParaCasa(catalogo ?? [], perfilDoAluno?.equipamentos_casa as string[] | null)
+      : (catalogo ?? []);
+
+    for (const sessao of limpas) {
+      const grupos = [...new Set(
+        (sessao.exercises ?? []).map((e: any) => e.muscleGroup).filter(Boolean)
+      )] as string[];
+      (sessao as any).warmup = selecionarMobilidade(poolDeMobilidade, grupos, 3).map((m: any) => ({
+        exerciseId: m.id,
+        name: m.name,
+        muscleGroup: m.muscle_group || '',
+        segundos: 40,
+      }));
     }
 
     const id = crypto.randomUUID();
