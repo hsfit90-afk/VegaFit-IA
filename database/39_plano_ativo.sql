@@ -27,15 +27,17 @@ ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS active_plan_id TEXT;
 
 /*
-  SEM foreign key para workout_plans de propósito.
+  SEM foreign key para workout_plans.
 
-  A coluna `id` de workout_plans é TEXT e recebe uuid gerado no cliente; já houve plano salvo
-  com id vindo de `crypto.randomUUID()` do navegador e plano vindo do servidor. Uma FK aqui
-  transformaria qualquer divergência histórica em erro de escrita no perfil — e perfil que não
-  salva é o aluno travado.
+  CORREÇÃO (15/10/2026): a justificativa original dizia que `workout_plans.id` era TEXT. Não
+  é — é UUID (ver database/02). O motivo real de a coluna aqui ser TEXT e não ter FK é outro,
+  e mais simples: ela foi criada assim, e trocar o tipo de uma coluna já populada em produção
+  para ganhar uma FK não paga o risco.
 
-  A integridade é garantida na leitura: AppContext só aceita o active_plan_id se ele existir
-  entre os planos carregados; se não existir, cai no mais recente.
+  O que garante a integridade é a LEITURA: AppContext só aceita o active_plan_id se ele
+  existir entre os planos carregados; se não existir, cai no mais recente. Plano apagado,
+  portanto, nunca deixa o aluno com a tela vazia — que é o que uma FK com ON DELETE SET NULL
+  daria, e já temos sem ela.
 */
 
 COMMENT ON COLUMN public.profiles.active_plan_id IS

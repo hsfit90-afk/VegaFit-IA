@@ -118,3 +118,59 @@ describe('calculateTargetWeight', () => {
     expect(Number.isInteger(v)).toBe(true);
   });
 });
+
+/**
+ * A GARANTIA QUE O PROFISSIONAL PEDIU (15/10/2026): "gerou outro e outro treino, mas o que eu
+ * nao quero que ele nunca perca e os valores das cargas".
+ *
+ * Isto NAO e um detalhe de calculo, e a promessa central do app: o aluno troca de treino e a
+ * progressao de carga continua de onde parou. Se quebrar, ele volta a chutar peso do zero a
+ * cada plano novo -- e ninguem perceberia, porque o numero na tela continuaria parecendo
+ * plausivel.
+ *
+ * Esta travado em dois lugares, e os dois precisam valer:
+ *   1. getHistorical1RM busca por NOME do exercicio, sem olhar o plano (testado aqui).
+ *   2. workout_history.workout_plan_id e ON DELETE SET NULL, nao CASCADE, entao apagar um
+ *      plano NAO apaga o historico (database/02_workout_plans_and_history.sql).
+ */
+describe('a carga atravessa a troca de treino', () => {
+  const comPlano = (planoId: string | null, nome: string, weight: number, reps: number) => ({
+    ...sessaoCom(nome, [{ weight, reps, completed: true }]),
+    workoutPlanId: planoId,
+  }) as WorkoutHistoryEntry;
+
+  it('acha a carga de um exercicio feito em OUTRO plano', () => {
+    const historico = [comPlano('plano-antigo', 'Supino com Halteres', 40, 8)];
+    // O aluno esta num plano novo; a carga do antigo tem que valer.
+    expect(getHistorical1RM(historico, 'Supino com Halteres')).toBeGreaterThan(0);
+  });
+
+  it('plano apagado (workoutPlanId nulo) nao perde a carga', () => {
+    // E o que sobra quando o profissional apaga um plano pelo painel: o historico fica, com a
+    // referencia zerada pelo ON DELETE SET NULL.
+    const historico = [comPlano(null, 'Agachamento Livre', 80, 5)];
+    expect(getHistorical1RM(historico, 'Agachamento Livre')).toBeGreaterThan(0);
+  });
+
+  it('pega a MAIOR carga entre todos os planos, nao a do mais recente', () => {
+    // Se o plano novo comecou leve, a referencia continua sendo o melhor que ele ja fez --
+    // senao cada treino novo rebaixaria a progressao.
+    const historico = [
+      comPlano('plano-1', 'Remada Curvada', 60, 8),
+      comPlano('plano-2', 'Remada Curvada', 30, 8),
+    ];
+    const so1 = getHistorical1RM([historico[0]], 'Remada Curvada');
+    expect(getHistorical1RM(historico, 'Remada Curvada')).toBe(so1);
+  });
+
+  it('o nome casa ignorando caixa e espaco', () => {
+    // Plano antigo pode ter gravado o nome com outra caixa; a carga nao pode sumir por isso.
+    const historico = [comPlano('p1', 'Supino Inclinado com Halteres', 30, 10)];
+    expect(getHistorical1RM(historico, '  supino inclinado COM halteres ')).toBeGreaterThan(0);
+  });
+
+  it('exercicio que ele nunca fez devolve zero, nao a carga de outro', () => {
+    const historico = [comPlano('p1', 'Supino com Halteres', 40, 8)];
+    expect(getHistorical1RM(historico, 'Levantamento Terra')).toBe(0);
+  });
+});
