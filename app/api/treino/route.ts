@@ -473,7 +473,7 @@ export async function POST(req: NextRequest) {
     // campo passou a convidar descrição longa, e aí vale a mesma defesa — e o mesmo teto, que
     // é o que impede um texto de 50 mil caracteres virar prompt de 50 mil caracteres.
     const studentPreferences = textoLivreParaPrompt(
-      config.limitations || profile?.intent,
+      config.limitations,
       'Nenhuma informada',
       LIMITE_PREFERENCIAS
     );

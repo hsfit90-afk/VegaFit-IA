@@ -65,7 +65,6 @@ PERFIL DO ALUNO:
 Nome: ${profile.name}
 Idade: ${profile.age} | Peso: ${profile.weight}kg | Altura: ${profile.height}cm
 Objetivo: ${profile.goal} | Nível: ${profile.level}
-Limitações: ${profile.intent || 'Nenhuma'}
 ${healthBlock}
 
 FEEDBACK DA SEMANA:

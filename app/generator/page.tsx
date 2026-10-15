@@ -71,7 +71,14 @@ export default function Generator() {
     duration: 60,
     equipment: mapAnamneseLocationToEquipment(profile?.trainingLocation),
     priorities: [] as string[],
-    limitations: profile?.intent || '',
+    // NÃO vem de profile.intent: aquele campo guarda o TEXTO INTEIRO da anamnese
+    // ("*ANAMNESE DE TREINO* — SEU OBJETIVO — ..."), não o que o aluno quer dizer. Ele
+    // aparecia aqui pré-preenchido, o aluno nunca escrevia nada de si, e o teto de 600
+    // caracteres ainda cortava o despejo no meio — o Joel perdia 667 caracteres.
+    //
+    // A anamnese continua chegando à IA, pelo bloco estruturado de saúde que a rota monta a
+    // partir de anamnese_history. Este campo é só para o que ela não pergunta.
+    limitations: '',
     trainingMethod: 'tradicional',
   });
 
@@ -102,7 +109,7 @@ export default function Generator() {
       goal: profile.goal || prev.goal,
       level: profile.level || prev.level,
       equipment: mapAnamneseLocationToEquipment(profile.trainingLocation),
-      limitations: prev.limitations || profile.intent || '',
+      // limitations fica de fora: é do aluno, não do perfil. Ver o comentário acima.
     }));
     setHidratado(true);
   }, [profile, hidratado]);
@@ -131,8 +138,32 @@ export default function Generator() {
     });
   };
 
+  /**
+   * Mínimo de texto no campo de intenção.
+   *
+   * Decisão do profissional (CREF, 15/10/2026): não gerar treino sem o aluno escrever nada
+   * ali. A anamnese responde o que o app pergunta; este campo é o único lugar onde ele conta
+   * o que ninguém perguntou — horário, tempo real, o que odeia, o que quer voltar a
+   * conseguir. Gerar sem isso devolve um treino genérico, que é o que o app existe para não
+   * ser.
+   *
+   * Vinte caracteres, e não "não vazio": um ponto ou um "ok" passariam numa checagem de
+   * vazio e não informam nada. Vinte é uma frase curta — "treino 6h antes do trabalho" tem
+   * vinte e seis.
+   */
+  const MINIMO_DE_INTENCAO = 20;
+  const intencaoCurta = form.limitations.trim().length < MINIMO_DE_INTENCAO;
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (intencaoCurta) {
+      setError('Escreva em "Limitações, Foco ou Intenção" antes de gerar. É o que o app não tem como adivinhar sobre você.');
+      document.getElementById('limitacoes')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.getElementById('limitacoes')?.focus();
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -490,10 +521,16 @@ export default function Generator() {
                   className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors min-h-[150px] leading-relaxed"
                 />
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-xs text-foreground-muted leading-relaxed">
-                    Lesões e equipamento não precisam entrar aqui — eles vêm da sua{' '}
-                    <Link href="/anamnese" className="text-primary underline">anamnese</Link> e são
-                    aplicados sempre.
+                  {/* O aviso muda de tom conforme falta: dizer "obrigatório" só quando o
+                      aluno tenta gerar seria descobrir a regra do jeito ruim. */}
+                  <p className={`text-xs leading-relaxed ${intencaoCurta ? 'text-warning' : 'text-foreground-muted'}`}>
+                    {intencaoCurta
+                      ? 'Escreva ao menos uma frase aqui — é o que o app não tem como adivinhar sobre você.'
+                      : <>
+                          Lesões e equipamento não precisam entrar aqui — eles vêm da sua{' '}
+                          <Link href="/anamnese" className="text-primary underline">anamnese</Link> e são
+                          aplicados sempre.
+                        </>}
                   </p>
                   <span className={`text-xs tabular-nums shrink-0 ${
                     form.limitations.length >= LIMITE_PREFERENCIAS

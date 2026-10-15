@@ -62,7 +62,6 @@ PERFIL:
 Nome: ${profile.name}
 Idade: ${profile.age} | Peso: ${profile.weight}kg | Altura: ${profile.height}cm
 Objetivo: ${profile.goal}
-Limitações/Preferências: ${profile.intent || 'Nenhuma'}
 ${healthBlock}
 
 RETORNE APENAS UM JSON VÁLIDO no seguinte formato exato, sem NENHUM markdown:

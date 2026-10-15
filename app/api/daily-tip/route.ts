@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/utils/supabase/auth-guard";
 import { reserveAiCapacity, type AiReservation } from "@/utils/rate-limit";
 import { generateWithRetry } from "@/lib/geminiClient";
+import { textoLivreParaPrompt } from "@/lib/aiHealthContext";
 
 const FALLBACK_TIP = "Mantenha a constância. A hidratação e um bom descanso são tão importantes quanto o treino.";
 
@@ -38,11 +39,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ tip: FALLBACK_TIP });
     }
 
+    /**
+     * O resumo da anamnese, cortado para caber numa dica.
+     *
+     * Esta era a única rota em que `profile.intent` fazia algum sentido: ela não busca a
+     * anamnese estruturada, então era a única fonte de contexto de saúde. Mas o campo guarda
+     * o TEXTO INTEIRO da anamnese — mais de mil caracteres para alguns alunos — e mandar isso
+     * inteiro para gerar duas frases é desperdício de token sem retorno.
+     *
+     * Trezentos caracteres bastam: a anamnese começa pelo objetivo e pelo nível, que é o que
+     * orienta uma dica curta. E vai delimitado, como todo texto que o aluno escreveu.
+     */
+    const resumoDaAnamnese = textoLivreParaPrompt(profile?.intent, 'Nao informado', 300);
+
     const prompt = `Você é um coach de saúde e fitness.
 Gere UMA única dica curta (máximo 2 frases) de treino, nutrição ou recuperação para um aluno com o seguinte perfil:
 - Objetivo: ${profile?.goal || 'Não especificado'}
 - Nível: ${profile?.level || 'Não especificado'}
-- Limitações/Intenção: ${profile?.intent || 'Nenhuma'}
+- Resumo da anamnese: ${resumoDaAnamnese}
 
 A dica deve ser motivadora, direta e mudar o foco (as vezes falar de água, outras de sono, outras de proteína, outras de carga, dependendo do perfil).
 Retorne apenas o texto da dica, sem aspas e sem formatação extra.`;
