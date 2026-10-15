@@ -25,9 +25,12 @@ import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
  * repetições, descanso e as observações. Não reproduz cronômetro, registro de carga nem
  * check-in, porque o que ele precisa conferir é a PRESCRIÇÃO, não a mecânica da tela.
  *
- * Mostra o plano MAIS RECENTE do aluno, que é o que o app dele abre por padrão (a lista vem
- * ordenada por data em AppContext). Se houver outros, avisa — plano antigo esquecido na conta
- * é coisa que o aluno pode abrir sem entender por quê.
+ * Mostra o plano ATIVO do aluno — o único que ele enxerga. Conferido em 15/10/2026: o
+ * dashboard dele renderiza um card só, o do ativo, e não existe seletor de planos. Os outros
+ * planos existem apenas deste lado.
+ *
+ * Isso torna o painel de planos aqui mais importante do que parecia: se o ativo estiver
+ * desatualizado, o aluno treina errado e não tem como perceber nem corrigir sozinho.
  */
 
 interface ExercicioPrescrito {
@@ -210,9 +213,9 @@ export default function PreviaDoAluno() {
       )}
 
       {/* DOMÍNIO SOBRE A CONTA.
-          Plano antigo esquecido é coisa que o aluno abre sem entender por quê — e, até agora,
-          o profissional não tinha como nem saber qual deles o aluno estava usando, porque o
-          ativo vivia só no aparelho dele. */}
+          O aluno só enxerga o ativo — o dashboard dele mostra um treino só. Então quem decide
+          o que ele treina é quem mexe aqui, e até 15/10/2026 ninguém decidia: o ativo vivia no
+          localStorage do aparelho dele, fora do alcance de todo mundo. */}
       {planos.length > 0 && (
         <Card className="mb-5">
           <CardContent className="p-4">
@@ -267,8 +270,8 @@ export default function PreviaDoAluno() {
             {planos.length > 1 && (
               <p className="flex items-start gap-2 text-[11px] text-foreground-muted mt-3">
                 <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
-                O aluno consegue trocar entre os treinos que estão na conta. Se os antigos não
-                servem mais, apague — evita que ele abra o errado.
+                O aluno <strong>só enxerga o ativo</strong> — o dashboard dele mostra um treino
+                só. Os outros existem apenas aqui, e quem decide qual ele abre é você.
               </p>
             )}
           </CardContent>

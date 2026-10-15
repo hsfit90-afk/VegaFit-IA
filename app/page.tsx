@@ -15,7 +15,10 @@ import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
 import { CardPersonalizado } from '@/components/CardPersonalizado';
 
 export default function Dashboard() {
-  const { profile, history, workoutPlans, activePlanId, setActivePlan, deleteWorkoutPlan, currentSessionIndex } = useAppContext();
+  // setActivePlan NÃO entra aqui: o dashboard mostra só o plano ativo, sem seletor. Estava
+  // sendo desestruturado sem nunca ser chamado, e foi o que me fez afirmar que o aluno
+  // trocava de treino — ele não troca. Quem troca é o profissional, pelo /admin/preview.
+  const { profile, history, workoutPlans, activePlanId, deleteWorkoutPlan, currentSessionIndex } = useAppContext();
   const router = useRouter();
   const confirmar = useConfirm();
   const [dailyTip, setDailyTip] = useState<string>('Carregando dica do dia...');
