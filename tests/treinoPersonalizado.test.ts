@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  vagasDoLote, jaTemPedidoAberto, prazoDeEntrega, VAGAS_PADRAO, type PedidoResumo,
-} from '@/lib/treinoPersonalizado';
+  vagasDoLote, jaTemPedidoAberto, prazoDeEntrega, VAGAS_PADRAO, type PedidoResumo, PLANO, valorVigente, valorPorMes } from '@/lib/treinoPersonalizado';
 
 /**
  * As dez vagas sao do LOTE DE LANCAMENTO, nao de um mes. Quando acabarem, acabou -- e um novo
@@ -114,5 +113,43 @@ describe('prazoDeEntrega — so dias uteis', () => {
     for (let dia = 1; dia <= 28; dia++) {
       expect([0, 6]).not.toContain(prazoDeEntrega(new Date(Date.UTC(2026, 9, dia, 12))).getDay());
     }
+  });
+});
+
+/**
+ * O produto virou TRIMESTRAL com preco de inauguracao (16/10/2026).
+ *
+ * Era R$ 147 avulso. O problema nao era o preco, era o produto: um treino isolado nao muda
+ * ninguem, e o protocolo do app e um mesociclo de 4 semanas. Tres meses e o menor periodo em
+ * que o aluno ve resultado.
+ *
+ * A promocao acaba com as VAGAS, nao com uma data -- contagem regressiva inventada ninguem
+ * acredita mais, e aqui a escassez e real: cada aluno consome horas do profissional.
+ */
+describe('preco do plano trimestral', () => {
+  it('cobra o promocional enquanto ha vaga no lote', () => {
+    expect(valorVigente(10)).toBe(PLANO.valorPromocional);
+    expect(valorVigente(1)).toBe(PLANO.valorPromocional);
+  });
+
+  it('sobe para o cheio quando o lote fecha', () => {
+    expect(valorVigente(0)).toBe(PLANO.valorCheio);
+  });
+
+  it('o promocional e MENOR que o cheio', () => {
+    // Trava obvia, e por isso mesmo: trocar os dois numeros de lugar num ajuste de preco
+    // passaria despercebido ate alguem pagar mais na promocao.
+    expect(PLANO.valorPromocional).toBeLessThan(PLANO.valorCheio);
+  });
+
+  it('o valor por mes divide o total pelos meses', () => {
+    expect(valorPorMes(297)).toBe(99);
+    expect(valorPorMes(397)).toBe(132);
+  });
+
+  it('o plano tem tres meses, como o protocolo pede', () => {
+    // Tres mesociclos de 4 semanas. Se alguem mudar para 2 meses, o produto deixa de entregar
+    // o que a tela promete.
+    expect(PLANO.meses).toBe(3);
   });
 });

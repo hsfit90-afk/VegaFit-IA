@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { UserCheck, ArrowRight } from 'lucide-react';
-import { VALOR } from '@/lib/treinoPersonalizado';
+
 
 /**
  * Chamada do Treino Personalizado na home.
@@ -20,6 +20,9 @@ import { VALOR } from '@/lib/treinoPersonalizado';
  */
 export function CardPersonalizado() {
   const [vagas, setVagas] = useState<{ restantes: number; limite: number; acabando: boolean } | null>(null);
+  // O preço vem da rota, não de constante importada: ele depende das vagas que restam, e
+  // quem sabe disso é o servidor.
+  const [preco, setPreco] = useState<{ valor: number; porMes: number; promocional: boolean } | null>(null);
 
   useEffect(() => {
     let vivo = true;
@@ -30,6 +33,7 @@ export function CardPersonalizado() {
         const d = await res.json();
         if (d.esgotado || d.temPedidoAberto) return;   // fica null, não renderiza
         setVagas({ restantes: d.vagasRestantes, limite: d.limiteDeVagas ?? 10, acabando: d.acabando });
+        setPreco({ valor: d.valor, porMes: d.valorPorMes, promocional: d.promocional });
       } catch { /* sem card é melhor que card quebrado */ }
     })();
     return () => { vivo = false; };
@@ -68,8 +72,14 @@ export function CardPersonalizado() {
           </span>
         </div>
         <p className="text-xs text-foreground-muted mt-1 leading-snug">
-          Sem IA: eu monto exercício por exercício, a partir da sua anamnese.{' '}
-          <span className="text-foreground font-semibold whitespace-nowrap">R$ {VALOR}</span>
+          Sem IA: eu monto exercício por exercício, a partir da sua anamnese. Três meses de
+          acompanhamento.{' '}
+          {preco && (
+            <span className="text-foreground font-semibold whitespace-nowrap">
+              R$ {preco.porMes}/mês
+              {preco.promocional && <span className="text-primary"> · inauguração</span>}
+            </span>
+          )}
           {urgente && <span className="text-warning font-semibold"> · quando acabar, fecha.</span>}
         </p>
       </div>

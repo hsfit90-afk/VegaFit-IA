@@ -5,7 +5,51 @@
 // implementações da mesma regra divergem no primeiro caso de borda — e aqui o caso de borda
 // é você prometer uma vaga que não existe.
 
-export const VALOR = 147;
+/**
+ * O TREINO DO PERSONAL VIROU TRIMESTRAL (16/10/2026).
+ *
+ * Era R$ 147 avulso: um treino, uma vez. O problema disso não é o preço, é o PRODUTO — um
+ * treino isolado não muda ninguém. O protocolo do app é um mesociclo de 4 semanas com deload
+ * (SEMANAS_DO_CICLO em lib/protocolo.ts), e resultado aparece depois de alguns ciclos.
+ *
+ * Três meses é o menor período em que o aluno vê mudança — e é o que vira depoimento, que é
+ * do que o app mais precisa hoje.
+ *
+ * O PREÇO DE INAUGURAÇÃO ACABA COM AS VAGAS, não com uma data.
+ *
+ * Contagem regressiva inventada é a parte do marketing que o cliente não acredita mais. Aqui
+ * a escassez é real: cada aluno consome horas do profissional todo mês, e as vagas existem
+ * porque a agenda dele existe. Quando o lote fecha, o preço sobe porque a fila ficou maior —
+ * o que é verdade.
+ */
+export const PLANO = {
+  nome: 'Trimestral',
+  meses: 3,
+  /** O preço que vale quando o lote de inauguração fechar. */
+  valorCheio: 397,
+  /** O de agora, enquanto houver vaga no lote. */
+  valorPromocional: 297,
+} as const;
+
+/** Quanto o aluno paga AGORA, dado o que resta do lote. */
+export function valorVigente(vagasRestantes: number): number {
+  return vagasRestantes > 0 ? PLANO.valorPromocional : PLANO.valorCheio;
+}
+
+/** Por mês, para a tela — R$ 99 soa diferente de R$ 297, e é o mesmo número. */
+export function valorPorMes(valor: number): number {
+  return Math.round(valor / PLANO.meses);
+}
+
+/**
+ * O valor avulso antigo, mantido só para ler pedidos feitos antes de 16/10/2026.
+ *
+ * Cada pedido grava o `valor` que foi cobrado na hora, então o histórico financeiro continua
+ * correto sozinho. Isto aqui existe para quem for ler código antigo e se perguntar de onde
+ * saíam os R$ 147.
+ */
+export const VALOR_AVULSO_LEGADO = 147;
+
 export const PRAZO_DIAS_UTEIS = 3;
 
 /**

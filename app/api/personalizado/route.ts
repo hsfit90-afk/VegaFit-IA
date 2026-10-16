@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/utils/supabase/auth-guard';
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
-import { vagasDoLote, jaTemPedidoAberto, limiteDeVagas, VALOR } from '@/lib/treinoPersonalizado';
+import { vagasDoLote, jaTemPedidoAberto, limiteDeVagas, PLANO, valorVigente, valorPorMes } from '@/lib/treinoPersonalizado';
 
 /**
  * Pedido de Treino Personalizado.
@@ -55,8 +55,16 @@ export async function GET() {
 
   try {
     const { vagas, pedidos, temAberto } = await estadoAtual(user.id);
+    // O preço vem do SERVIDOR, calculado a partir das vagas que restam. Mandar o valor cheio
+    // e deixar a tela decidir o desconto poria o preço nas mãos do navegador.
+    const valor = valorVigente(vagas.restantes);
+
     return NextResponse.json({
-      valor: VALOR,
+      valor,
+      valorPorMes: valorPorMes(valor),
+      valorCheio: PLANO.valorCheio,
+      promocional: valor < PLANO.valorCheio,
+      plano: { nome: PLANO.nome, meses: PLANO.meses },
       vagasRestantes: vagas.restantes,
       limiteDeVagas: vagas.limite,
       esgotado: vagas.esgotado,
@@ -107,7 +115,9 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('treino_personalizado_pedidos')
-      .insert({ user_id: user.id, valor: VALOR, objetivo, observacoes, status: 'aguardando_pagamento' })
+      // O valor gravado é o VIGENTE no momento do pedido, e fica congelado nele: quem pegou a
+      // promoção pagou a promoção, mesmo que o lote feche enquanto ele decide pagar.
+      .insert({ user_id: user.id, valor: valorVigente(vagas.restantes), objetivo, observacoes, status: 'aguardando_pagamento' })
       .select('id, status, created_at')
       .single();
 
@@ -117,7 +127,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(`[personalizado] pedido ${data.id} aberto por ${user.id}`);
-    return NextResponse.json({ ok: true, pedido: data, valor: VALOR });
+    return NextResponse.json({ ok: true, pedido: data, valor: valorVigente(vagas.restantes) });
   } catch (e) {
     console.error('[personalizado] POST:', e instanceof Error ? e.message : e);
     return NextResponse.json({ error: 'Nao consegui registrar o pedido.' }, { status: 500 });

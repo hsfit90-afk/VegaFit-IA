@@ -23,6 +23,10 @@ import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 interface Estado {
   valor: number;
+  valorPorMes: number;
+  valorCheio: number;
+  promocional: boolean;
+  plano?: { nome: string; meses: number };
   vagasRestantes: number;
   limiteDeVagas: number;
   acabando: boolean;
@@ -165,11 +169,31 @@ export default function TreinoPersonalizado() {
         <>
           <Card className="mb-6">
             <CardContent className="p-6 flex flex-col gap-5">
+              {/* O NÚMERO GRANDE É O MENSAL, e o total vem embaixo.
+                  R$ 99 e R$ 297 são o mesmo preço, e o primeiro é o que a pessoa compara com
+                  o que ela pagaria numa consultoria. Esconder o total seria outra coisa — ele
+                  está logo ali, junto com o que ela economiza. */}
               <div className="flex items-baseline justify-between gap-4 flex-wrap">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-foreground-muted font-semibold">R$</span>
-                  <span className="font-outfit font-extrabold text-5xl tracking-tight tabular-nums">{estado.valor}</span>
-                  <span className="text-foreground-muted text-sm ml-1">pagamento único</span>
+                <div>
+                  {estado.promocional && (
+                    <p className="text-sm text-foreground-muted mb-0.5">
+                      De <span className="line-through">R$ {estado.valorCheio}</span>{' '}
+                      <span className="text-primary font-semibold">por</span>
+                    </p>
+                  )}
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-foreground-muted font-semibold">R$</span>
+                    <span className="font-outfit font-extrabold text-5xl tracking-tight tabular-nums">{estado.valorPorMes}</span>
+                    <span className="text-foreground-muted text-sm ml-1">por mês</span>
+                  </div>
+                  <p className="text-xs text-foreground-muted mt-1">
+                    R$ {estado.valor} pelos {estado.plano?.meses ?? 3} meses
+                    {estado.promocional && (
+                      <span className="text-primary font-semibold">
+                        {' '}· preço de inauguração
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
                   estado.esgotado ? 'bg-destructive/15 text-destructive'
@@ -184,7 +208,10 @@ export default function TreinoPersonalizado() {
               <ul className="space-y-2.5 text-sm text-foreground-muted">
                 <li className="flex gap-2.5"><Check className="w-4 h-4 text-primary flex-none mt-0.5" /> Treino montado exercício por exercício, por mim</li>
                 <li className="flex gap-2.5"><Check className="w-4 h-4 text-primary flex-none mt-0.5" /> Baseado na sua anamnese, seu histórico e suas limitações</li>
-                <li className="flex gap-2.5"><Check className="w-4 h-4 text-primary flex-none mt-0.5" /> Uma revisão gratuita depois de duas semanas de uso</li>
+                <li className="flex gap-2.5"><Check className="w-4 h-4 text-primary flex-none mt-0.5" /> Um treino novo por mês, pelos três meses — cada um é um ciclo completo, com semana de deload</li>
+                <li className="flex gap-2.5"><Check className="w-4 h-4 text-primary flex-none mt-0.5" /> Revisão do seu check-in semanal, para ajustar carga e volume</li>
+                <li className="flex gap-2.5"><Check className="w-4 h-4 text-primary flex-none mt-0.5" /> Dúvidas pelo WhatsApp, com resposta em até 24h em dia útil</li>
+                <li className="flex gap-2.5"><Check className="w-4 h-4 text-primary flex-none mt-0.5" /> Acesso completo ao app durante os três meses, incluso</li>
                 <li className="flex gap-2.5"><Check className="w-4 h-4 text-primary flex-none mt-0.5" /> Entra direto no app, com vídeo e cronômetro como qualquer treino</li>
               </ul>
 
