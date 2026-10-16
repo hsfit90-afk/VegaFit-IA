@@ -81,17 +81,21 @@ export default function RevisarEquipamentos() {
    *
    * ACADEMIA é simples: vira ['maquina'] e sai de todo treino de casa.
    *
-   * CASA precisa de cuidado. "Cabe em casa" não diz DE QUE precisa, e sem isso quem não tem
-   * nada receberia rosca com halteres. Então o botão PRESERVA o equipamento que já estava
+   * AMBOS precisa de cuidado. "Cabe nos dois" não diz DE QUE precisa, e sem isso quem não
+   * tem nada receberia rosca com halteres. Então o botão PRESERVA o equipamento que já estava
    * marcado (a sugestão da IA, quase sempre certa) e só tira 'maquina'. Se a sugestão for
    * vazia, fica peso corporal mesmo.
+   *
+   * O rótulo é "Ambos" e não "Casa" porque é o que ele de fato significa: não existe
+   * exercício que caiba em casa e não caiba na academia. Chamar de "Casa" fazia parecer que
+   * faltava um terceiro estado.
    *
    * O refinamento continua ali embaixo, nas caixas, para os casos em que o balde grosso não
    * basta — mas deixou de ser obrigatório.
    */
   const marcarAcademia = (ex: ExercicioParaRevisar) => salvar(ex, ['maquina']);
 
-  const marcarCasa = (ex: ExercicioParaRevisar) =>
+  const marcarAmbos = (ex: ExercicioParaRevisar) =>
     salvar(ex, (ex.equipamento_necessario ?? []).filter(x => x !== 'maquina'));
 
   const salvar = async (ex: ExercicioParaRevisar, equipamento: string[]) => {
@@ -227,10 +231,16 @@ export default function RevisarEquipamentos() {
                     )}
 
                     {/* A PERGUNTA BINÁRIA PRIMEIRO. Resolve a maioria num toque; as caixas
-                        embaixo ficam para refinar o que o balde grosso não separa. */}
+                        embaixo ficam para refinar o que o balde grosso não separa.
+                        
+                        SÃO DOIS ESTADOS, NÃO TRÊS, e o rótulo "Ambos" é o que torna isso
+                        óbvio. Não existe exercício que caiba em casa e NÃO caiba na academia
+                        — a academia tem tudo que a casa tem. Então "cabe em casa" e "cabe nos
+                        dois" são a mesma coisa, e chamar de "Casa" fazia parecer que havia um
+                        terceiro estado faltando. */}
                     <div className="flex gap-2 mt-2.5">
                       <button
-                        onClick={() => marcarCasa(ex)}
+                        onClick={() => marcarAmbos(ex)}
                         disabled={salvando === ex.id}
                         className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-40 ${
                           !ids.includes('maquina') && confirmado
@@ -238,7 +248,7 @@ export default function RevisarEquipamentos() {
                             : 'bg-surface-light border-white/10 hover:border-primary/40 hover:text-primary'
                         }`}
                       >
-                        Casa
+                        Ambos
                       </button>
                       <button
                         onClick={() => marcarAcademia(ex)}
@@ -257,8 +267,8 @@ export default function RevisarEquipamentos() {
                     {!ids.includes('maquina') && (
                       <p className="text-[11px] text-foreground-muted mt-1.5">
                         {ids.length > 0
-                          ? <>Em casa, para quem tem: <span className="text-foreground">{ids.join(', ')}</span></>
-                          : 'Em casa, sem precisar de nada.'}
+                          ? <>Em casa e na academia, para quem tem: <span className="text-foreground">{ids.join(', ')}</span></>
+                          : 'Em casa e na academia, sem precisar de nada.'}
                       </p>
                     )}
 
