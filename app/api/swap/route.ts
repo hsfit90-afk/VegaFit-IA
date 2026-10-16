@@ -94,8 +94,29 @@ export async function POST(req: NextRequest) {
 
     if (emCasa) {
       const antes = candidates.length;
+
+      /**
+       * A classificação vem do BANCO, não do corpo da requisição.
+       *
+       * Os candidatos chegam do navegador — só nome, id e grupo. Confiar neles para dizer de
+       * que equipamento precisam seria pôr a prescrição nas mãos do cliente, que é o erro que
+       * esta rota já cometeu de outro jeito. Busca-se pelo nome, que é o que há em comum.
+       */
+      const { data: classificados } = await servico
+        .from('exercises')
+        .select('name, equipamento_necessario')
+        .in('name', candidates.map(c => c.name));
+
+      const porNome = new Map(
+        (classificados ?? []).map(c => [c.name, c.equipamento_necessario as string[] | null])
+      );
+      const comClassificacao = candidates.map(c => ({
+        ...c,
+        equipamento_necessario: porNome.get(c.name) ?? null,
+      }));
+
       const filtrados = filtrarParaCasa(
-        candidates,
+        comClassificacao,
         perfilDoAluno?.equipamentos_casa as string[] | null
       );
       // Salvaguarda: a lista já está restrita a um grupo muscular, então pode esvaziar de vez.

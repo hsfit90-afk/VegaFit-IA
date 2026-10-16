@@ -423,3 +423,49 @@ describe('cabeEmCasa — face pull', () => {
     expect(cabeEmCasa('Puxada Front Lever', ['barra_fixa'])).toBe(true);
   });
 });
+
+/**
+ * A CLASSIFICACAO GUARDADA substitui o palpite pelo nome (16/10/2026).
+ *
+ * Cada exercicio passou a ter uma lista do que exige, preenchida uma vez e revisada pelo
+ * profissional. O filtro compara lista com lista em vez de procurar palavra no nome -- que e
+ * o que vinha deixando "Levantamento Terra" e "Puxada para o Rosto" chegarem a quem treina na
+ * sala.
+ */
+describe('filtrarParaCasa — pela classificacao', () => {
+  const ex = (name: string, equipamento_necessario: string[] | null) => ({ name, equipamento_necessario });
+
+  it('exige TUDO que o exercicio pede', () => {
+    const pool = [
+      ex('Supino inclinado com halteres', ['banco', 'halteres']),
+      ex('Rosca com halteres', ['halteres']),
+    ];
+    // So halteres: passa a rosca, nao passa o supino, que tambem quer banco.
+    expect(filtrarParaCasa(pool, ['halteres']).map(e => e.name)).toEqual(['Rosca com halteres']);
+    expect(filtrarParaCasa(pool, ['halteres', 'banco']).length).toBe(2);
+  });
+
+  it('lista vazia e peso corporal, passa para todo mundo', () => {
+    expect(filtrarParaCasa([ex('Flexão', [])], []).length).toBe(1);
+  });
+
+  it('maquina nunca passa, nem com tudo marcado', () => {
+    const tudo = ['halteres','barra','elastico','banco','barra_fixa','kettlebell','acessorios'];
+    expect(filtrarParaCasa([ex('Leg Press', ['maquina'])], tudo).length).toBe(0);
+  });
+
+  it('a classificacao GANHA do nome', () => {
+    // "Levantamento Terra" nao cita barra no nome. Antes passava; agora a coluna manda.
+    expect(filtrarParaCasa([ex('Levantamento Terra', ['barra'])], ['halteres']).length).toBe(0);
+    expect(filtrarParaCasa([ex('Levantamento Terra', ['barra'])], ['barra']).length).toBe(1);
+
+    // E no sentido inverso: o nome cortava "Voador com Halteres", a coluna libera.
+    expect(filtrarParaCasa([ex('Voador com Halteres para Cima', ['banco','halteres'])], ['banco','halteres']).length).toBe(1);
+  });
+
+  it('sem classificacao, cai na regra por nome', () => {
+    // E o que faz exercicio recem-cadastrado funcionar antes de alguem revisar.
+    expect(filtrarParaCasa([ex('Leg Press Horizontal', null)], ['halteres']).length).toBe(0);
+    expect(filtrarParaCasa([ex('Flexão de Braço', null)], []).length).toBe(1);
+  });
+});

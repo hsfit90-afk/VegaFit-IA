@@ -20,6 +20,8 @@ import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
  */
 
 export interface ItemDaLista {
+  /** O que o exercicio exige, para o filtro de casa ler o dado em vez do nome. */
+  equipamento_necessario?: string[] | null;
   id?: string;
   name: string;
   muscle_group?: string | null;

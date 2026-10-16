@@ -34,11 +34,12 @@ export default function Mobilidade() {
       const supabase = createClient();
       const { data } = await supabase
         .from('exercises')
-        .select('id, name, muscle_group, media_url')
+        .select('id, name, muscle_group, media_url, equipamento_necessario')
         .order('name')
         .limit(1000);
       setCatalogo((data ?? []).map(e => ({
         id: e.id, name: e.name, muscle_group: e.muscle_group, mediaUrl: e.media_url,
+        equipamento_necessario: e.equipamento_necessario,
       })));
     })();
   }, []);

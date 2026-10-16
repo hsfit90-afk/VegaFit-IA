@@ -262,11 +262,46 @@ export function avaliarParaCasa(
  * Aqui, devolver um exercício de leg press a quem treina na sala é prescrever o impossível.
  * Peso corporal cobre todos os grupos, então nenhum grupo fica sem opção de verdade.
  */
-export function filtrarParaCasa<T extends { name: string }>(
+/**
+ * O exercício cabe, segundo a CLASSIFICAÇÃO guardada no banco.
+ *
+ * Esta é a regra que substitui o palpite pelo nome, a partir de 16/10/2026. Cada exercício
+ * tem uma lista do que exige (exercises.equipamento_necessario), preenchida uma vez e
+ * revisada pelo profissional. Aqui só se compara lista com lista.
+ *
+ * `null` significa NÃO CLASSIFICADO, e devolve null também: quem chama cai na regra por nome.
+ * É o que faz exercício novo funcionar no dia em que entra no catálogo, antes de alguém
+ * passar na tela de revisão.
+ */
+export function cabePelaClassificacao(
+  exige: string[] | null | undefined,
+  tenho: string[] | null | undefined
+): boolean | null {
+  if (!Array.isArray(exige)) return null;
+  if (exige.includes('maquina')) return false;
+  const possui = new Set(tenho ?? []);
+  return exige.every(id => possui.has(id));
+}
+
+/**
+ * Filtra o catálogo para quem treina em casa.
+ *
+ * SEM SALVAGUARDA POR GRUPO MUSCULAR, ao contrário do filtro de academia — e é de propósito.
+ * Lá, devolver um exercício de máquina a quem está na academia é no máximo inconveniente.
+ * Aqui, devolver leg press a quem treina na sala é prescrever o impossível.
+ *
+ * PREFERE A CLASSIFICAÇÃO, cai no nome quando ela não existe. A regra por nome continua no
+ * código porque continua sendo usada: exercício recém-cadastrado chega sem classificação, e
+ * entre errar como antes e não entregar nada, errar como antes é melhor.
+ */
+export function filtrarParaCasa<T extends { name: string; equipamento_necessario?: string[] | null }>(
   exercicios: T[],
   tenho: string[] | null | undefined
 ): T[] {
-  return exercicios.filter(ex => avaliarParaCasa(ex.name, tenho).cabe);
+  return exercicios.filter(ex => {
+    const pelaColuna = cabePelaClassificacao(ex.equipamento_necessario, tenho);
+    return pelaColuna ?? avaliarParaCasa(ex.name, tenho).cabe;
+  });
 }
 
 /**
