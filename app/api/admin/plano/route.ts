@@ -138,7 +138,7 @@ function limparPreparo(e: any) {
  */
 async function aplicarAquecimento(limpas: any[], alunoId: string) {
   const [{ data: catalogo }, { data: perfilDoAluno }] = await Promise.all([
-    admin().from('exercises').select('id, name, muscle_group, equipamento_necessario'),
+    admin().from('exercises').select('id, name, muscle_group, equipamento_necessario, contexto'),
     admin().from('profiles').select('training_location, equipamentos_casa').eq('id', alunoId).maybeSingle(),
   ]);
 

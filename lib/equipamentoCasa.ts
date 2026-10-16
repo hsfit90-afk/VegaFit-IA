@@ -294,14 +294,39 @@ export function cabePelaClassificacao(
  * código porque continua sendo usada: exercício recém-cadastrado chega sem classificação, e
  * entre errar como antes e não entregar nada, errar como antes é melhor.
  */
-export function filtrarParaCasa<T extends { name: string; equipamento_necessario?: string[] | null }>(
+export function filtrarParaCasa<T extends ExercicioClassificado>(
   exercicios: T[],
   tenho: string[] | null | undefined
 ): T[] {
   return exercicios.filter(ex => {
+    // O contexto decide se o exercício é para este lugar; o equipamento, se ele é possível.
+    // As duas coisas têm que valer.
+    if (!serveNoLocal(contextoDoExercicio(ex.contexto, ex.equipamento_necessario), true)) return false;
     const pelaColuna = cabePelaClassificacao(ex.equipamento_necessario, tenho);
     return pelaColuna ?? avaliarParaCasa(ex.name, tenho).cabe;
   });
+}
+
+export interface ExercicioClassificado {
+  name: string;
+  equipamento_necessario?: string[] | null;
+  contexto?: string | null;
+}
+
+/**
+ * O filtro de quem treina na ACADEMIA, que antes não existia.
+ *
+ * Até aqui, aluno de academia recebia o catálogo inteiro — o único filtro era o de "Minha
+ * academia", opcional, para marcar o que falta. Com o contexto, o profissional pode tirar da
+ * academia o que ele só prescreve em casa.
+ *
+ * Não filtra por equipamento: a academia tem tudo, e o que falta nela é tratado pelo filtro
+ * de equipamento ausente, que é outra coisa e continua valendo.
+ */
+export function filtrarParaAcademia<T extends ExercicioClassificado>(exercicios: T[]): T[] {
+  return exercicios.filter(ex =>
+    serveNoLocal(contextoDoExercicio(ex.contexto, ex.equipamento_necessario), false)
+  );
 }
 
 /**
@@ -344,4 +369,47 @@ export function resumirCasa(tenho: string[] | null | undefined): string {
   }
   if (nomes.length === 1) return `Seus treinos vão usar ${nomes[0].toLowerCase()} e o peso do corpo.`;
   return `Seus treinos vão usar ${nomes.slice(0, -1).join(', ').toLowerCase()} e ${nomes[nomes.length - 1].toLowerCase()}, além do peso do corpo.`;
+}
+
+// ---------------------------------------------------------------------------------------
+// CONTEXTO: onde o exercício deve ser prescrito
+//
+// Pergunta diferente da do equipamento. `equipamento_necessario` responde "o aluno CONSEGUE
+// fazer?"; `contexto` responde "o profissional QUER prescrever aqui?".
+//
+// Flexão de braço é o exemplo que separa as duas: cabe nos dois lugares pelo equipamento —
+// não precisa de nada —, mas na academia existe supino, e o profissional pode preferir não
+// prescrever flexão para quem tem a academia inteira. Pelo equipamento isso é
+// indistinguível.
+// ---------------------------------------------------------------------------------------
+
+export type Contexto = 'casa' | 'academia' | 'ambos';
+
+const CONTEXTOS: Contexto[] = ['casa', 'academia', 'ambos'];
+
+/**
+ * O contexto do exercício, deduzido quando ninguém marcou.
+ *
+ * A dedução reproduz o comportamento que existia antes da coluna: exige máquina, é de
+ * academia; não exige, serve nos dois. Assim nada muda até alguém marcar, e exercício novo
+ * funciona no dia em que entra no catálogo.
+ *
+ * Valor desconhecido na coluna também cai na dedução — errar para o comportamento antigo é
+ * mais seguro que errar para um exercício que some sem explicação.
+ */
+export function contextoDoExercicio(
+  contexto: string | null | undefined,
+  exige: string[] | null | undefined
+): Contexto {
+  if (contexto && (CONTEXTOS as string[]).includes(contexto)) return contexto as Contexto;
+  return Array.isArray(exige) && exige.includes('maquina') ? 'academia' : 'ambos';
+}
+
+/** O exercício deve aparecer para quem treina neste lugar? */
+export function serveNoLocal(
+  ctx: Contexto,
+  alunoTreinaEmCasa: boolean
+): boolean {
+  if (ctx === 'ambos') return true;
+  return alunoTreinaEmCasa ? ctx === 'casa' : ctx === 'academia';
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cabeEmCasa, filtrarParaCasa, tiersDeCasa, resumirCasa, EQUIPAMENTOS_CASA, avaliarParaCasa, dicasDeImproviso } from '@/lib/equipamentoCasa';
+import { cabeEmCasa, filtrarParaCasa, tiersDeCasa, resumirCasa, EQUIPAMENTOS_CASA, avaliarParaCasa, dicasDeImproviso, contextoDoExercicio, serveNoLocal, filtrarParaAcademia } from '@/lib/equipamentoCasa';
 
 /**
  * Espelho invertido do filtro de academia:
@@ -467,5 +467,66 @@ describe('filtrarParaCasa — pela classificacao', () => {
     // E o que faz exercicio recem-cadastrado funcionar antes de alguem revisar.
     expect(filtrarParaCasa([ex('Leg Press Horizontal', null)], ['halteres']).length).toBe(0);
     expect(filtrarParaCasa([ex('Flexão de Braço', null)], []).length).toBe(1);
+  });
+});
+
+/**
+ * CONTEXTO: onde o exercicio deve ser prescrito (16/10/2026, pedido do CREF).
+ *
+ * Pergunta diferente da do equipamento. `equipamento_necessario` responde "o aluno CONSEGUE
+ * fazer?"; `contexto` responde "o profissional QUER prescrever aqui?".
+ *
+ * Flexao de braco separa as duas: cabe nos dois lugares pelo equipamento -- nao precisa de
+ * nada --, mas na academia existe supino, e ele pode preferir nao prescrever flexao para quem
+ * tem a academia inteira.
+ */
+describe('contexto do exercicio', () => {
+  it('deduz do equipamento quando ninguem marcou', () => {
+    // Reproduz o comportamento anterior a coluna: nada muda ate alguem marcar.
+    expect(contextoDoExercicio(null, ['maquina'])).toBe('academia');
+    expect(contextoDoExercicio(null, ['halteres'])).toBe('ambos');
+    expect(contextoDoExercicio(null, [])).toBe('ambos');
+    expect(contextoDoExercicio(null, null)).toBe('ambos');
+  });
+
+  it('o marcado ganha da deducao', () => {
+    expect(contextoDoExercicio('casa', [])).toBe('casa');
+    expect(contextoDoExercicio('academia', [])).toBe('academia');
+    // Marcar "ambos" num exercicio de maquina e contraditorio, mas a escolha dele vale --
+    // pode ser maquina que a academia dele tem e a do aluno nao.
+    expect(contextoDoExercicio('ambos', ['maquina'])).toBe('ambos');
+  });
+
+  it('valor desconhecido cai na deducao, nao some', () => {
+    // Errar para o comportamento antigo e mais seguro que o exercicio sumir sem explicacao.
+    expect(contextoDoExercicio('qualquer coisa', ['maquina'])).toBe('academia');
+  });
+
+  it('serveNoLocal separa os tres', () => {
+    expect(serveNoLocal('ambos', true)).toBe(true);
+    expect(serveNoLocal('ambos', false)).toBe(true);
+    expect(serveNoLocal('casa', true)).toBe(true);
+    expect(serveNoLocal('casa', false)).toBe(false);   // some da academia
+    expect(serveNoLocal('academia', false)).toBe(true);
+    expect(serveNoLocal('academia', true)).toBe(false);
+  });
+
+  it('o filtro de casa respeita o contexto E o equipamento', () => {
+    const pool = [
+      { name: 'Flexão', equipamento_necessario: [], contexto: 'casa' },
+      { name: 'Supino com Halteres', equipamento_necessario: ['banco','halteres'], contexto: 'ambos' },
+      { name: 'Leg Press', equipamento_necessario: ['maquina'], contexto: 'academia' },
+    ];
+    // So halteres: a flexao passa, o supino nao (falta banco), o leg press nunca.
+    expect(filtrarParaCasa(pool, ['halteres']).map(e => e.name)).toEqual(['Flexão']);
+  });
+
+  it('o filtro de academia tira o que e so de casa', () => {
+    const pool = [
+      { name: 'Flexão', equipamento_necessario: [], contexto: 'casa' },
+      { name: 'Supino com Halteres', equipamento_necessario: ['banco','halteres'], contexto: 'ambos' },
+      { name: 'Leg Press', equipamento_necessario: ['maquina'], contexto: 'academia' },
+    ];
+    expect(filtrarParaAcademia(pool).map(e => e.name)).toEqual(['Supino com Halteres', 'Leg Press']);
   });
 });

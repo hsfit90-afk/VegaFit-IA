@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       await Promise.all([
         serviceSupabase
           .from('exercises')
-          .select('id, name, muscle_group, equipamento_necessario'), // Buscar todos os exercícios, ignorando user_id por enquanto (B2C)
+          .select('id, name, muscle_group, equipamento_necessario, contexto'), // Buscar todos os exercícios, ignorando user_id por enquanto (B2C)
         fetchLatestAnamneseAnswers(serviceSupabase, targetUserId),
         serviceSupabase.from('workout_history').select('date, workout_plan_id').eq('user_id', targetUserId),
         // Papel lido do BANCO, nunca do corpo da requisição: `profile` vem do cliente e poderia

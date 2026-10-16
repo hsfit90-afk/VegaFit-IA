@@ -104,15 +104,14 @@ export async function POST(req: NextRequest) {
        */
       const { data: classificados } = await servico
         .from('exercises')
-        .select('name, equipamento_necessario')
+        .select('name, equipamento_necessario, contexto')
         .in('name', candidates.map(c => c.name));
 
-      const porNome = new Map(
-        (classificados ?? []).map(c => [c.name, c.equipamento_necessario as string[] | null])
-      );
+      const porNome = new Map((classificados ?? []).map(c => [c.name, c]));
       const comClassificacao = candidates.map(c => ({
         ...c,
-        equipamento_necessario: porNome.get(c.name) ?? null,
+        equipamento_necessario: (porNome.get(c.name)?.equipamento_necessario as string[] | null) ?? null,
+        contexto: (porNome.get(c.name)?.contexto as string | null) ?? null,
       }));
 
       const filtrados = filtrarParaCasa(

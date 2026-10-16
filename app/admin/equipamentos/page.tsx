@@ -33,6 +33,8 @@ interface ExercicioParaRevisar {
   media_url: string | null;
   equipamento_necessario: string[] | null;
   equipamento_origem: string | null;
+  contexto: string | null;
+  contextoEfetivo: 'casa' | 'academia' | 'ambos';
   divergente: boolean;
   naoClassificado: boolean;
   iaDizQueCabeEmCasa: boolean;
@@ -93,23 +95,43 @@ export default function RevisarEquipamentos() {
    * O refinamento continua ali embaixo, nas caixas, para os casos em que o balde grosso não
    * basta — mas deixou de ser obrigatório.
    */
-  const marcarAcademia = (ex: ExercicioParaRevisar) => salvar(ex, ['maquina']);
+  /**
+   * Os tres contextos, num toque cada.
+   *
+   * ACADEMIA marca o contexto E poe 'maquina' no equipamento: exercicio de academia costuma
+   * exigir aparelho, e as duas coisas andam juntas na pratica.
+   *
+   * CASA e AMBOS preservam o equipamento ja marcado e so tiram 'maquina' -- "serve em casa"
+   * nao diz DE QUE precisa, e sem isso quem nao tem nada receberia rosca com halteres.
+   *
+   * A diferenca entre os dois esta so no CONTEXTO: "casa" some do treino de quem esta na
+   * academia, "ambos" aparece nos dois. Pelo equipamento eles sao identicos.
+   */
+  const semMaquina = (ex: ExercicioParaRevisar) =>
+    (ex.equipamento_necessario ?? []).filter(x => x !== 'maquina');
 
-  const marcarAmbos = (ex: ExercicioParaRevisar) =>
-    salvar(ex, (ex.equipamento_necessario ?? []).filter(x => x !== 'maquina'));
+  const marcarAcademia = (ex: ExercicioParaRevisar) => salvar(ex, ['maquina'], 'academia');
+  const marcarCasa = (ex: ExercicioParaRevisar) => salvar(ex, semMaquina(ex), 'casa');
+  const marcarAmbos = (ex: ExercicioParaRevisar) => salvar(ex, semMaquina(ex), 'ambos');
 
-  const salvar = async (ex: ExercicioParaRevisar, equipamento: string[]) => {
+  const salvar = async (ex: ExercicioParaRevisar, equipamento: string[], contexto?: string) => {
     setSalvando(ex.id);
     try {
       const r = await fetch('/api/admin/equipamentos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: ex.id, equipamento }),
+        body: JSON.stringify({ id: ex.id, equipamento, contexto }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'Não consegui salvar.');
       setLista(l => (l ?? []).map(x => x.id === ex.id
-        ? { ...x, equipamento_necessario: d.equipamento, equipamento_origem: 'profissional' }
+        ? {
+            ...x,
+            equipamento_necessario: d.equipamento,
+            equipamento_origem: 'profissional',
+            contexto: d.contexto ?? x.contexto,
+            contextoEfetivo: (d.contexto ?? x.contextoEfetivo) as 'casa' | 'academia' | 'ambos',
+          }
         : x));
     } catch (e) {
       toast.erro(e instanceof Error ? e.message : 'Não consegui salvar.');
@@ -230,47 +252,47 @@ export default function RevisarEquipamentos() {
                       </p>
                     )}
 
-                    {/* A PERGUNTA BINÁRIA PRIMEIRO. Resolve a maioria num toque; as caixas
-                        embaixo ficam para refinar o que o balde grosso não separa.
-                        
-                        SÃO DOIS ESTADOS, NÃO TRÊS, e o rótulo "Ambos" é o que torna isso
-                        óbvio. Não existe exercício que caiba em casa e NÃO caiba na academia
-                        — a academia tem tudo que a casa tem. Então "cabe em casa" e "cabe nos
-                        dois" são a mesma coisa, e chamar de "Casa" fazia parecer que havia um
-                        terceiro estado faltando. */}
-                    <div className="flex gap-2 mt-2.5">
-                      <button
-                        onClick={() => marcarAmbos(ex)}
-                        disabled={salvando === ex.id}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-40 ${
-                          !ids.includes('maquina') && confirmado
-                            ? 'bg-primary/20 text-primary border-primary/50'
-                            : 'bg-surface-light border-white/10 hover:border-primary/40 hover:text-primary'
-                        }`}
-                      >
-                        Ambos
-                      </button>
-                      <button
-                        onClick={() => marcarAcademia(ex)}
-                        disabled={salvando === ex.id}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-40 ${
-                          ids.includes('maquina')
-                            ? 'bg-destructive/20 text-destructive border-destructive/50'
-                            : 'bg-surface-light border-white/10 hover:border-destructive/40 hover:text-destructive'
-                        }`}
-                      >
-                        Só academia
-                      </button>
+                    {/* OS TRÊS CONTEXTOS.
+                        Casa e Ambos são idênticos pelo EQUIPAMENTO — a diferença é onde o
+                        exercício aparece. "Casa" some do treino de quem está na academia: é
+                        para o que o profissional só prescreve em casa, porque lá existe
+                        coisa melhor. */}
+                    <div className="grid grid-cols-3 gap-2 mt-2.5">
+                      {([
+                        ['casa', 'Casa', marcarCasa, false],
+                        ['ambos', 'Ambos', marcarAmbos, false],
+                        ['academia', 'Academia', marcarAcademia, true],
+                      ] as const).map(([valor, rotulo, acao, vermelho]) => {
+                        const ativo = ex.contextoEfetivo === valor;
+                        return (
+                          <button
+                            key={valor}
+                            onClick={() => acao(ex)}
+                            disabled={salvando === ex.id}
+                            className={`py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-40 ${
+                              ativo && confirmado
+                                ? (vermelho
+                                    ? 'bg-destructive/20 text-destructive border-destructive/50'
+                                    : 'bg-primary/20 text-primary border-primary/50')
+                                : ativo
+                                ? 'bg-surface-light border-white/25 text-foreground'
+                                : 'bg-surface-light border-white/10 text-foreground-muted hover:text-foreground'
+                            }`}
+                          >
+                            {rotulo}
+                          </button>
+                        );
+                      })}
                     </div>
 
-                    {/* Mostra o que "Casa" vai entregar, porque o botão sozinho não diz. */}
-                    {!ids.includes('maquina') && (
-                      <p className="text-[11px] text-foreground-muted mt-1.5">
-                        {ids.length > 0
-                          ? <>Em casa e na academia, para quem tem: <span className="text-foreground">{ids.join(', ')}</span></>
-                          : 'Em casa e na academia, sem precisar de nada.'}
-                      </p>
-                    )}
+                    {/* O que esta aceso sem confirmacao e palpite. Dizer isso evita achar que
+                        ja revisou o que so foi deduzido do equipamento. */}
+                    <p className="text-[11px] text-foreground-muted mt-1.5">
+                      {!confirmado && 'Sugerido — toque para confirmar. '}
+                      {!ids.includes('maquina') && (ids.length > 0
+                        ? `Precisa de: ${ids.join(', ')}.`
+                        : 'Não precisa de nada.')}
+                    </p>
 
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {OPCOES.map(o => {

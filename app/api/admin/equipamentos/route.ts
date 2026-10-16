@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/utils/supabase/auth-guard';
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
-import { cabeEmCasa, IDS_CASA } from '@/lib/equipamentoCasa';
+import { cabeEmCasa, IDS_CASA, contextoDoExercicio } from '@/lib/equipamentoCasa';
 
 /**
  * Revisão do equipamento de cada exercício do catálogo.
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await admin()
     .from('exercises')
-    .select('id, name, muscle_group, media_url, equipamento_necessario, equipamento_origem')
+    .select('id, name, muscle_group, media_url, equipamento_necessario, equipamento_origem, contexto')
     .order('name')
     .limit(1000);
 
@@ -64,6 +64,9 @@ export async function GET(req: NextRequest) {
     const nomeDizQueCabeEmCasa = cabeEmCasa(e.name, TUDO_DE_CASA);
     return {
       ...e,
+      // O contexto efetivo: o marcado, ou o deduzido do equipamento. A tela precisa saber
+      // qual botao acender mesmo para quem ninguem marcou ainda.
+      contextoEfetivo: contextoDoExercicio(e.contexto, e.equipamento_necessario),
       naoClassificado,
       divergente: !naoClassificado && iaDizQueCabeEmCasa !== nomeDizQueCabeEmCasa,
       // Para a tela explicar de que lado está a discordância.
@@ -107,6 +110,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const id = String(body?.id ?? '');
     const bruto = body?.equipamento;
+    const contexto = body?.contexto;
 
     if (!/^[0-9a-f-]{36}$/i.test(id)) {
       return NextResponse.json({ error: 'Exercicio invalido.' }, { status: 400 });
@@ -122,6 +126,9 @@ export async function POST(req: NextRequest) {
       .from('exercises')
       .update({
         equipamento_necessario: equipamento,
+        // So grava contexto se veio um dos tres; qualquer outra coisa deixa como esta, e a
+        // leitura cai na deducao pelo equipamento.
+        ...(['casa', 'academia', 'ambos'].includes(contexto) ? { contexto } : {}),
         // A partir daqui o dado é do profissional, e não volta a ser sugestão.
         equipamento_origem: 'profissional',
         equipamento_revisado_em: new Date().toISOString(),
@@ -133,7 +140,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Nao consegui salvar.' }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, equipamento });
+    return NextResponse.json({ ok: true, equipamento, contexto: contexto ?? null });
   } catch (e) {
     console.error('[admin/equipamentos] erro:', e instanceof Error ? e.message : e);
     return NextResponse.json({ error: 'Nao consegui salvar.' }, { status: 500 });

@@ -39,6 +39,7 @@ const QUANTIDADE = 3;
 
 interface ExercicioCore {
   equipamento_necessario?: string[] | null;
+  contexto?: string | null;
   id: string;
   name: string;
   muscle_group: string | null;
@@ -73,7 +74,7 @@ export default function Abdominal() {
       const supabase = createClient();
       const { data } = await supabase
         .from('exercises')
-        .select('id, name, muscle_group, media_url, equipamento_necessario')
+        .select('id, name, muscle_group, media_url, equipamento_necessario, contexto')
         .limit(1000);
       // QUEM TREINA EM CASA NÃO RECEBE ABDOMINAL DE BOLA SUÍÇA.
       //
@@ -87,7 +88,7 @@ export default function Abdominal() {
         .filter(e => /core|abd/i.test(e.muscle_group ?? ''))
         .map(e => ({ id: e.id, name: e.name, muscle_group: e.muscle_group, mediaUrl: e.media_url,
           // Vai junto: e o que o filtro usa no lugar do palpite pelo nome.
-          equipamento_necessario: e.equipamento_necessario }));
+          equipamento_necessario: e.equipamento_necessario, contexto: e.contexto }));
 
       setCatalogo(
         treinaEmCasa(mapAnamneseLocationToEquipment(profile?.trainingLocation))
