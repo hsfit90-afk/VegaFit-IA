@@ -50,7 +50,7 @@ export default function RevisarEquipamentos() {
 
   const [lista, setLista] = useState<ExercicioParaRevisar[] | null>(null);
   const [resumo, setResumo] = useState<{ total: number; divergentes: number; naoClassificados: number; revisados: number } | null>(null);
-  const [filtro, setFiltro] = useState<'divergentes' | 'todos' | 'revisados'>('divergentes');
+  const [filtro, setFiltro] = useState<'novos' | 'divergentes' | 'pendentes' | 'todos' | 'revisados'>('divergentes');
   const [salvando, setSalvando] = useState<string | null>(null);
   const [ampliado, setAmpliado] = useState<ExercicioParaRevisar | null>(null);
 
@@ -72,6 +72,27 @@ export default function RevisarEquipamentos() {
       : [...atual, idEquip];
     await salvar(ex, novo);
   };
+
+  /**
+   * OS DOIS BOTÕES GRANDES: casa ou academia, num toque.
+   *
+   * Pedido do profissional, e ele está certo sobre o motivo — oito caixas por exercício é
+   * lento para 882. A maioria se resolve na pergunta binária.
+   *
+   * ACADEMIA é simples: vira ['maquina'] e sai de todo treino de casa.
+   *
+   * CASA precisa de cuidado. "Cabe em casa" não diz DE QUE precisa, e sem isso quem não tem
+   * nada receberia rosca com halteres. Então o botão PRESERVA o equipamento que já estava
+   * marcado (a sugestão da IA, quase sempre certa) e só tira 'maquina'. Se a sugestão for
+   * vazia, fica peso corporal mesmo.
+   *
+   * O refinamento continua ali embaixo, nas caixas, para os casos em que o balde grosso não
+   * basta — mas deixou de ser obrigatório.
+   */
+  const marcarAcademia = (ex: ExercicioParaRevisar) => salvar(ex, ['maquina']);
+
+  const marcarCasa = (ex: ExercicioParaRevisar) =>
+    salvar(ex, (ex.equipamento_necessario ?? []).filter(x => x !== 'maquina'));
 
   const salvar = async (ex: ExercicioParaRevisar, equipamento: string[]) => {
     setSalvando(ex.id);
@@ -133,7 +154,9 @@ export default function RevisarEquipamentos() {
 
       <div className="flex gap-2 mb-5">
         {([
+          ['novos', 'GIF novo'],
           ['divergentes', 'Precisam do seu olho'],
+          ['pendentes', 'Falta confirmar'],
           ['revisados', 'Já confirmados'],
           ['todos', 'Catálogo inteiro'],
         ] as const).map(([v, rotulo]) => (
@@ -200,6 +223,42 @@ export default function RevisarEquipamentos() {
                         {ex.iaDizQueCabeEmCasa
                           ? 'A regra antiga cortava este; a classificação diz que cabe em casa.'
                           : 'A regra antiga deixava este passar; a classificação diz que é de academia.'}
+                      </p>
+                    )}
+
+                    {/* A PERGUNTA BINÁRIA PRIMEIRO. Resolve a maioria num toque; as caixas
+                        embaixo ficam para refinar o que o balde grosso não separa. */}
+                    <div className="flex gap-2 mt-2.5">
+                      <button
+                        onClick={() => marcarCasa(ex)}
+                        disabled={salvando === ex.id}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-40 ${
+                          !ids.includes('maquina') && confirmado
+                            ? 'bg-primary/20 text-primary border-primary/50'
+                            : 'bg-surface-light border-white/10 hover:border-primary/40 hover:text-primary'
+                        }`}
+                      >
+                        Casa
+                      </button>
+                      <button
+                        onClick={() => marcarAcademia(ex)}
+                        disabled={salvando === ex.id}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-40 ${
+                          ids.includes('maquina')
+                            ? 'bg-destructive/20 text-destructive border-destructive/50'
+                            : 'bg-surface-light border-white/10 hover:border-destructive/40 hover:text-destructive'
+                        }`}
+                      >
+                        Só academia
+                      </button>
+                    </div>
+
+                    {/* Mostra o que "Casa" vai entregar, porque o botão sozinho não diz. */}
+                    {!ids.includes('maquina') && (
+                      <p className="text-[11px] text-foreground-muted mt-1.5">
+                        {ids.length > 0
+                          ? <>Em casa, para quem tem: <span className="text-foreground">{ids.join(', ')}</span></>
+                          : 'Em casa, sem precisar de nada.'}
                       </p>
                     )}
 

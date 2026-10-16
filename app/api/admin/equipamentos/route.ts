@@ -72,8 +72,18 @@ export async function GET(req: NextRequest) {
     };
   });
 
+  /**
+   * "novos" é o filtro que faz esta tela ter uso continuado.
+   *
+   * Exercício recém-cadastrado entra com equipamento_necessario NULL, e enquanto for NULL o
+   * filtro de treino cai na regra por nome — que é justamente a que erra. Este recorte os
+   * junta num lugar só, para a classificação virar parte de subir GIF novo e não algo que
+   * alguém lembra de fazer seis meses depois.
+   */
   const lista =
-    filtro === 'divergentes' ? comDivergencia.filter(e => e.divergente || e.naoClassificado)
+    filtro === 'novos' ? comDivergencia.filter(e => e.naoClassificado)
+    : filtro === 'divergentes' ? comDivergencia.filter(e => e.divergente || e.naoClassificado)
+    : filtro === 'pendentes' ? comDivergencia.filter(e => e.equipamento_origem !== 'profissional')
     : filtro === 'revisados' ? comDivergencia.filter(e => e.equipamento_origem === 'profissional')
     : comDivergencia;
 
