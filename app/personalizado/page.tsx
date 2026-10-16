@@ -195,6 +195,11 @@ export default function TreinoPersonalizado() {
                     )}
                   </p>
                 </div>
+                {/* O QUE TORNA A OFERTA LEGÍVEL.
+                    R$ 147 é o mesmo número que antes comprava UM treino. Dizer isso é mais
+                    forte que qualquer percentual de desconto: não é preço menor, é o produto
+                    que ficou três vezes maior pelo mesmo dinheiro. E é verdade — dá para
+                    conferir nos pedidos antigos. */}
                 <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
                   estado.esgotado ? 'bg-destructive/15 text-destructive'
                     : estado.acabando ? 'bg-warning/15 text-warning' : 'bg-primary/15 text-primary'
@@ -204,6 +209,14 @@ export default function TreinoPersonalizado() {
                     : `${estado.vagasRestantes} de ${estado.limiteDeVagas} vagas`}
                 </span>
               </div>
+
+              {estado.promocional && (
+                <p className="text-sm bg-primary/10 border border-primary/30 rounded-xl p-3.5 leading-relaxed">
+                  <strong className="text-primary">R$ 147 era o preço de um treino só.</strong>{' '}
+                  Agora é o que custam os três meses inteiros — enquanto durarem as vagas do
+                  primeiro lote.
+                </p>
+              )}
 
               <ul className="space-y-2.5 text-sm text-foreground-muted">
                 <li className="flex gap-2.5"><Check className="w-4 h-4 text-primary flex-none mt-0.5" /> Treino montado exercício por exercício, por mim</li>

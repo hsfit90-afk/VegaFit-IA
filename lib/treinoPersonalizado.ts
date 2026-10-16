@@ -27,8 +27,18 @@ export const PLANO = {
   meses: 3,
   /** O preço que vale quando o lote de inauguração fechar. */
   valorCheio: 397,
-  /** O de agora, enquanto houver vaga no lote. */
-  valorPromocional: 297,
+  /**
+   * O de agora, enquanto houver vaga no lote.
+   *
+   * R$ 147 é o MESMO número que antes custava um treino avulso — e agora compra três meses de
+   * acompanhamento. É o que torna a oferta legível para quem já viu o preço antigo: não é
+   * desconto, é o produto que ficou três vezes maior pelo mesmo dinheiro.
+   *
+   * Decisão comercial do dono (16/10/2026), com uma ressalva que ele conhece: a renovação
+   * salta para R$ 397, que é 2,7 vezes. Quem entra a R$ 49/mês sente ao renovar, e vale
+   * combinar um preço de renovação com quem entrar no lote.
+   */
+  valorPromocional: 147,
 } as const;
 
 /** Quanto o aluno paga AGORA, dado o que resta do lote. */

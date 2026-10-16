@@ -143,7 +143,7 @@ describe('preco do plano trimestral', () => {
   });
 
   it('o valor por mes divide o total pelos meses', () => {
-    expect(valorPorMes(297)).toBe(99);
+    expect(valorPorMes(147)).toBe(49);
     expect(valorPorMes(397)).toBe(132);
   });
 
