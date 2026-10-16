@@ -157,6 +157,11 @@ export default function AdminDashboard() {
         <a href="/admin/exercicios" className="inline-flex items-center gap-2 bg-surface-light border border-white/10 font-outfit font-bold px-5 py-3 rounded-xl hover:bg-white/5 transition-colors">
           Exercicios por aluno
         </a>
+        {/* A revisao do catalogo: o filtro de equipamento deixou de adivinhar pelo nome e
+            passa a ler o que o profissional confirmou aqui. */}
+        <a href="/admin/equipamentos" className="inline-flex items-center gap-2 bg-surface-light border border-white/10 font-outfit font-bold px-5 py-3 rounded-xl hover:bg-white/5 transition-colors">
+          Equipamento por exercicio
+        </a>
       </div>
 
       <FilaPersonalizado />
