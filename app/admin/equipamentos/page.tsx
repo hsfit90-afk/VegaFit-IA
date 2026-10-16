@@ -124,15 +124,37 @@ export default function RevisarEquipamentos() {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'Não consegui salvar.');
-      setLista(l => (l ?? []).map(x => x.id === ex.id
-        ? {
-            ...x,
-            equipamento_necessario: d.equipamento,
-            equipamento_origem: 'profissional',
-            contexto: d.contexto ?? x.contexto,
-            contextoEfetivo: (d.contexto ?? x.contextoEfetivo) as 'casa' | 'academia' | 'ambos',
-          }
-        : x));
+      /**
+       * O EXERCÍCIO SAI DA LISTA ao ser confirmado — nas abas de trabalho pendente.
+       *
+       * Antes ele ficava, e a tela deixava de responder a pergunta "o que falta?": o
+       * profissional passava pelos mesmos exercícios de novo sem saber quais já tinha olhado.
+       *
+       * Em "Já confirmados" e "Catálogo inteiro" ele FICA, porque ali o trabalho é consultar
+       * e corrigir, não esvaziar fila. Sumir seria perder o que ele acabou de ajustar.
+       */
+      const abaDeTrabalho = filtro === 'novos' || filtro === 'divergentes' || filtro === 'pendentes';
+
+      if (abaDeTrabalho) {
+        setLista(l => (l ?? []).filter(x => x.id !== ex.id));
+        setResumo(r => r && {
+          ...r,
+          revisados: r.revisados + (ex.equipamento_origem === 'profissional' ? 0 : 1),
+          divergentes: Math.max(0, r.divergentes - (ex.divergente ? 1 : 0)),
+          naoClassificados: Math.max(0, r.naoClassificados - (ex.naoClassificado ? 1 : 0)),
+        });
+        toast.sucesso(`${ex.name}: ${d.contexto ?? 'salvo'}.`);
+      } else {
+        setLista(l => (l ?? []).map(x => x.id === ex.id
+          ? {
+              ...x,
+              equipamento_necessario: d.equipamento,
+              equipamento_origem: 'profissional',
+              contexto: d.contexto ?? x.contexto,
+              contextoEfetivo: (d.contexto ?? x.contextoEfetivo) as 'casa' | 'academia' | 'ambos',
+            }
+          : x));
+      }
     } catch (e) {
       toast.erro(e instanceof Error ? e.message : 'Não consegui salvar.');
     } finally {
@@ -180,12 +202,12 @@ export default function RevisarEquipamentos() {
 
       <div className="flex gap-2 mb-5">
         {([
-          ['novos', 'GIF novo'],
-          ['divergentes', 'Precisam do seu olho'],
-          ['pendentes', 'Falta confirmar'],
-          ['revisados', 'Já confirmados'],
-          ['todos', 'Catálogo inteiro'],
-        ] as const).map(([v, rotulo]) => (
+          ['novos', 'GIF novo', resumo?.naoClassificados],
+          ['divergentes', 'Precisam do seu olho', resumo?.divergentes],
+          ['pendentes', 'Falta confirmar', resumo ? resumo.total - resumo.revisados : undefined],
+          ['revisados', 'Já confirmados', resumo?.revisados],
+          ['todos', 'Catálogo inteiro', resumo?.total],
+        ] as const).map(([v, rotulo, quantos]) => (
           <button
             key={v}
             onClick={() => setFiltro(v)}
@@ -194,6 +216,11 @@ export default function RevisarEquipamentos() {
             }`}
           >
             {rotulo}
+            {typeof quantos === 'number' && (
+              <span className={`ml-1.5 tabular-nums ${filtro === v ? 'opacity-70' : 'opacity-50'}`}>
+                {quantos}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -201,10 +228,21 @@ export default function RevisarEquipamentos() {
       {lista === null ? (
         <div className="min-h-[30vh] flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
       ) : lista.length === 0 ? (
-        <Card><CardContent className="p-6 text-sm text-foreground-muted">
-          {filtro === 'divergentes'
-            ? 'Nenhuma divergência. A classificação e a regra por nome concordam em tudo.'
-            : 'Nada por aqui.'}
+        // A fila vazia é o resultado do trabalho, e vale dizer o que ela significa — cada aba
+        // esvazia por um motivo diferente.
+        <Card><CardContent className="p-6 text-sm text-foreground-muted flex items-start gap-3">
+          <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <span>
+            {filtro === 'novos'
+              ? 'Nenhum GIF novo esperando. Quando você subir exercício novo, ele aparece aqui.'
+              : filtro === 'divergentes'
+              ? 'Acabaram as divergências. O que sobrou é onde a classificação e a regra por nome já concordavam.'
+              : filtro === 'pendentes'
+              ? 'Catálogo inteiro revisado por você. Daqui em diante, só o que entrar de novo.'
+              : filtro === 'revisados'
+              ? 'Você ainda não confirmou nenhum. Toque em Casa, Ambos ou Academia em qualquer exercício.'
+              : 'Nada por aqui.'}
+          </span>
         </CardContent></Card>
       ) : (
         <div className="flex flex-col gap-2.5">
