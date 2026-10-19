@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2, ClipboardList , UserCheck , StretchHorizontal , Waves, Flame, Timer} from 'lucide-react';
+import { Home, Zap, Dumbbell, PlayCircle, History, MessageSquare, Settings, TrendingUp, Apple, LogOut, BarChart2, ClipboardList , UserCheck , StretchHorizontal , Waves, Flame, Timer, Users} from 'lucide-react';
 import { useAppContext } from '@/app/context/AppContext';
 
 /**
@@ -37,6 +37,7 @@ const DESKTOP_NAV_ITEMS = [
   { href: '/abdominal', label: 'Abdominal', icon: Flame },
   { href: '/mobilidade', label: 'Mobilidade', icon: Waves },
   { href: '/alongamento', label: 'Alongamento', icon: StretchHorizontal },
+  { href: '/admin/treinos', label: 'Treinos dos alunos', icon: Users, somenteMaster: true },
   { href: '/library', label: 'Exercícios', icon: Dumbbell, somenteMaster: true },
   { href: '/nutrition', label: 'Nutrição IA', icon: Apple, somenteMaster: true },
   { href: '/coach', label: 'AI Coach', icon: MessageSquare, somenteMaster: true },

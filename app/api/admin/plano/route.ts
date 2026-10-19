@@ -6,6 +6,11 @@ import { limparAlvosPorSerie } from '@/lib/metodoTreino';
 import { selecionarMobilidade } from '@/lib/preparoFinalizacao';
 import { filtrarParaCasa } from '@/lib/equipamentoCasa';
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
+import {
+  mesclarSessoesEditadas,
+  type ExercicioComChave,
+  type SessaoComExercicios,
+} from '@/lib/edicaoDePlano';
 
 /**
  * Salva um plano de treino montado à mão pelo profissional, na conta de um aluno.
@@ -99,6 +104,23 @@ function normalizarSessoes(sessoes: any[]) {
         restSeconds: Math.min(600, Math.max(0, Number(e?.restSeconds) || 60)),
         tips: String(e?.tips || '').slice(0, 500),
         youtubeSearchTerm: String(e?.name || '').slice(0, 120),
+
+        /**
+         * A PERIODIZAÇÃO, que esta função apagava.
+         *
+         * Achado em 19/10/2026: `method` guarda o texto da progressão de 4 semanas que a
+         * geração escreve em cada exercício ("Semana 1: 3 séries. ... Semana 4: Deload"). Como
+         * ele não estava nesta lista, abrir um plano gerado no montador e salvar apagava a
+         * progressão de TODOS os exercícios — em POST e em PUT. O treino continuava abrindo,
+         * só sem a instrução que diz ao aluno o que muda na semana seguinte.
+         *
+         * undefined e não string vazia quando não há: '' é um valor, e a tela do aluno
+         * renderizaria a tarja de método vazia como se alguém tivesse prescrito isso.
+         */
+        method: typeof e?.method === 'string' && e.method.trim()
+          ? e.method.trim().slice(0, 300)
+          : undefined,
+
         targetLabels: e?.targetLabels,
         targetReps: e?.targetReps,
         targetWeights: e?.targetWeights,
@@ -376,9 +398,11 @@ export async function PUT(req: NextRequest) {
 
     // O plano tem que ser deste aluno. service_role ignora RLS, então sem este filtro um id
     // trocado reescreveria o treino de outra pessoa.
+    //
+    // `sessions` vem junto porque a mesclagem precisa do que ESTÁ salvo: ver abaixo.
     const { data: existente } = await admin()
       .from('workout_plans')
-      .select('id')
+      .select('id, sessions')
       .eq('id', planoId)
       .eq('user_id', alvo)
       .maybeSingle();
@@ -387,7 +411,23 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Plano nao encontrado para este aluno.' }, { status: 404 });
     }
 
-    const limpas = normalizarSessoes(sessoes);
+    /**
+     * O QUE A TELA NÃO MANDOU CONTINUA EXISTINDO.
+     *
+     * O editor devolve a sessão INTEIRA, então um campo que o formulário não tem não significa
+     * "não mudou" — significa "apaga". Era assim que a carga alvo por série e a periodização
+     * desapareciam ao ajustar um exercício (ver lib/edicaoDePlano.ts).
+     *
+     * A mesclagem vem ANTES de normalizar, de propósito: `limparAlvosPorSerie`, dentro de
+     * normalizarSessoes, tem que manter a palavra final sobre alvo desalinhado. Mesclar depois
+     * reintroduziria exatamente o desalinhamento que a limpeza acabou de tirar.
+     */
+    const mescladas = mesclarSessoesEditadas(
+      sessoes,
+      (existente.sessions as SessaoComExercicios<ExercicioComChave>[] | null) ?? []
+    );
+
+    const limpas = normalizarSessoes(mescladas);
     if (limpas.length === 0) {
       return NextResponse.json({ error: 'Nenhum dia tem exercício.' }, { status: 400 });
     }
@@ -405,8 +445,41 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Nao consegui salvar as alteracoes.' }, { status: 500 });
     }
 
+    /**
+     * EDITAR UM PLANO QUE NÃO É O ATIVO NÃO MUDA NADA PARA O ALUNO.
+     *
+     * O aluno abre UM plano: o que `profiles.active_plan_id` aponta. Salvar alterações num
+     * plano que não é esse é trabalho que não chega do outro lado — e, pior, o profissional
+     * sai da tela achando que chegou.
+     *
+     * Ativar sozinho seria pior ainda: trocar o treino do aluno sem pedir, só porque alguém
+     * abriu um plano antigo para conferir. Então a rota ATIVA quando pedem (`ativar: true`) e,
+     * de qualquer forma, DIZ se este é o plano que o aluno vê. Quem decide é quem está olhando
+     * a tela; o que a rota garante é que ninguém decide sem saber.
+     */
+    const { data: perfil } = await admin()
+      .from('profiles')
+      .select('active_plan_id')
+      .eq('id', alvo)
+      .maybeSingle();
+
+    let ativo = perfil?.active_plan_id === planoId;
+
+    if (!ativo && body?.ativar === true) {
+      const { error: erroAtivo } = await admin()
+        .from('profiles')
+        .update({ active_plan_id: planoId })
+        .eq('id', alvo);
+      if (erroAtivo) {
+        console.error('[admin/plano] PUT salvou mas nao ativou:', erroAtivo.message);
+      } else {
+        ativo = true;
+        console.log(`[admin/plano] ${user.id} ativou o plano ${planoId} para ${alvo} ao salvar`);
+      }
+    }
+
     console.log(`[admin/plano] ${user.id} atualizou o plano ${planoId} de ${alvo} (${limpas.length} dias)`);
-    return NextResponse.json({ ok: true, planoId, dias: limpas.length });
+    return NextResponse.json({ ok: true, planoId, dias: limpas.length, ativo });
   } catch (e) {
     console.error('[admin/plano] PUT erro:', e instanceof Error ? e.message : e);
     return NextResponse.json({ error: 'Nao consegui salvar as alteracoes.' }, { status: 500 });

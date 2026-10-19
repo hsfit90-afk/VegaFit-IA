@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { useSearchParams } from 'next/navigation';
 import { useSomenteMaster } from '@/components/useSomenteMaster';
 import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark, Eye, Pencil } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark, Eye, Pencil, ChevronUp, ChevronDown, Home } from 'lucide-react';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { EditorDePreparo, type ItemDePreparo } from '@/components/admin/EditorDePreparo';
 import { classificarTipo } from '@/lib/preparoFinalizacao';
+import { moverNaLista, ajustarCargas, aplicarCargaEmTodas } from '@/lib/edicaoDePlano';
 
 import { prescrever, normalizarObjetivo } from '@/lib/protocolo';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
@@ -37,6 +38,20 @@ interface ExercicioLinha {
   reps: string;
   restSeconds: number;
   tips: string;
+
+  /** Carga sugerida por série, editável desde 19/10/2026. */
+  targetWeights?: number[];
+
+  /**
+   * A periodização de 4 semanas que a geração escreve ("Semana 1: 3 séries… Semana 4: Deload").
+   *
+   * NÃO é editável aqui — está no tipo só para ATRAVESSAR a tela. Sem isto, gerar um plano e
+   * salvar apagava a progressão de todos os exercícios: o editor devolve a sessão inteira, e o
+   * que não está no formulário não volta. No plano que já existe o servidor remonta a partir do
+   * que está salvo (ver lib/edicaoDePlano.ts); num plano NOVO não há o que remontar, então
+   * quem tem que carregar é a tela.
+   */
+  method?: string;
 }
 
 interface SessaoLinha {
@@ -76,7 +91,30 @@ interface ResumoDoAluno {
   condicoes: string | null;
   liberacao: string | null;
 }
-interface ExercicioCatalogo { id: string; name: string; muscle_group: string; media_url: string | null }
+/**
+ * Um exercício do catálogo, JÁ julgado contra o inventário deste aluno.
+ *
+ * `cabe` vem do servidor e sai do mesmo filtro que a geração usa — não de uma regra escrita
+ * aqui. Ver app/api/admin/catalogo/route.ts.
+ */
+interface ExercicioCatalogo {
+  id: string;
+  name: string;
+  muscle_group: string;
+  media_url: string | null;
+  cabe: boolean;
+  /** Como improvisar, quando cabe só por improvisação ("dá para usar uma cadeira"). */
+  dica: string | null;
+  /** O que falta, quando não cabe. Rótulos legíveis, já traduzidos pelo servidor. */
+  exige: string[];
+}
+
+/** O que /api/admin/catalogo diz sobre o lugar onde o aluno treina. */
+interface LocalDoAluno {
+  emCasa: boolean;
+  local: string | null;
+  rotulosDoEquipamento: string[];
+}
 
 const novaLinha = (): ExercicioLinha => ({
   id: crypto.randomUUID(),
@@ -92,9 +130,23 @@ const novaLinha = (): ExercicioLinha => ({
 export default function MontarTreino() {
   const ehMaster = useSomenteMaster();
   const toast = useToast();
+  const params = useSearchParams();
 
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [catalogo, setCatalogo] = useState<ExercicioCatalogo[]>([]);
+  const [localDoAluno, setLocalDoAluno] = useState<LocalDoAluno | null>(null);
+  const [carregandoCatalogo, setCarregandoCatalogo] = useState(false);
+  /**
+   * Ver o catálogo inteiro, incluindo o que não cabe no que o aluno tem.
+   *
+   * Existe porque quem tem CREF pode querer prescrever um exercício fora do inventário com
+   * nota de improviso — e porque há grupo muscular que fica VAZIO no filtro: bíceps não tem
+   * nenhum exercício de peso corporal puro no catálogo (medido em 19/10/2026: 0 de 61). Sem
+   * esta válvula, montar bíceps para quem não tem nada seria impossível pela tela.
+   *
+   * Começa desligado de propósito: o padrão é o que o aluno consegue executar.
+   */
+  const [mostrarTudo, setMostrarTudo] = useState(false);
   const [alunoId, setAlunoId] = useState('');
   const [nome, setNome] = useState('');
   const [sessoes, setSessoes] = useState<SessaoLinha[]>([]);
@@ -118,6 +170,10 @@ export default function MontarTreino() {
    */
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [planosDoAluno, setPlanosDoAluno] = useState<{ id: string; name: string; sessions: any[]; created_at: string }[]>([]);
+  /** Qual plano o aluno REALMENTE abre. Editar outro não muda nada para ele. */
+  const [ativoId, setAtivoId] = useState<string | null>(null);
+  /** Quando ele treinou por último, para avisar sobre treino possivelmente em andamento. */
+  const [ultimoTreino, setUltimoTreino] = useState<string | null>(null);
   const [resumo, setResumo] = useState<ResumoDoAluno | null>(null);
   const [temAnamnese, setTemAnamnese] = useState(false);
   const [carregandoAluno, setCarregandoAluno] = useState(false);
@@ -138,18 +194,32 @@ export default function MontarTreino() {
     duration: 60,
   });
 
+  /**
+   * O catálogo NÃO vem mais aqui.
+   *
+   * Vinha, direto do navegador e sem filtro nenhum — e por isso o campo de busca oferecia os
+   * 882 exercícios a quem treina na sala de casa, leg press incluído. O filtro depende do
+   * perfil do aluno, que decide prescrição e por isso é lido no servidor; então o catálogo só
+   * pode ser buscado DEPOIS de saber de quem é o treino. Ver o efeito da troca de aluno.
+   */
   useEffect(() => {
     (async () => {
-      const supabase = createClient();
-      const [r, cat] = await Promise.all([
-        fetch('/api/admin/plano'),
-        supabase.from('exercises').select('id, name, muscle_group, media_url').order('name').limit(1000),
-      ]);
+      const r = await fetch('/api/admin/plano');
       if (r.ok) setAlunos((await r.json()).alunos ?? []);
-      if (cat.data) setCatalogo(cat.data);
       setCarregando(false);
     })();
   }, []);
+
+  /**
+   * Abrir já no aluno certo, e já no plano certo.
+   *
+   * É o que liga a lista de /admin/treinos a esta tela: um clique lá chega aqui com o treino
+   * aberto, em vez de obrigar a reencontrar o aluno num seletor de 200 nomes.
+   */
+  useEffect(() => {
+    const vindo = params.get('userId');
+    if (vindo) setAlunoId(vindo);
+  }, [params]);
 
   const alunoEscolhido = alunos.find(a => a.id === alunoId);
 
@@ -160,14 +230,32 @@ export default function MontarTreino() {
    * lib/preparoFinalizacao.ts já sabe separar. Oferecer o catálogo inteiro faria o
    * profissional escolher supino como aquecimento sem querer.
    */
+  /**
+   * O que os campos de busca oferecem.
+   *
+   * Por padrão, só o que o aluno consegue executar com o que ele tem. A válvula de ver tudo é
+   * global: ela vale para exercício, mobilidade e alongamento ao mesmo tempo, porque um
+   * seletor filtrado ao lado de outro aberto é a situação em que ninguém sabe o que está vendo.
+   */
+  const catalogoVisivel = useMemo(
+    () => (mostrarTudo ? catalogo : catalogo.filter(c => c.cabe)),
+    [catalogo, mostrarTudo]
+  );
+
+  const quantosCabem = useMemo(() => catalogo.filter(c => c.cabe).length, [catalogo]);
+
   const catalogoDeMobilidade = useMemo(
-    () => catalogo.filter(c => classificarTipo(c.name, c.muscle_group) === 'mobilidade'),
-    [catalogo]
+    () => catalogoVisivel.filter(c => classificarTipo(c.name, c.muscle_group) === 'mobilidade'),
+    [catalogoVisivel]
   );
   const catalogoDeAlongamento = useMemo(
-    () => catalogo.filter(c => classificarTipo(c.name, c.muscle_group) === 'alongamento'),
-    [catalogo]
+    () => catalogoVisivel.filter(c => classificarTipo(c.name, c.muscle_group) === 'alongamento'),
+    [catalogoVisivel]
   );
+
+  /** O julgamento do catálogo sobre um exercício já escolhido, para a linha avisar. */
+  const noCatalogo = (ex: ExercicioLinha): ExercicioCatalogo | undefined =>
+    catalogo.find(c => (ex.exerciseId && c.id === ex.exerciseId) || c.name === ex.name);
 
   /**
    * Ao escolher o aluno, busca a anamnese dele e pré-preenche a geração.
@@ -177,21 +265,62 @@ export default function MontarTreino() {
    * entregar um treino que não serve.
    */
   useEffect(() => {
-    if (!alunoId) { setResumo(null); setTemAnamnese(false); return; }
+    if (!alunoId) {
+      setResumo(null);
+      setTemAnamnese(false);
+      setCatalogo([]);
+      setLocalDoAluno(null);
+      setAtivoId(null);
+      return;
+    }
     let cancelado = false;
     (async () => {
       setCarregandoAluno(true);
+      setCarregandoCatalogo(true);
+      // Troca de aluno reseta a válvula: o que cabia para o anterior não cabe para este, e
+      // deixar o catálogo aberto esconderia justamente a informação que importa.
+      setMostrarTudo(false);
       try {
-        const [r, rPlanos] = await Promise.all([
+        const [r, rPlanos, rCatalogo] = await Promise.all([
           fetch(`/api/admin/aluno?userId=${encodeURIComponent(alunoId)}`),
           fetch(`/api/admin/plano?userId=${encodeURIComponent(alunoId)}`),
+          fetch(`/api/admin/catalogo?userId=${encodeURIComponent(alunoId)}`),
         ]);
         if (rPlanos.ok) setPlanosDoAluno((await rPlanos.json()).planos ?? []);
+
+        // O catálogo filtrado. Falhar aqui é sério: sem ele a tela não tem o que oferecer, e
+        // oferecer o catálogo inteiro como "melhor que nada" é o bug que isto corrige.
+        if (rCatalogo.ok) {
+          const dc = await rCatalogo.json();
+          if (!cancelado) {
+            setCatalogo((dc.exercicios ?? []).map((e: any) => ({
+              id: e.id,
+              name: e.name,
+              muscle_group: e.muscleGroup,
+              media_url: e.mediaUrl,
+              cabe: Boolean(e.cabe),
+              dica: e.dica ?? null,
+              exige: e.exige ?? [],
+            })));
+            setLocalDoAluno({
+              emCasa: Boolean(dc.aluno?.emCasa),
+              local: dc.aluno?.local ?? null,
+              rotulosDoEquipamento: dc.aluno?.rotulosDoEquipamento ?? [],
+            });
+          }
+        } else if (!cancelado) {
+          setCatalogo([]);
+          setLocalDoAluno(null);
+          toast.erro('Não consegui carregar o catálogo deste aluno.');
+        }
+
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || 'Não consegui carregar o aluno.');
         if (cancelado) return;
         setResumo(d.resumo);
         setTemAnamnese(Boolean(d.aluno?.temAnamnese));
+        setAtivoId(d.aluno?.activePlanId ?? null);
+        setUltimoTreino(d.aluno?.ultimoTreino ?? null);
         setConfig(c => ({ ...c, ...d.sugestao }));
       } catch (e) {
         if (!cancelado) {
@@ -200,7 +329,10 @@ export default function MontarTreino() {
           toast.erro(e instanceof Error ? e.message : 'Não consegui carregar o aluno.');
         }
       } finally {
-        if (!cancelado) setCarregandoAluno(false);
+        if (!cancelado) {
+          setCarregandoAluno(false);
+          setCarregandoCatalogo(false);
+        }
       }
     })();
     // Troca rápida de aluno: a resposta antiga não pode sobrescrever a nova.
@@ -233,7 +365,69 @@ export default function MontarTreino() {
     // o que está na conta dele, e oferecer a prévia ali enganaria quem confia nela.
     setSalvo(false);
     setSessoes(s => s.map(x => (x.id === sessaoId
-      ? { ...x, exercises: x.exercises.map(e => (e.id === exId ? { ...e, [campo]: valor } : e)) }
+      ? {
+          ...x,
+          exercises: x.exercises.map(e => {
+            if (e.id !== exId) return e;
+            const novo = { ...e, [campo]: valor };
+
+            /**
+             * Mexer em "séries" arrasta a carga junto.
+             *
+             * `limparAlvosPorSerie` DESCARTA o array de carga quando o tamanho não bate com
+             * `sets` — e está certo, porque rótulo desalinhado faz o aluno descansar na hora
+             * errada no drop set. Só que descartar seria a resposta errada aqui: quem subiu de
+             * 3 para 4 séries perderia a carga que acabou de digitar por mexer num campo
+             * vizinho. Ver ajustarCargas em lib/edicaoDePlano.ts.
+             */
+            if (campo === 'sets') novo.targetWeights = ajustarCargas(e.targetWeights, Number(valor));
+            return novo;
+          }),
+        }
+      : x)));
+  };
+
+  /** Carga sugerida de UMA série. Campo vazio ou zero limpa a prescrição daquela série. */
+  const mudaCarga = (sessaoId: string, exId: string, serie: number, valor: number) => {
+    setSalvo(false);
+    setSessoes(s => s.map(x => (x.id === sessaoId
+      ? {
+          ...x,
+          exercises: x.exercises.map(e => {
+            if (e.id !== exId) return e;
+            const base = ajustarCargas(e.targetWeights, e.sets) ?? Array(e.sets).fill(0);
+            const cargas = [...base];
+            cargas[serie] = Number.isFinite(valor) && valor > 0 ? valor : 0;
+            // Tudo zerado é "sem prescrição de carga", não "prescrevi zero quilo".
+            return { ...e, targetWeights: cargas.some(c => c > 0) ? cargas : undefined };
+          }),
+        }
+      : x)));
+  };
+
+  /**
+   * Repete a carga da primeira série nas outras.
+   *
+   * O caso comum é "20 kg nas quatro"; progressão por série é exceção. Digitar o mesmo número
+   * quatro vezes é o tipo de atrito que faz o campo não ser usado.
+   */
+  const igualarCarga = (sessaoId: string, exId: string) => {
+    setSalvo(false);
+    setSessoes(s => s.map(x => (x.id === sessaoId
+      ? {
+          ...x,
+          exercises: x.exercises.map(e => (e.id === exId
+            ? { ...e, targetWeights: aplicarCargaEmTodas(e.targetWeights?.[0] ?? 0, e.sets) }
+            : e)),
+        }
+      : x)));
+  };
+
+  /** Sobe ou desce um exercício dentro do dia. A ordem na tela é a ordem da execução. */
+  const moveExercicio = (sessaoId: string, de: number, para: number) => {
+    setSalvo(false);
+    setSessoes(s => s.map(x => (x.id === sessaoId
+      ? { ...x, exercises: moverNaLista(x.exercises, de, para) }
       : x)));
   };
 
@@ -249,13 +443,24 @@ export default function MontarTreino() {
     setEditandoId(pl.id);
     setNome(pl.name);
     setSalvo(false);
+    /**
+     * OS IDS ORIGINAIS SÃO MANTIDOS, e isso não é detalhe.
+     *
+     * Aqui se gerava `crypto.randomUUID()` para cada dia e cada exercício, jogando fora o id
+     * que o plano tinha. Com o id perdido, o servidor não consegue reencontrar o exercício no
+     * plano salvo para devolver o que o formulário não edita — e a mesclagem de
+     * lib/edicaoDePlano.ts cairia no nome, que é ambíguo quando o mesmo exercício aparece duas
+     * vezes no dia com séries diferentes.
+     *
+     * O uuid novo continua valendo para plano antigo que não tem id, e para linha nova.
+     */
     setSessoes((pl.sessions ?? []).map((sx: any, i: number) => ({
-      id: crypto.randomUUID(),
+      id: String(sx.id || crypto.randomUUID()),
       name: sx.name || `Treino ${String.fromCharCode(65 + i)}`,
       warmup: Array.isArray(sx.warmup) ? sx.warmup : undefined,
       alongamento: Array.isArray(sx.alongamento) ? sx.alongamento : undefined,
       exercises: (sx.exercises ?? []).map((e: any) => ({
-        id: crypto.randomUUID(),
+        id: String(e.id || crypto.randomUUID()),
         // Reencontra o id no catálogo pelo nome, como os modelos fazem: plano antigo pode ter
         // sido salvo antes de um recadastro de exercício.
         exerciseId: e.exerciseId || catalogo.find(c => c.name === e.name)?.id || '',
@@ -265,10 +470,35 @@ export default function MontarTreino() {
         reps: String(e.reps || '8-12'),
         restSeconds: Number(e.restSeconds) || 60,
         tips: String(e.tips || ''),
+        targetWeights: Array.isArray(e.targetWeights) ? e.targetWeights : undefined,
+        method: typeof e.method === 'string' ? e.method : undefined,
       })),
     })));
     toast.sucesso(`"${pl.name}" aberto para edição. Salvar atualiza este treino.`);
   };
+
+  /**
+   * Abre o plano pedido na URL, uma vez, quando os dados já chegaram.
+   *
+   * Espera o catálogo: `editarPlano` reencontra o id do exercício nele, e abrir antes deixaria
+   * as linhas sem miniatura e sem o aviso de equipamento — justamente o que a tela ganhou.
+   */
+  const [abriuDaUrl, setAbriuDaUrl] = useState(false);
+  useEffect(() => {
+    if (abriuDaUrl) return;
+    const pedido = params.get('planoId');
+    if (!pedido || planosDoAluno.length === 0 || catalogo.length === 0) return;
+    const achado = planosDoAluno.find(p => p.id === pedido);
+    setAbriuDaUrl(true);
+    if (achado) {
+      editarPlano(achado);
+    } else {
+      toast.erro('Esse treino não está mais na conta deste aluno.');
+    }
+    // editarPlano e toast mudam a cada render e reabririam o plano em loop; o que de fato
+    // dispara isto é a chegada dos dados.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params, planosDoAluno, catalogo, abriuDaUrl]);
 
   // ---- modelos de sessão ----
 
@@ -429,6 +659,10 @@ export default function MontarTreino() {
           reps: String(e.reps || '8-12'),
           restSeconds: Number(e.restSeconds) || 60,
           tips: String(e.tips || ''),
+          // Carga e periodização vêm da geração e precisam atravessar a tela: num plano NOVO
+          // não há plano salvo de onde o servidor as remonte.
+          targetWeights: Array.isArray(e.targetWeights) ? e.targetWeights : undefined,
+          method: typeof e.method === 'string' ? e.method : undefined,
         })),
       })));
       if (!nome) setNome(`Treino de ${alunoEscolhido?.name || 'aluno'}`);
@@ -450,6 +684,22 @@ export default function MontarTreino() {
       toast.erro('Adicione ao menos um exercício.'); return;
     }
 
+    /**
+     * EDITAR UM PLANO QUE NÃO É O ATIVO NÃO CHEGA AO ALUNO.
+     *
+     * O aluno abre UM plano. Salvar alterações em outro é trabalho que não aparece do lado
+     * dele — e o pior é sair da tela achando que apareceu. Então pergunta, aqui, enquanto dá
+     * para decidir, em vez de avisar depois.
+     */
+    let ativar = false;
+    if (editandoId && ativoId && editandoId !== ativoId) {
+      ativar = confirm(
+        `Este não é o treino que ${alunoEscolhido?.name || 'o aluno'} abre hoje. ` +
+        `Salvar sem ativar não muda nada para ele.\n\nOK ativa este treino agora. ` +
+        `Cancelar salva só as alterações.`
+      );
+    }
+
     setSalvando(true);
     try {
       const res = await fetch('/api/admin/plano', {
@@ -458,6 +708,7 @@ export default function MontarTreino() {
         body: JSON.stringify({
           userId: alunoId,
           planoId: editandoId ?? undefined,
+          ativar,
           name: nome,
           split: `${sessoes.length} dias`,
           sessions: sessoes.map(s => ({
@@ -471,6 +722,7 @@ export default function MontarTreino() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Não consegui salvar.');
+      if (data.ativo) setAtivoId(data.planoId ?? editandoId);
       toast.sucesso(editandoId
         ? `Treino atualizado na conta de ${alunoEscolhido?.name || 'aluno'} (${data.dias} dias).`
         : `Treino salvo na conta de ${alunoEscolhido?.name || 'aluno'} (${data.dias} dias).`);
@@ -487,6 +739,28 @@ export default function MontarTreino() {
     () => sessoes.reduce((n, s) => n + s.exercises.filter(e => e.name.trim()).length, 0),
     [sessoes]
   );
+
+  /**
+   * Pode haver um treino EM ANDAMENTO no aparelho deste aluno agora.
+   *
+   * O treino em andamento vive no localStorage dele, e o servidor não tem cópia nem como
+   * consultar — então isto é probabilidade, não certeza, e o aviso diz isso com essas
+   * palavras.
+   *
+   * A janela é de 8 horas porque é exatamente a validade do cache (MAX_AGE_MS em
+   * utils/workoutCache.ts): passado esse prazo não existe mais sessão restaurável, e avisar
+   * seria assustar à toa.
+   *
+   * O que acontece de fato se houver: a tela aberta dele não muda (não há atualização em
+   * tempo real), e se ele recarregar, retoma a sessão antiga que já está no aparelho. Não
+   * corrompe nada — no pior caso ele termina um dia que você acabou de tirar do plano.
+   */
+  const JANELA_DO_CACHE_MS = 8 * 60 * 60 * 1000;
+  const talvezTreinandoAgora = useMemo(() => {
+    if (!ultimoTreino) return false;
+    const quando = Date.parse(ultimoTreino);
+    return Number.isFinite(quando) && Date.now() - quando < JANELA_DO_CACHE_MS;
+  }, [ultimoTreino, JANELA_DO_CACHE_MS]);
 
   if (!ehMaster || carregando) {
     return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
@@ -784,6 +1058,51 @@ export default function MontarTreino() {
           </CardContent>
         </Card>
 
+      {/* O QUE OS CAMPOS DE BUSCA ESTÃO OFERECENDO.
+          O montador carregava o catálogo inteiro e sem filtro: montando para quem treina na
+          sala, o campo oferecia leg press e cadeira extensora, e não havia nada na tela que
+          dissesse o contrário. Agora o número está à vista, e abrir o resto é um ato
+          explícito — não o padrão. */}
+      {alunoId && sessoes.length > 0 && (
+        <div className="mb-4 rounded-xl border border-border bg-surface/60 p-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {carregandoCatalogo ? (
+            <p className="text-sm text-foreground-muted flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> Conferindo o que cabe no que este aluno tem…
+            </p>
+          ) : (
+            <>
+              <div className="flex-1 min-w-[220px]">
+                <p className="text-sm font-semibold flex items-center gap-1.5">
+                  {localDoAluno?.emCasa && <Home className="w-4 h-4 text-secondary" />}
+                  {mostrarTudo
+                    ? `Mostrando os ${catalogo.length} exercícios do catálogo`
+                    : `${quantosCabem} de ${catalogo.length} exercícios`}
+                </p>
+                <p className="text-xs text-foreground-muted mt-0.5">
+                  {localDoAluno?.emCasa
+                    ? `Treina em casa com: ${localDoAluno.rotulosDoEquipamento.length > 0
+                        ? localDoAluno.rotulosDoEquipamento.join(', ')
+                        : 'nada marcado — só peso do corpo'}.`
+                    : `Treina em academia${localDoAluno?.local ? ` (${localDoAluno.local})` : ''}.`}
+                  {mostrarTudo && ' Os que não cabem aparecem marcados na linha.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMostrarTudo(v => !v)}
+                className={`text-xs font-semibold px-3 py-2 rounded-lg border transition-colors flex-none ${
+                  mostrarTudo
+                    ? 'border-warning/50 bg-warning/10 text-warning'
+                    : 'border-white/10 bg-surface-light text-foreground-muted hover:text-primary hover:border-primary/40'
+                }`}
+              >
+                {mostrarTudo ? 'Voltar ao que cabe' : 'Mostrar o catálogo todo'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Sessões */}
       <div className="flex flex-col gap-4">
         {sessoes.map((sessao, si) => (
@@ -821,7 +1140,7 @@ export default function MontarTreino() {
               </div>
 
               <div className="flex flex-col gap-2">
-                {sessao.exercises.map(ex => (
+                {sessao.exercises.map((ex, ei) => (
                   <div key={ex.id} className="grid grid-cols-12 gap-2 items-start bg-surface/60 rounded-xl p-2.5 border border-border">
                     {/* A MINIATURA. Montar treino às cegas significa digitar um nome e torcer
                         para ser o movimento que você tem na cabeça — e o catálogo tem
@@ -861,6 +1180,29 @@ export default function MontarTreino() {
                       </div>
                       {ex.muscleGroup && (
                         <span className="text-[11px] text-foreground-muted pl-1">{ex.muscleGroup}</span>
+                      )}
+
+                      {/* O AVISO NA LINHA, e não só no contador lá em cima.
+                          Um exercício fora do inventário pode entrar de propósito — e aí a
+                          linha tem que dizer o que falta, para a observação ao aluno explicar
+                          o improviso. O que não pode é entrar sem ninguém perceber, que era o
+                          que acontecia. */}
+                      {ex.name.trim() && noCatalogo(ex)?.cabe === false && (
+                        <span className="text-[11px] text-warning pl-1 flex items-start gap-1">
+                          <AlertTriangle className="w-3 h-3 mt-0.5 flex-none" />
+                          <span>
+                            Fora do que o aluno tem
+                            {(noCatalogo(ex)?.exige.length ?? 0) > 0
+                              ? `: precisa de ${noCatalogo(ex)!.exige.join(', ').toLowerCase()}`
+                              : ''}
+                          </span>
+                        </span>
+                      )}
+
+                      {/* A dica de improviso vem do mesmo lugar que a geração usa, então é a
+                          mesma que o aluno veria no treino gerado. */}
+                      {ex.name.trim() && noCatalogo(ex)?.dica && (
+                        <span className="text-[11px] text-secondary pl-1">{noCatalogo(ex)!.dica}</span>
                       )}
 
                       {/* PRESETS DO PROTOCOLO.
@@ -905,15 +1247,78 @@ export default function MontarTreino() {
                         className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center tabular-nums focus:outline-none focus:border-primary/50" />
                     </div>
 
-                    <div className="col-span-1 flex items-end justify-center h-full pb-1">
+                    {/* REORDENAR, que o ícone de alça prometia sem cumprir.
+                        A ordem na tela é a ordem em que o aluno executa, e composto antes de
+                        isolado não é preferência: é a prescrição. Subir e descer em vez de
+                        arrastar porque isto é usado no celular, onde arrastar numa lista que
+                        rola é a interação que mais erra. */}
+                    <div className="col-span-1 flex flex-col items-center justify-end h-full gap-0.5 pb-1">
+                      <button
+                        onClick={() => moveExercicio(sessao.id, ei, ei - 1)}
+                        disabled={ei === 0}
+                        aria-label={`Subir ${ex.name || 'exercício'}`}
+                        className="p-1 text-foreground-muted hover:text-primary transition-colors disabled:opacity-20 disabled:hover:text-foreground-muted"
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => moveExercicio(sessao.id, ei, ei + 1)}
+                        disabled={ei === sessao.exercises.length - 1}
+                        aria-label={`Descer ${ex.name || 'exercício'}`}
+                        className="p-1 text-foreground-muted hover:text-primary transition-colors disabled:opacity-20 disabled:hover:text-foreground-muted"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => removeExercicio(sessao.id, ex.id)}
                         aria-label={`Remover ${ex.name || 'exercício'}`}
-                        className="p-1.5 text-foreground-muted hover:text-destructive transition-colors"
+                        className="p-1 text-foreground-muted hover:text-destructive transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
+
+                    {/* A CARGA SUGERIDA, que a tela não tinha e o salvamento apagava.
+                        O plano guarda `targetWeights` — uma carga por série —, e a tela do
+                        aluno lê isso para mostrar o alvo. O montador não tinha o campo, então
+                        editar um plano gerado zerava a carga de todos os exercícios.
+                        Fica em linha própria porque são até 10 campos: num celular eles não
+                        caberiam na mesma linha das séries. */}
+                    {ex.name.trim() && (
+                      <div className="col-span-12 border-t border-border/60 pt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                        <span className="text-[10px] uppercase tracking-wider text-foreground-muted">
+                          Carga sugerida (kg)
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {Array.from({ length: ex.sets }, (_, i) => (
+                            <input
+                              key={i}
+                              type="number"
+                              min={0}
+                              step={0.5}
+                              value={ex.targetWeights?.[i] || ''}
+                              onChange={e => mudaCarga(sessao.id, ex.id, i, Number(e.target.value))}
+                              placeholder={`S${i + 1}`}
+                              aria-label={`Carga da série ${i + 1} de ${ex.name}`}
+                              className="w-14 bg-black/30 border border-border rounded-lg py-1 px-1.5 text-xs text-center tabular-nums focus:outline-none focus:border-primary/50"
+                            />
+                          ))}
+                        </div>
+                        {ex.sets > 1 && (ex.targetWeights?.[0] ?? 0) > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => igualarCarga(sessao.id, ex.id)}
+                            title="Repetir a carga da primeira série nas outras"
+                            className="text-[11px] px-2 py-1 rounded-md bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors"
+                          >
+                            igualar
+                          </button>
+                        )}
+                        <span className="text-[10px] text-foreground-muted">
+                          Em branco: o aluno registra a carga dele.
+                        </span>
+                      </div>
+                    )}
 
                     <div className="col-span-12">
                       <input
@@ -963,6 +1368,37 @@ export default function MontarTreino() {
         ))}
       </div>
 
+      {/* ESTE NÃO É O TREINO QUE O ALUNO ABRE.
+          O aluno vê UM plano: o que o perfil dele aponta. Editar outro é trabalho que não
+          chega do outro lado. O aviso fica ANTES do botão de salvar, enquanto ainda dá para
+          decidir — avisar depois de salvar seria contar o que já aconteceu. */}
+      {sessoes.length > 0 && editandoId && ativoId && editandoId !== ativoId && (
+        <div className="mt-5 rounded-xl border border-warning/40 bg-warning/10 p-4 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+          <p className="text-sm">
+            Este não é o treino que <strong>{alunoEscolhido?.name || 'o aluno'}</strong> abre
+            hoje. Salvar guarda as alterações, mas ele continua no treino ativo — ao salvar,
+            você escolhe se quer ativar este.
+          </p>
+        </div>
+      )}
+
+      {/* PODE HAVER ALGUÉM TREINANDO AGORA.
+          O treino em andamento fica no aparelho do aluno, e daqui não dá para ver. O que dá
+          para saber é que ele treinou há pouco — então o aviso fala em possibilidade, não em
+          certeza, e diz o que de fato acontece. */}
+      {sessoes.length > 0 && editandoId && editandoId === ativoId && talvezTreinandoAgora && (
+        <div className="mt-5 rounded-xl border border-secondary/40 bg-secondary/10 p-4 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
+          <p className="text-sm">
+            <strong>{alunoEscolhido?.name || 'Este aluno'}</strong> treinou nas últimas horas e
+            pode estar com um treino aberto no celular. Salvar não interrompe nem corrompe o
+            que ele está fazendo: ele termina a sessão que já começou e vê as mudanças na
+            próxima.
+          </p>
+        </div>
+      )}
+
       {sessoes.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-3 mt-5">
           <Button variant="outline" onClick={addSessao} className="sm:w-auto">
@@ -1002,9 +1438,13 @@ export default function MontarTreino() {
       )}
 
       {/* Um datalist só, compartilhado por todas as linhas: 882 opções repetidas por linha
-          deixariam a tela pesada sem necessidade. */}
+          deixariam a tela pesada sem necessidade.
+
+          Sai de `catalogoVisivel` e não de `catalogo`: é aqui que o filtro de equipamento
+          chega ao campo de busca. Sem o aluno escolhido a lista fica vazia, e isso está certo
+          — não existe "o que cabe" antes de saber para quem é o treino. */}
       <datalist id="catalogo-exercicios">
-        {catalogo.map(c => <option key={c.id} value={c.name} />)}
+        {catalogoVisivel.map(c => <option key={c.id} value={c.name} />)}
       </datalist>
       <datalist id="catalogo-mobilidade">
         {catalogoDeMobilidade.map(c => <option key={c.id} value={c.name} />)}

@@ -60,13 +60,29 @@ export async function GET(req: NextRequest) {
     }
 
     const cliente = admin();
-    const [{ data: perfil }, respostas] = await Promise.all([
+    const [{ data: perfil }, respostas, { data: ultimos }] = await Promise.all([
       cliente
         .from('profiles')
         .select('id, name, goal, level, training_location, equipamentos_casa, active_plan_id')
         .eq('id', alvo)
         .maybeSingle(),
       fetchLatestAnamneseAnswers(cliente, alvo),
+      /**
+       * Quando este aluno treinou pela última vez.
+       *
+       * Serve para o montador avisar antes de salvar: um treino EM ANDAMENTO vive no
+       * localStorage do aparelho do aluno (utils/workoutCache.ts), o servidor não tem cópia e
+       * não há como consultá-lo daqui. O que dá para saber é se ele treinou há pouco — e isso
+       * basta para a tela dizer "pode ter alguém no meio de um treino agora".
+       *
+       * Não é certeza, é probabilidade, e a tela precisa dizer isso com essas palavras.
+       */
+      cliente
+        .from('workout_history')
+        .select('date')
+        .eq('user_id', alvo)
+        .order('date', { ascending: false })
+        .limit(1),
     ]);
 
     if (!perfil) {
@@ -85,6 +101,7 @@ export async function GET(req: NextRequest) {
         // Qual plano o aluno realmente abre. A previa usa isto para mostrar o treino certo,
         // em vez de assumir que e o mais recente -- os dois divergem quando ele troca.
         activePlanId: perfil.active_plan_id ?? null,
+        ultimoTreino: ultimos?.[0]?.date ?? null,
       },
       // O que o montador mostra na tela.
       resumo: {
