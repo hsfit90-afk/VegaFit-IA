@@ -259,75 +259,42 @@ export default function PreviaDoAluno() {
         </CardContent></Card>
       )}
 
-      {/* A TELA QUE ELE ABRE, na linguagem visual do dashboard dele.
-          Mesma moldura, mesma informação, mesma ordem — e os VERBOS trocados: onde ele lê
-          "INICIAR TREINO", aqui se lê "Editar este treino". Uma cópia fiel teria o botão de
-          treinar sem função nenhuma, e meia tela de botão morto é pior que nenhuma tela.
-
-          Só aparece no plano ATIVO: é o único que ele enxerga, e mostrar esta moldura num
-          plano antigo diria "é isto que ele abre" sobre algo que ele não abre. */}
-      {plano && ehOAtivo && (
-        <div className="mb-5 bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 rounded-3xl p-5 md:p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
-
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <h2 className="text-base font-bold m-0">Plano Ativo</h2>
-            </div>
-            <p className="text-lg font-bold text-primary mb-3">{plano.name}</p>
-
-            {/* O MESMO desvio por fadiga que o dashboard dele faz. Sem isto a prévia diria
-                "Treino A" e ele abriria o B. */}
-            {escolha.desviadoPorFadiga && (
-              <div className="flex items-start gap-2 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 mb-3">
-                <AlertTriangle className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
-                <div className="min-w-0">
-                  <p className="text-orange-400 font-bold text-[11px] uppercase tracking-wider">
-                    Ele vai ver &quot;Fadiga Detectada&quot;
-                  </p>
-                  <p className="text-orange-300/80 text-xs mt-0.5">
-                    {sessaoDoCiclo?.name} usa músculo treinado nas últimas 24h. O app desvia
-                    para o treino abaixo.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <p className="text-[11px] text-foreground-muted uppercase tracking-wider font-semibold mb-1">
-              Próximo treino
+      {/* O RESUMO DO PLANO, enxuto.
+          Era um card grande com O PRÓXIMO treino, e isso fez a tela ser lida como se o plano
+          tivesse um dia só — duas vezes. O card graúdo agora é de CADA dia, logo abaixo; aqui
+          fica só o que vale para o plano inteiro: o estado da conta e o botão de editar. */}
+      {plano && (
+        <div className="mb-5 rounded-2xl border border-border bg-surface p-4 flex flex-wrap items-center gap-x-4 gap-y-3">
+          <div className="flex-1 min-w-[200px]">
+            <p className="text-xs uppercase tracking-wider font-semibold text-foreground-muted">
+              {ehOAtivo ? 'O treino que ele abre' : 'Treino guardado, que ele NÃO abre'}
             </p>
-            <p className="text-base font-bold">{sessaoDeHoje?.name ?? '—'}</p>
+            <p className="text-sm mt-0.5">
+              {plano.sessions?.length ?? 0} dias · {textoDoUltimoTreino}
+            </p>
+          </div>
+          <Link
+            href={`/admin/montar?userId=${alunoId}&planoId=${plano.id}`}
+            className="inline-flex items-center justify-center gap-2 text-sm font-bold bg-primary text-primary-foreground px-5 py-2.5 rounded-xl hover:bg-primary-hover transition-colors shrink-0"
+          >
+            <Pencil className="w-4 h-4" /> EDITAR ESTE TREINO
+          </Link>
+        </div>
+      )}
 
-            {/* ESTE CARD MOSTRA UM DIA DE PROPÓSITO, e isso precisa estar escrito.
-                É a réplica do que o aluno abre, e o dashboard dele mostra um treino por vez.
-                Sem esta linha, quem olha de cima conclui que o plano só tem o Treino A — foi
-                o que aconteceu na primeira vez que esta tela foi usada. */}
-            {(plano.sessions?.length ?? 0) > 1 && (
-              <p className="text-[11px] text-foreground-muted mb-3 mt-1">
-                É um dia por vez, como ele vê. Os {plano.sessions!.length} dias estão abaixo.
-              </p>
-            )}
-            {(plano.sessions?.length ?? 0) <= 1 && <div className="mb-3" />}
-
-            <div className="flex flex-wrap gap-2 mb-4">
-              <span className="text-xs text-foreground-muted bg-surface/60 px-3 py-1.5 rounded-lg border border-white/5">
-                ⚡ {sessaoDeHoje?.exercises?.length ?? 0} exercícios
-              </span>
-              <span className="text-xs text-foreground-muted bg-surface/60 px-3 py-1.5 rounded-lg border border-white/5">
-                ⏱️ ~{minutosDaSessao(sessaoDeHoje)} min
-              </span>
-              <span className="text-xs text-foreground-muted bg-surface/60 px-3 py-1.5 rounded-lg border border-white/5">
-                {textoDoUltimoTreino}
-              </span>
-            </div>
-
-            <Link
-              href={`/admin/montar?userId=${alunoId}&planoId=${plano.id}`}
-              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto text-sm font-bold bg-primary text-primary-foreground px-5 py-3 rounded-xl hover:bg-primary-hover transition-colors"
-            >
-              <Pencil className="w-4 h-4" /> EDITAR ESTE TREINO
-            </Link>
+      {/* O MESMO desvio por fadiga que o dashboard dele faz. Sem isto a prévia diria
+          "Treino A" e ele abriria o B. */}
+      {plano && ehOAtivo && escolha.desviadoPorFadiga && (
+        <div className="mb-5 flex items-start gap-2 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3">
+          <AlertTriangle className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-orange-400 font-bold text-[11px] uppercase tracking-wider">
+              Ele vai ver &quot;Fadiga Detectada&quot;
+            </p>
+            <p className="text-orange-300/80 text-xs mt-0.5">
+              {sessaoDoCiclo?.name} usa músculo treinado nas últimas 24h. O app desvia para o{' '}
+              {sessaoDeHoje?.name}.
+            </p>
           </div>
         </div>
       )}
@@ -411,44 +378,56 @@ export default function PreviaDoAluno() {
         </Card>
       )}
 
-      {/* O PLANO INTEIRO, que o dashboard dele NÃO mostra.
-          Ele vê um dia por vez; aqui estão todos. É daqui que a revisão acontece — o card de
-          cima serve para saber o que ele abre, esta lista para julgar o que foi prescrito. */}
+      {/* O PLANO INTEIRO, UM CARD POR DIA.
+          O aluno abre um dia por vez — por isso o dashboard dele mostra um só. Quem revisa
+          precisa do contrário: ver A, B e C lado a lado, com o mesmo peso, para julgar o
+          conjunto. Duas vezes a tela foi lida como se o plano tivesse um dia, porque o dia de
+          hoje estava num card graúdo e os outros em texto corrido.
+
+          Agora todos têm a mesma moldura do dashboard. O que distingue o dia de hoje é a
+          borda acesa e a tarja, não o tamanho — a diferença informa, em vez de esconder. */}
       {plano && (plano.sessions?.length ?? 0) > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-          <div className="min-w-0">
-            <h2 className="font-outfit font-bold text-lg">Os {plano.sessions!.length} dias</h2>
-            <p className="text-xs text-foreground-muted">
-              Ele abre um por vez, no rodízio. Aqui estão todos.
-            </p>
-          </div>
-          <Link
-            href={`/admin/montar?userId=${alunoId}&planoId=${plano.id}`}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-white/10 bg-surface-light hover:text-primary hover:border-primary/40 transition-colors shrink-0"
-          >
-            <Pencil className="w-3.5 h-3.5" /> Editar no montador
-          </Link>
-        </div>
+        <h2 className="font-outfit font-bold text-lg mb-3">
+          Os {plano.sessions!.length} dias do treino
+        </h2>
       )}
 
       <div className="flex flex-col gap-5">
-        {(plano?.sessions ?? []).map((sessao, i) => (
-          <Card key={sessao.id ?? i} className={ehOAtivo && i === escolha.indice ? 'border-primary/40' : ''}>
-            <CardContent className="p-5">
-              {/* CADA DIA COM O MESMO TRATAMENTO DO CARD DE CIMA.
-                  O card do topo mostra UM dia porque é o que o dashboard do aluno mostra — ele
-                  abre um por vez. Mas quem revisa precisa julgar o plano inteiro, e um dia
-                  resumido ao lado de dois em texto corrido faz o olho pular os outros dois.
+        {(plano?.sessions ?? []).map((sessao, i) => {
+          const ehODeHoje = ehOAtivo && i === escolha.indice;
+          return (
+          <div
+            key={sessao.id ?? i}
+            className={`rounded-3xl border p-5 md:p-6 relative overflow-hidden ${
+              ehODeHoje
+                ? 'bg-gradient-to-br from-primary/20 to-secondary/20 border-primary/30'
+                : 'bg-gradient-to-br from-surface-light to-surface border-border'
+            }`}
+          >
+            {ehODeHoje && (
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
+            )}
+            <div className="relative z-10">
+              {/* O cabeçalho do dia, na mesma estrutura do card do dashboard: a marca de
+                  estado, o nome, e as etiquetas do que ele vai encontrar ali.
 
-                  As mesmas etiquetas, na mesma ordem: exercícios, minutos, e o que acompanha
-                  aquele dia. O abdominal aparece aqui porque cai em dias ALTERNADOS: saber em
-                  qual dia ele cai é parte de conferir o plano, e isso não dá para ver no card
-                  de um dia só. */}
+                  O abdominal entra nas etiquetas porque cai em dias ALTERNADOS — num A-B-C,
+                  no A e no C. Saber em qual dia ele cai é parte de conferir o plano, e com um
+                  dia por vez na tela isso era invisível. */}
               <div className="flex flex-wrap items-center gap-2 mb-2.5">
-                <h2 className="font-outfit font-bold text-xl flex-1 min-w-0">{sessao.name}</h2>
-                {ehOAtivo && i === escolha.indice && (
+                {ehODeHoje && (
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
+                )}
+                <h2 className={`font-outfit font-bold text-xl flex-1 min-w-0 ${ehODeHoje ? 'text-primary' : ''}`}>
+                  {sessao.name}
+                </h2>
+                {ehODeHoje ? (
                   <span className="text-[11px] font-semibold text-primary px-2 py-1 rounded-full bg-primary/10 shrink-0">
                     é este que ele abre agora
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-foreground-muted px-2 py-1 shrink-0">
+                    dia {i + 1} de {plano?.sessions?.length ?? 0}
                   </span>
                 )}
               </div>
@@ -552,9 +531,20 @@ export default function PreviaDoAluno() {
                   </p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        ))}
+
+              {/* Editar a partir do dia que você está olhando, sem rolar de volta ao topo.
+                  Leva ao montador com o plano aberto — ele mostra todos os dias numa página
+                  só, então não existe "abrir só este dia" para prometer. */}
+              <Link
+                href={`/admin/montar?userId=${alunoId}&planoId=${plano?.id ?? ''}`}
+                className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg border border-white/10 bg-surface-light hover:text-primary hover:border-primary/40 transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Editar no montador
+              </Link>
+            </div>
+          </div>
+          );
+        })}
       </div>
     </div>
   );
