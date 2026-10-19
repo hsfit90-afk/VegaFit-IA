@@ -5,6 +5,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { fetchLatestAnamneseAnswers } from '@/lib/aiHealthContext';
 import { mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 import { primeiroObjetivo, minutosDaSessao, diasPorSemana } from '@/lib/anamneseParaGerador';
+import { musculosEmFadiga } from '@/lib/proximoTreino';
 
 /**
  * Resumo da anamnese de um aluno, para o montador do Treino do Personal.
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
     }
 
     const cliente = admin();
-    const [{ data: perfil }, respostas, { data: ultimos }] = await Promise.all([
+    const [{ data: perfil }, respostas, { data: ultimos }, { data: indice }] = await Promise.all([
       cliente
         .from('profiles')
         .select('id, name, goal, level, training_location, equipamentos_casa, active_plan_id')
@@ -77,12 +78,26 @@ export async function GET(req: NextRequest) {
        *
        * Não é certeza, é probabilidade, e a tela precisa dizer isso com essas palavras.
        */
+      /**
+       * Os treinos recentes, para a prévia dizer qual sessão o aluno vai abrir.
+       *
+       * O dashboard dele desvia de dia quando o músculo treinado nas últimas 24h ainda não
+       * recuperou (lib/proximoTreino.ts). A prévia que ignorasse isso mostraria "Treino A" e
+       * o aluno abriria o B — e o profissional entregaria confiando no que viu.
+       *
+       * Dez linhas bastam: a fadiga olha 24 horas, e ninguém treina dez vezes num dia.
+       */
       cliente
         .from('workout_history')
-        .select('date')
+        .select('date, exercises')
         .eq('user_id', alvo)
         .order('date', { ascending: false })
-        .limit(1),
+        .limit(10),
+      cliente
+        .from('user_session_index')
+        .select('current_session_index')
+        .eq('user_id', alvo)
+        .maybeSingle(),
     ]);
 
     if (!perfil) {
@@ -102,6 +117,23 @@ export async function GET(req: NextRequest) {
         // em vez de assumir que e o mais recente -- os dois divergem quando ele troca.
         activePlanId: perfil.active_plan_id ?? null,
         ultimoTreino: ultimos?.[0]?.date ?? null,
+      },
+
+      /**
+       * O estado do treino dele, para a prévia reproduzir a tela que ele abre.
+       *
+       * `musculosEmFadiga` sai da MESMA função do dashboard (lib/proximoTreino.ts) — não de
+       * uma segunda conta escrita aqui. É a regra que este projeto aprendeu a seguir depois
+       * de três bugs com o mesmo formato.
+       */
+      treino: {
+        indiceDaSessao: indice?.current_session_index ?? 0,
+        musculosEmFadiga: [...musculosEmFadiga(
+          (ultimos ?? []).map(h => ({
+            date: Date.parse(h.date as string),
+            exercises: Array.isArray(h.exercises) ? (h.exercises as { muscleGroup?: string | null }[]) : [],
+          }))
+        )],
       },
       // O que o montador mostra na tela.
       resumo: {

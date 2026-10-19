@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { motion, type Variants } from 'motion/react';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { WorkoutPlan } from '@/lib/types';
+import { musculosEmFadiga, escolherSessao, sessaoSeguinte, minutosDaSessao } from '@/lib/proximoTreino';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
 import { CardPersonalizado } from '@/components/CardPersonalizado';
@@ -104,42 +105,34 @@ export default function Dashboard() {
     return workoutPlans[0];
   }, [workoutPlans, activePlanId]);
 
-  // --- Smart Session Suggestion (Fadiga Muscular) ---
-  // Detecta músculos em fadiga (treinados nas últimas 24h)
-  const fatigueMuscleSets = useMemo(() => {
-    const fatigued = new Set<string>();
-    const recentHistory = [...history].sort((a, b) => b.date - a.date);
-    recentHistory.forEach(h => {
-      const diffHours = (now - h.date) / (1000 * 60 * 60);
-      if (diffHours < 24) {
-        h.exercises.forEach(ex => {
-          if (ex.muscleGroup) fatigued.add(ex.muscleGroup.toLowerCase());
-        });
-      }
-    });
-    return fatigued;
-  }, [history, now]);
+  /**
+   * A REGRA SAIU DAQUI em 19/10/2026 — agora mora em lib/proximoTreino.ts.
+   *
+   * Qual dia o aluno abre, e quando o app desvia por fadiga, É PRESCRIÇÃO. Morava nesta tela
+   * como três `useMemo` sem teste, então nenhuma outra podia dizer "o próximo treino dele é o
+   * Treino A" sem reimplementar a conta — e é assim que duas versões da mesma regra nascem e
+   * divergem, como já aconteceu com o filtro de equipamento e com a escolha do abdominal.
+   *
+   * A prévia do profissional precisa do MESMO número que o aluno vê. Agora as duas telas
+   * chamam a mesma função.
+   *
+   * O comportamento é idêntico ao de antes, de propósito: extrair não pode mudar nada na tela
+   * que todo aluno abre. Até um caso de borda conhecido foi preservado — ver o teste
+   * 'COMPORTAMENTO PRESERVADO' em tests/proximoTreino.test.ts.
+   */
+  const fatigueMuscleSets = useMemo(() => musculosEmFadiga(history, now), [history, now]);
 
-  // Encontra a próxima sessão cujos músculos estejam recuperados
-  const smartSessionIndex = useMemo(() => {
-    if (!activePlan || fatigueMuscleSets.size === 0) return currentSessionIndex;
-    const total = activePlan.sessions.length;
-    for (let i = 0; i < total; i++) {
-      const idx = (currentSessionIndex + i) % total;
-      const session = activePlan.sessions[idx];
-      const sessionMuscles = session.exercises.map(ex => (ex.muscleGroup || '').toLowerCase());
-      const hasFatigue = sessionMuscles.some(m => fatigueMuscleSets.has(m));
-      if (!hasFatigue) return idx;
-    }
-    // Todos os treinos têm fadiga — retorna o próximo mesmo assim
-    return currentSessionIndex;
-  }, [activePlan, currentSessionIndex, fatigueMuscleSets]);
+  const escolhaDeHoje = useMemo(
+    () => escolherSessao(activePlan?.sessions, currentSessionIndex, fatigueMuscleSets),
+    [activePlan, currentSessionIndex, fatigueMuscleSets]
+  );
+  const smartSessionIndex = escolhaDeHoje.indice;
 
   const displaySessionIndex = manualSessionIndex !== null ? manualSessionIndex : smartSessionIndex;
 
   const suggestedSession = activePlan?.sessions[displaySessionIndex % (activePlan?.sessions.length || 1)];
   const originalSession = activePlan?.sessions[currentSessionIndex % (activePlan?.sessions.length || 1)];
-  const wasRedirectedDueToFatigue = manualSessionIndex === null && smartSessionIndex !== currentSessionIndex;
+  const wasRedirectedDueToFatigue = manualSessionIndex === null && escolhaDeHoje.desviadoPorFadiga;
 
   const cycleNextSession = () => {
     if (!activePlan) return;
@@ -148,19 +141,10 @@ export default function Dashboard() {
   };
 
   // Próximo treino com músculos recuperados (pula o smartSessionIndex atual)
-  const nextSmartSessionIndex = useMemo(() => {
-    if (!activePlan) return smartSessionIndex + 1;
-    const total = activePlan.sessions.length;
-    for (let i = 1; i <= total; i++) {
-      const idx = (smartSessionIndex + i) % total;
-      const session = activePlan.sessions[idx];
-      const sessionMuscles = session.exercises.map(ex => (ex.muscleGroup || '').toLowerCase());
-      const hasFatigue = sessionMuscles.some(m => fatigueMuscleSets.has(m));
-      if (!hasFatigue) return idx;
-    }
-    // Todos têm fadiga — retorna o próximo do ciclo mesmo assim
-    return (smartSessionIndex + 1) % total;
-  }, [activePlan, smartSessionIndex, fatigueMuscleSets]);
+  const nextSmartSessionIndex = useMemo(
+    () => sessaoSeguinte(activePlan?.sessions, smartSessionIndex, fatigueMuscleSets),
+    [activePlan, smartSessionIndex, fatigueMuscleSets]
+  );
 
   const nextSuggestedSession = activePlan?.sessions[nextSmartSessionIndex % (activePlan?.sessions.length || 1)];
 
@@ -282,7 +266,7 @@ export default function Dashboard() {
                         <span className="text-primary">⚡</span> {suggestedSession?.exercises?.length || 0} exercícios
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-foreground-muted bg-surface/60 px-3 py-1.5 rounded-lg border border-white/5">
-                        <span className="text-primary">⏱️</span> ~{(suggestedSession?.exercises?.length || 0) * 5} min
+                        <span className="text-primary">⏱️</span> ~{minutosDaSessao(suggestedSession)} min
                       </div>
                     </div>
                   </div>

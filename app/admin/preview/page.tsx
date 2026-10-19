@@ -8,8 +8,10 @@ import { useSomenteMaster } from '@/components/useSomenteMaster';
 import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
-import { Loader2, ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriangle, Check, Trash2, StretchHorizontal, Flame } from 'lucide-react';
+import { Loader2, ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriangle, Check, Trash2, StretchHorizontal, Flame, Pencil } from 'lucide-react';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
+import { escolherSessao, minutosDaSessao } from '@/lib/proximoTreino';
+import { temAbdominalNoDia } from '@/lib/protocolo';
 
 /**
  * O treino do aluno, como ele vai ver.
@@ -83,6 +85,12 @@ export default function PreviaDoAluno() {
   const [ativoId, setAtivoId] = useState<string | null>(null);
   const [vendo, setVendo] = useState<string | null>(null);
   const [mexendo, setMexendo] = useState(false);
+  /** O estado do treino do aluno: onde o rodízio está e o que está em recuperação. */
+  const [estadoDoTreino, setEstadoDoTreino] = useState<{
+    indiceDaSessao: number;
+    musculosEmFadiga: string[];
+  }>({ indiceDaSessao: 0, musculosEmFadiga: [] });
+  const [ultimoTreino, setUltimoTreino] = useState<string | null>(null);
 
   useEffect(() => {
     if (!alunoId) return;
@@ -111,6 +119,11 @@ export default function PreviaDoAluno() {
         const d = await alunoR.json();
         setNomeDoAluno(d.aluno?.nome ?? '');
         setAtivoId(d.aluno?.activePlanId ?? null);
+        setUltimoTreino(d.aluno?.ultimoTreino ?? null);
+        setEstadoDoTreino({
+          indiceDaSessao: d.treino?.indiceDaSessao ?? 0,
+          musculosEmFadiga: d.treino?.musculosEmFadiga ?? [],
+        });
       }
     })();
   }, [alunoId]);
@@ -129,6 +142,31 @@ export default function PreviaDoAluno() {
     () => planos?.find(p => p.id === (vendo ?? ativoId)) ?? planos?.[0] ?? null,
     [planos, vendo, ativoId]
   );
+
+  /** O card do dashboard só vale para o plano que ele realmente abre. */
+  const ehOAtivo = Boolean(plano && plano.id === (ativoId ?? planos?.[0]?.id));
+
+  /**
+   * QUAL SESSÃO ELE VAI ABRIR — pela mesma função do dashboard (lib/proximoTreino.ts).
+   *
+   * Recalcular aqui com uma conta própria daria um número que PARECE certo e diverge no dia
+   * em que a fadiga desvia. O profissional entregaria confiando na prévia.
+   */
+  const escolha = useMemo(
+    () => escolherSessao(plano?.sessions, estadoDoTreino.indiceDaSessao, new Set(estadoDoTreino.musculosEmFadiga)),
+    [plano, estadoDoTreino]
+  );
+  const sessaoDeHoje = plano?.sessions?.[escolha.indice % (plano?.sessions?.length || 1)];
+  const sessaoDoCiclo = plano?.sessions?.[escolha.indiceDoCiclo % (plano?.sessions?.length || 1)];
+
+  const textoDoUltimoTreino = useMemo(() => {
+    if (!ultimoTreino) return 'Nunca treinou';
+    const dias = Math.floor((Date.now() - Date.parse(ultimoTreino)) / 86_400_000);
+    if (!Number.isFinite(dias)) return 'Nunca treinou';
+    if (dias <= 0) return 'Treinou hoje';
+    if (dias === 1) return 'Treinou ontem';
+    return `Treinou há ${dias} dias`;
+  }, [ultimoTreino]);
 
   const ativar = async (planoId: string) => {
     setMexendo(true);
@@ -221,6 +259,121 @@ export default function PreviaDoAluno() {
         </CardContent></Card>
       )}
 
+      {/* A TELA QUE ELE ABRE, na linguagem visual do dashboard dele.
+          Mesma moldura, mesma informação, mesma ordem — e os VERBOS trocados: onde ele lê
+          "INICIAR TREINO", aqui se lê "Editar este treino". Uma cópia fiel teria o botão de
+          treinar sem função nenhuma, e meia tela de botão morto é pior que nenhuma tela.
+
+          Só aparece no plano ATIVO: é o único que ele enxerga, e mostrar esta moldura num
+          plano antigo diria "é isto que ele abre" sobre algo que ele não abre. */}
+      {plano && ehOAtivo && (
+        <div className="mb-5 bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 rounded-3xl p-5 md:p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <h2 className="text-base font-bold m-0">Plano Ativo</h2>
+            </div>
+            <p className="text-lg font-bold text-primary mb-3">{plano.name}</p>
+
+            {/* O MESMO desvio por fadiga que o dashboard dele faz. Sem isto a prévia diria
+                "Treino A" e ele abriria o B. */}
+            {escolha.desviadoPorFadiga && (
+              <div className="flex items-start gap-2 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 mb-3">
+                <AlertTriangle className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-orange-400 font-bold text-[11px] uppercase tracking-wider">
+                    Ele vai ver &quot;Fadiga Detectada&quot;
+                  </p>
+                  <p className="text-orange-300/80 text-xs mt-0.5">
+                    {sessaoDoCiclo?.name} usa músculo treinado nas últimas 24h. O app desvia
+                    para o treino abaixo.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <p className="text-[11px] text-foreground-muted uppercase tracking-wider font-semibold mb-1">
+              Próximo treino
+            </p>
+            <p className="text-base font-bold mb-3">{sessaoDeHoje?.name ?? '—'}</p>
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              <span className="text-xs text-foreground-muted bg-surface/60 px-3 py-1.5 rounded-lg border border-white/5">
+                ⚡ {sessaoDeHoje?.exercises?.length ?? 0} exercícios
+              </span>
+              <span className="text-xs text-foreground-muted bg-surface/60 px-3 py-1.5 rounded-lg border border-white/5">
+                ⏱️ ~{minutosDaSessao(sessaoDeHoje)} min
+              </span>
+              <span className="text-xs text-foreground-muted bg-surface/60 px-3 py-1.5 rounded-lg border border-white/5">
+                {textoDoUltimoTreino}
+              </span>
+            </div>
+
+            <Link
+              href={`/admin/montar?userId=${alunoId}&planoId=${plano.id}`}
+              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto text-sm font-bold bg-primary text-primary-foreground px-5 py-3 rounded-xl hover:bg-primary-hover transition-colors"
+            >
+              <Pencil className="w-4 h-4" /> EDITAR ESTE TREINO
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* O QUE MAIS APARECE NA TELA DELE.
+          O dashboard oferece aeróbico, mobilidade, abdominal e alongamento ao lado do treino.
+          Saber o que está sendo oferecido faz parte de conferir o que a pessoa recebe — e o
+          abdominal, por cair em dias alternados, não aparece todo dia. */}
+      {plano && ehOAtivo && (
+        <div className="mb-5 grid sm:grid-cols-2 gap-2.5">
+          {plano.cardio_session && (
+            <div className="rounded-xl border border-border bg-surface p-3 flex items-center gap-3">
+              <Timer className="w-4 h-4 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-foreground-muted">Depois do treino</p>
+                <p className="text-sm font-medium truncate">{plano.cardio_session.name}</p>
+              </div>
+            </div>
+          )}
+          <div className="rounded-xl border border-border bg-surface p-3 flex items-center gap-3">
+            <Waves className="w-4 h-4 text-secondary shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-wider text-foreground-muted">Antes do treino</p>
+              <p className="text-sm font-medium truncate">
+                {(sessaoDeHoje?.warmup?.length ?? 0) > 0
+                  ? sessaoDeHoje!.warmup!.map(w => w.name).join(' · ')
+                  : 'Mobilidade — nenhuma neste dia'}
+              </p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-surface p-3 flex items-center gap-3">
+            <Flame className="w-4 h-4 text-accent shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-wider text-foreground-muted">Abdominal</p>
+              <p className="text-sm font-medium truncate">
+                {temAbdominalNoDia(escolha.indice)
+                  ? ((sessaoDeHoje?.abdominal?.length ?? 0) > 0
+                      ? sessaoDeHoje!.abdominal!.map(a => a.name).join(' · ')
+                      : 'Sorteado na tela dele')
+                  : 'Não cai neste dia'}
+              </p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-surface p-3 flex items-center gap-3">
+            <StretchHorizontal className="w-4 h-4 text-primary shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-wider text-foreground-muted">Quando quiser</p>
+              <p className="text-sm font-medium truncate">
+                {(sessaoDeHoje?.alongamento?.length ?? 0) > 0
+                  ? sessaoDeHoje!.alongamento!.map(a => a.name).join(' · ')
+                  : 'Alongamento livre'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* DOMÍNIO SOBRE A CONTA.
           O aluno só enxerga o ativo — o dashboard dele mostra um treino só. Então quem decide
           o que ele treina é quem mexe aqui, e até 15/10/2026 ninguém decidia: o ativo vivia no
@@ -300,11 +453,38 @@ export default function PreviaDoAluno() {
         </Card>
       )}
 
+      {/* O PLANO INTEIRO, que o dashboard dele NÃO mostra.
+          Ele vê um dia por vez; aqui estão todos. É daqui que a revisão acontece — o card de
+          cima serve para saber o que ele abre, esta lista para julgar o que foi prescrito. */}
+      {plano && (plano.sessions?.length ?? 0) > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div className="min-w-0">
+            <h2 className="font-outfit font-bold text-lg">Os {plano.sessions!.length} dias</h2>
+            <p className="text-xs text-foreground-muted">
+              Ele abre um por vez, no rodízio. Aqui estão todos.
+            </p>
+          </div>
+          <Link
+            href={`/admin/montar?userId=${alunoId}&planoId=${plano.id}`}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg border border-white/10 bg-surface-light hover:text-primary hover:border-primary/40 transition-colors shrink-0"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Editar no montador
+          </Link>
+        </div>
+      )}
+
       <div className="flex flex-col gap-5">
         {(plano?.sessions ?? []).map((sessao, i) => (
-          <Card key={sessao.id ?? i}>
+          <Card key={sessao.id ?? i} className={ehOAtivo && i === escolha.indice ? 'border-primary/40' : ''}>
             <CardContent className="p-5">
-              <h2 className="font-outfit font-bold text-xl mb-4">{sessao.name}</h2>
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <h2 className="font-outfit font-bold text-xl flex-1 min-w-0">{sessao.name}</h2>
+                {ehOAtivo && i === escolha.indice && (
+                  <span className="text-[11px] font-semibold text-primary px-2 py-1 rounded-full bg-primary/10 shrink-0">
+                    é este que ele abre agora
+                  </span>
+                )}
+              </div>
 
               {/* O aquecimento é montado no servidor quando a IA gera. Plano montado à mão
                   também recebe, desde 15/10/2026 — antes o Treino do Personal chegava sem,
