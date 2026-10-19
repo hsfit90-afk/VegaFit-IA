@@ -10,7 +10,16 @@ import { Input } from '@/components/ui/Input';
 import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark, Eye, Pencil, ChevronUp, ChevronDown, Home } from 'lucide-react';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { EditorDePreparo, type ItemDePreparo } from '@/components/admin/EditorDePreparo';
-import { classificarTipo } from '@/lib/preparoFinalizacao';
+import {
+  classificarTipo,
+  selecionarMobilidade,
+  selecionarAbdominal,
+  articulacoesDoExercicio,
+  chaveDeMobilidade,
+  chaveDeAbdominal,
+  sementeDaChave,
+  type ExercicioSimples,
+} from '@/lib/preparoFinalizacao';
 import { moverNaLista, ajustarCargas, aplicarCargaEmTodas } from '@/lib/edicaoDePlano';
 
 import { prescrever, normalizarObjetivo } from '@/lib/protocolo';
@@ -64,6 +73,14 @@ interface SessaoLinha {
    */
   warmup?: ItemDePreparo[];
   alongamento?: ItemDePreparo[];
+  /**
+   * O abdominal do dia, prescrito à mão.
+   *
+   * Mesma convenção dos outros dois: undefined deixa o automático escolher, array (mesmo
+   * vazio) é decisão do profissional. Até 19/10/2026 o abdominal só existia do lado do aluno,
+   * sorteado na tela dele — o profissional não via nem opinava.
+   */
+  abdominal?: ItemDePreparo[];
 }
 
 interface Aluno { id: string; name: string | null; role: string | null }
@@ -252,10 +269,110 @@ export default function MontarTreino() {
     () => catalogoVisivel.filter(c => classificarTipo(c.name, c.muscle_group) === 'alongamento'),
     [catalogoVisivel]
   );
+  const catalogoDeAbdominal = useMemo(
+    () => catalogoVisivel.filter(c => /core|abd/i.test(c.muscle_group ?? '')),
+    [catalogoVisivel]
+  );
 
   /** O julgamento do catálogo sobre um exercício já escolhido, para a linha avisar. */
   const noCatalogo = (ex: ExercicioLinha): ExercicioCatalogo | undefined =>
     catalogo.find(c => (ex.exerciseId && c.id === ex.exerciseId) || c.name === ex.name);
+
+  /**
+   * A SUGESTÃO AUTOMÁTICA SAI SEMPRE DO QUE CABE, mesmo com a válvula de ver tudo ligada.
+   *
+   * A válvula serve para o profissional ESCOLHER algo fora do inventário de propósito. Deixar
+   * ela contaminar a sugestão faria a prévia mostrar rolo de espuma para quem não tem — que é
+   * exatamente o que esta tela passou a existir para evitar.
+   */
+  const poolParaSugestao = useMemo<ExercicioSimples[]>(
+    () => catalogo.filter(c => c.cabe).map(c => ({ id: c.id, name: c.name, muscle_group: c.muscle_group })),
+    [catalogo]
+  );
+
+  const gruposDaSessao = (s: SessaoLinha): string[] =>
+    [...new Set(s.exercises.map(e => e.muscleGroup).filter(Boolean))];
+
+  const paraPreparo = (lista: ExercicioSimples[], segundos?: number): ItemDePreparo[] =>
+    lista.map(e => ({
+      exerciseId: e.id ?? '',
+      name: e.name,
+      muscleGroup: e.muscle_group ?? '',
+      ...(segundos === undefined ? {} : { segundos }),
+    }));
+
+  /**
+   * As MESMAS chaves que o servidor usa (lib/preparoFinalizacao.ts).
+   *
+   * É o que faz a prévia do modo automático valer: os dois lados sorteiam com a mesma semente,
+   * então o que aparece aqui é literalmente o que vai ser gravado. Uma chave só daqui
+   * transformaria a prévia em ficção.
+   */
+  const chaveDaMobilidade = (s: SessaoLinha) => chaveDeMobilidade(s.id, gruposDaSessao(s));
+  const chaveDoAbdominal = (s: SessaoLinha) => chaveDeAbdominal(s.id);
+
+  /** O que o roletar produziu, por chave. Tem precedência sobre o sorteio estável. */
+  const [roletados, setRoletados] = useState<Record<string, ItemDePreparo[]>>({});
+
+  /**
+   * O que o aluno receberia AGORA se o bloco ficasse no automático.
+   *
+   * Calculado com as MESMAS funções do servidor (selecionarMobilidade e selecionarAbdominal).
+   * Uma prévia por outra regra seria pior que nenhuma: mostraria três e entregaria outros três.
+   */
+  const sugestoes = useMemo(() => {
+    const mapa: Record<string, ItemDePreparo[]> = {};
+    if (poolParaSugestao.length === 0) return mapa;
+    for (const s of sessoes) {
+      const kMob = chaveDaMobilidade(s);
+      const kAbd = chaveDoAbdominal(s);
+      mapa[kMob] = roletados[kMob]
+        ?? paraPreparo(selecionarMobilidade(poolParaSugestao, gruposDaSessao(s), 3, { semente: sementeDaChave(kMob) }), 40);
+      mapa[kAbd] = roletados[kAbd]
+        ?? paraPreparo(selecionarAbdominal(poolParaSugestao, 3, { semente: sementeDaChave(kAbd) }));
+    }
+    return mapa;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessoes, poolParaSugestao, roletados]);
+
+  /**
+   * Sorteia outro conjunto, evitando o que está na tela.
+   *
+   * ROLETAR É DECISÃO, e por isso FIXA a lista — mesmo partindo do automático.
+   *
+   * No automático o servidor remonta o bloco na hora de salvar, a partir da semente da sessão.
+   * Se o sorteio ficasse só na tela, o profissional roletaria até gostar, salvaria, e o
+   * servidor devolveria o conjunto da semente — jogando fora exatamente a escolha que o botão
+   * existe para permitir. Fixar transforma o clique em prescrição, que é o que ele significa.
+   *
+   * "Voltar ao automático" continua ali para desfazer.
+   */
+  const roletar = (sessao: SessaoLinha, bloco: 'warmup' | 'abdominal') => {
+    const chave = bloco === 'warmup' ? chaveDaMobilidade(sessao) : chaveDoAbdominal(sessao);
+    const atual = sugestoes[chave] ?? [];
+    const excluir = atual.map(i => i.name);
+
+    const novo = bloco === 'warmup'
+      ? paraPreparo(selecionarMobilidade(poolParaSugestao, gruposDaSessao(sessao), 3, { excluir }), 40)
+      : paraPreparo(selecionarAbdominal(poolParaSugestao, 3, { excluir }));
+
+    setRoletados(r => ({ ...r, [chave]: novo }));
+    mudaSessao(sessao.id, bloco, novo);
+    setSalvo(false);
+
+    // O catálogo pode não ter de onde variar: 3 mobilidades de ombro para um aluno de casa
+    // são 3, e roletar devolve as mesmas. Melhor dizer do que deixar o botão parecer quebrado.
+    const repetiuTudo = novo.length > 0 && novo.every(n => excluir.includes(n.name));
+    if (repetiuTudo) {
+      toast.aviso(`São os únicos ${novo.length} que servem para este dia e para o que o aluno tem.`);
+    }
+  };
+
+  /** A articulação que cada mobilidade prepara, para a linha dizer por que foi escolhida. */
+  const legendaDaMobilidade = (item: ItemDePreparo): string | null => {
+    const art = articulacoesDoExercicio(item.muscleGroup);
+    return art.length > 0 ? art.join(' · ') : 'geral';
+  };
 
   /**
    * Ao escolher o aluno, busca a anamnese dele e pré-preenche a geração.
@@ -459,6 +576,7 @@ export default function MontarTreino() {
       name: sx.name || `Treino ${String.fromCharCode(65 + i)}`,
       warmup: Array.isArray(sx.warmup) ? sx.warmup : undefined,
       alongamento: Array.isArray(sx.alongamento) ? sx.alongamento : undefined,
+      abdominal: Array.isArray(sx.abdominal) ? sx.abdominal : undefined,
       exercises: (sx.exercises ?? []).map((e: any) => ({
         id: String(e.id || crypto.randomUUID()),
         // Reencontra o id no catálogo pelo nome, como os modelos fazem: plano antigo pode ter
@@ -717,6 +835,7 @@ export default function MontarTreino() {
             // Vão como estão: undefined deixa o servidor preencher, array manda respeitar.
             warmup: s.warmup,
             alongamento: s.alongamento,
+            abdominal: s.abdominal,
           })),
         }),
       });
@@ -1346,12 +1465,33 @@ export default function MontarTreino() {
                   aluno, e isto é para quem pagou por prescrição. */}
               <EditorDePreparo
                 titulo="Aquecimento · mobilidade"
-                ajuda="Antes do treino, para preparar as articulações do dia. Deixe no automático e o servidor escolhe pela musculatura do dia; escolha à mão quando este aluno precisar de algo específico."
+                ajuda="Antes do treino, para preparar as articulações que este dia vai carregar. A escolha é pela ARTICULAÇÃO, não pelo grupo muscular: dia de peito pede ombro, dia de perna pede quadril, joelho e tornozelo."
                 itens={sessao.warmup}
                 catalogo={catalogoDeMobilidade}
                 listaId="catalogo-mobilidade"
                 classesDaMoldura="border-secondary/25 bg-secondary/5"
                 onMudar={novos => mudaSessao(sessao.id, 'warmup', novos)}
+                sugestao={sugestoes[chaveDaMobilidade(sessao)]}
+                onRoletar={() => roletar(sessao, 'warmup')}
+                legendaDe={legendaDaMobilidade}
+              />
+
+              {/* ABDOMINAL, que até 19/10/2026 só existia do lado do aluno.
+                  Era sorteado na tela dele e o profissional não via nem opinava — num produto
+                  em que ele paga pela escolha de quem tem CREF, isso era o bloco errado para
+                  deixar no automático sem prévia. */}
+              <EditorDePreparo
+                titulo="Abdominal · depois do treino"
+                ajuda="Aparece no fim do treino, em dias alternados (no plano A-B-C, cai no A e no C). Deixe no automático para o app sortear do que o aluno pode fazer, ou escolha à mão."
+                itens={sessao.abdominal}
+                catalogo={catalogoDeAbdominal}
+                listaId="catalogo-abdominal"
+                classesDaMoldura="border-accent/25 bg-accent/5"
+                onMudar={novos => mudaSessao(sessao.id, 'abdominal', novos)}
+                sugestao={sugestoes[chaveDoAbdominal(sessao)]}
+                onRoletar={() => roletar(sessao, 'abdominal')}
+                semSegundos
+                rodape={`Séries e repetições vêm do protocolo do objetivo (${config.goal}), como no resto do treino.`}
               />
 
               <EditorDePreparo
@@ -1451,6 +1591,9 @@ export default function MontarTreino() {
       </datalist>
       <datalist id="catalogo-alongamento">
         {catalogoDeAlongamento.map(c => <option key={c.id} value={c.name} />)}
+      </datalist>
+      <datalist id="catalogo-abdominal">
+        {catalogoDeAbdominal.map(c => <option key={c.id} value={c.name} />)}
       </datalist>
     </div>
   );

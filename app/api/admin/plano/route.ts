@@ -3,7 +3,7 @@ import { requireAuth } from '@/utils/supabase/auth-guard';
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { limparAlvosPorSerie } from '@/lib/metodoTreino';
-import { selecionarMobilidade } from '@/lib/preparoFinalizacao';
+import { selecionarMobilidade, chaveDeMobilidade, sementeDaChave } from '@/lib/preparoFinalizacao';
 import { filtrarParaCasa } from '@/lib/equipamentoCasa';
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 import {
@@ -133,7 +133,20 @@ function normalizarSessoes(sessoes: any[]) {
     // voltar sozinho no salvamento seguinte, sem entender por quê.
     warmup: Array.isArray(s?.warmup) ? s.warmup.slice(0, 8).map(limparPreparo) : undefined,
     alongamento: Array.isArray(s?.alongamento) ? s.alongamento.slice(0, 8).map(limparPreparo) : undefined,
+
+    // Abdominal não tem `segundos`: é prescrito por série e repetição, e as duas vêm do
+    // protocolo do objetivo na tela do aluno. Guardar um campo de tempo aqui seria dado falso.
+    abdominal: Array.isArray(s?.abdominal) ? s.abdominal.slice(0, 8).map(limparPrescrito) : undefined,
   })).filter((s: any) => s.exercises.length > 0);
+}
+
+/** Um exercício escolhido à mão, sem tempo: o abdominal. */
+function limparPrescrito(e: any) {
+  return {
+    exerciseId: String(e?.exerciseId || ''),
+    name: String(e?.name || '').slice(0, 160),
+    muscleGroup: String(e?.muscleGroup || '').slice(0, 60),
+  };
 }
 
 /** Um item de aquecimento ou alongamento, normalizado. */
@@ -176,7 +189,17 @@ async function aplicarAquecimento(limpas: any[], alunoId: string) {
     const grupos = [...new Set(
       (sessao.exercises ?? []).map((e: any) => e.muscleGroup).filter(Boolean)
     )] as string[];
-    (sessao as any).warmup = selecionarMobilidade(poolDeMobilidade, grupos, 3).map((m: any) => ({
+
+    /**
+     * SEMENTE, e não sorteio aleatório.
+     *
+     * O montador mostra a prévia do automático usando esta MESMA chave. Sorteando aleatório
+     * aqui, o profissional veria três exercícios na tela e o aluno receberia outros três — e
+     * a prévia, que existe justamente para ele não entregar às cegas, passaria a enganar.
+     */
+    const semente = sementeDaChave(chaveDeMobilidade(String(sessao.id ?? ''), grupos));
+
+    (sessao as any).warmup = selecionarMobilidade(poolDeMobilidade, grupos, 3, { semente }).map((m: any) => ({
       exerciseId: m.id,
       name: m.name,
       muscleGroup: m.muscle_group || '',

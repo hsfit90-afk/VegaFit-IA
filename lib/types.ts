@@ -44,6 +44,20 @@ export interface ExercicioDePreparo {
   segundos: number;
 }
 
+/**
+ * Um exercício prescrito sem tempo: o abdominal.
+ *
+ * Série e repetição NÃO ficam aqui de propósito — vêm do protocolo do objetivo e da semana do
+ * ciclo (lib/protocolo.ts), como no resto do treino. Gravar um número junto criaria uma
+ * segunda fonte de verdade que envelhece: o aluno mudaria de objetivo e o abdominal continuaria
+ * prescrito com a conta antiga.
+ */
+export interface ExercicioPrescrito {
+  exerciseId?: string;
+  name: string;
+  muscleGroup: string;
+}
+
 export interface WorkoutSession {
   id: string;
   name: string;
@@ -65,6 +79,16 @@ export interface WorkoutSession {
    * quando alguém pagou para que a escolha fosse feita por ele.
    */
   alongamento?: ExercicioDePreparo[];
+
+  /**
+   * O abdominal do dia, escolhido à mão pelo profissional.
+   *
+   * Ausente = a tela do aluno sorteia sozinha, como sempre fez. Presente = prescrição, e o
+   * botão de trocar some do lado dele: ele recebe o que foi aprovado.
+   *
+   * Só tem efeito nos dias em que há abdominal — dias alternados, ver temAbdominalNoDia.
+   */
+  abdominal?: ExercicioPrescrito[];
 }
 
 /**

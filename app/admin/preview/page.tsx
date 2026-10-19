@@ -8,7 +8,7 @@ import { useSomenteMaster } from '@/components/useSomenteMaster';
 import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
-import { Loader2, ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriangle, Check, Trash2, StretchHorizontal } from 'lucide-react';
+import { Loader2, ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriangle, Check, Trash2, StretchHorizontal, Flame } from 'lucide-react';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 /**
@@ -57,6 +57,7 @@ interface SessaoPrescrita {
   exercises?: ExercicioPrescrito[];
   warmup?: ItemDePreparoPrescrito[];
   alongamento?: ItemDePreparoPrescrito[];
+  abdominal?: ItemDePreparoPrescrito[];
 }
 
 interface PlanoDoAluno {
@@ -359,6 +360,24 @@ export default function PreviaDoAluno() {
                   );
                 })}
               </div>
+
+              {/* ABDOMINAL PRESCRITO.
+                  Só aparece quando o profissional escolheu à mão. No automático ele é
+                  sorteado na tela do aluno, e mostrar aqui um sorteio que vai acontecer do
+                  outro lado seria prometer exercício que pode não ser esse. */}
+              {sessao.abdominal && sessao.abdominal.length > 0 && (
+                <div className="rounded-xl border border-accent/30 bg-accent/5 p-3 mt-4">
+                  <p className="text-xs font-semibold flex items-center gap-1.5 mb-2">
+                    <Flame className="w-3.5 h-3.5 text-accent" /> Abdominal · depois do treino
+                  </p>
+                  <p className="text-xs text-foreground-muted">
+                    {sessao.abdominal.map(a => a.name).join(' · ')}
+                  </p>
+                  <p className="text-[11px] text-foreground-muted mt-1.5">
+                    Aparece em dias alternados. Séries e repetições saem do protocolo do objetivo.
+                  </p>
+                </div>
+              )}
 
               {/* Só aparece quando foi prescrito à mão: no app, alongar é livre. */}
               {sessao.alongamento && sessao.alongamento.length > 0 && (

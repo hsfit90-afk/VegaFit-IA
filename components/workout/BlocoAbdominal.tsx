@@ -7,6 +7,8 @@ import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { prescrever, normalizarObjetivo, temAbdominalNoDia } from '@/lib/protocolo';
 import { filtrarParaCasa } from '@/lib/equipamentoCasa';
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
+import { selecionarAbdominal } from '@/lib/preparoFinalizacao';
+import type { ExercicioPrescrito } from '@/lib/types';
 
 /**
  * Abdominal, no fim da sessão de força.
@@ -46,6 +48,7 @@ export function BlocoAbdominal({
   equipamentosCasa,
   chaveDaSessao,
   indiceDaSessao,
+  prescritos,
 }: {
   biblioteca?: ExercicioDaBiblioteca[];
   semana?: number;
@@ -56,6 +59,14 @@ export function BlocoAbdominal({
   chaveDaSessao?: string;
   /** Posição da sessão no plano. Decide se hoje é dia de abdominal. */
   indiceDaSessao?: number;
+  /**
+   * O que o profissional escolheu à mão para este dia.
+   *
+   * Quando existe, manda: o aluno recebe o que foi aprovado e o convite para trocar some. É a
+   * decisão de 19/10/2026 — num treino que a pessoa pagou para ser montado por quem tem CREF,
+   * trocar o exercício por conta própria desfaz justamente o que ela comprou.
+   */
+  prescritos?: ExercicioPrescrito[] | null;
 }) {
   const [aberto, setAberto] = useState(false);
   const [feitos, setFeitos] = useState<Set<string>>(new Set());
@@ -63,7 +74,30 @@ export function BlocoAbdominal({
 
   const receita = prescrever('isolado', normalizarObjetivo(objetivo), semana);
 
+  const prescrito = (prescritos?.length ?? 0) > 0;
+
   const escolhidos = useMemo(() => {
+    /**
+     * O QUE O PROFISSIONAL ESCOLHEU VEM PRIMEIRO, e sem passar pelo sorteio.
+     *
+     * A mídia é reencontrada na biblioteca por id e depois por nome, como no resto do app:
+     * plano montado a partir de modelo guarda o nome, não o id.
+     */
+    if (prescritos && prescritos.length > 0) {
+      return prescritos.map(p => {
+        const achado = biblioteca.find(b =>
+          (p.exerciseId && b.id === p.exerciseId) ||
+          b.name.trim().toLowerCase() === p.name.trim().toLowerCase()
+        );
+        return {
+          id: achado?.id ?? p.exerciseId,
+          name: p.name,
+          muscleGroup: p.muscleGroup || achado?.muscleGroup || null,
+          mediaUrl: achado?.mediaUrl ?? null,
+        };
+      });
+    }
+
     const core = biblioteca.filter(e => /core|abd/i.test(e.muscleGroup ?? ''));
 
     // Mesmo filtro do resto do app: 20 dos 97 exercícios de core pedem aparelho (bola, polia,
@@ -72,17 +106,30 @@ export function BlocoAbdominal({
       ? filtrarParaCasa(core, equipamentosCasa)
       : core;
 
-    // Sorteio ESTÁVEL: sem semente, cada re-render do treino trocaria os exercícios debaixo
-    // da pessoa no meio da sessão. A chave da sessão basta — muda quando o dia muda.
+    /**
+     * Sorteio ESTÁVEL: sem semente, cada re-render do treino trocaria os exercícios debaixo da
+     * pessoa no meio da sessão. A chave da sessão basta — muda quando o dia muda.
+     *
+     * Usa selecionarAbdominal, a mesma função do montador: o que o profissional vê na prévia é
+     * o que o aluno recebe. Antes eram duas implementações, e duas divergem.
+     */
     const semente = [...(chaveDaSessao ?? 'abd')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
-    return [...possiveis]
-      .sort((a, b) => {
-        const ha = ([...a.name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, semente)) % 1000;
-        const hb = ([...b.name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, semente)) % 1000;
-        return ha - hb;
-      })
-      .slice(0, QUANTIDADE);
-  }, [biblioteca, trainingLocation, equipamentosCasa, chaveDaSessao]);
+    const sorteados = selecionarAbdominal(
+      possiveis.map(e => ({ id: e.id, name: e.name, muscle_group: e.muscleGroup })),
+      QUANTIDADE,
+      { semente }
+    );
+
+    return sorteados.map(s => {
+      const achado = possiveis.find(e => e.name === s.name);
+      return {
+        id: s.id,
+        name: s.name,
+        muscleGroup: s.muscle_group ?? null,
+        mediaUrl: achado?.mediaUrl ?? null,
+      };
+    });
+  }, [biblioteca, trainingLocation, equipamentosCasa, chaveDaSessao, prescritos]);
 
   // Dias alternados: num plano A-B-C, abdominal é no A e no C. Ver temAbdominalNoDia.
   if (!temAbdominalNoDia(indiceDaSessao ?? 0)) return null;
@@ -191,10 +238,19 @@ export function BlocoAbdominal({
             );
           })}
 
-          <p className="text-[11px] text-foreground-muted mt-1">
-            Marcar é opcional. Quer registrar no histórico ou trocar os exercícios?{' '}
-            <Link href="/abdominal" className="text-primary underline">Abrir a sessão de abdominal</Link>.
-          </p>
+          {/* O CONVITE PARA TROCAR SOME QUANDO HÁ PRESCRIÇÃO.
+              Oferecer "trocar os exercícios" logo abaixo do que o profissional escolheu seria
+              o app desfazendo, com um link, o trabalho pelo qual a pessoa pagou. */}
+          {prescrito ? (
+            <p className="text-[11px] text-foreground-muted mt-1">
+              Escolhido pelo seu personal para este dia. Marcar é opcional.
+            </p>
+          ) : (
+            <p className="text-[11px] text-foreground-muted mt-1">
+              Marcar é opcional. Quer registrar no histórico ou trocar os exercícios?{' '}
+              <Link href="/abdominal" className="text-primary underline">Abrir a sessão de abdominal</Link>.
+            </p>
+          )}
         </div>
       )}
     </div>

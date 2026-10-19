@@ -1271,6 +1271,7 @@ export default function ActiveWorkout() {
         equipamentosCasa={profile?.equipamentosCasa}
         chaveDaSessao={currentSession?.id}
         indiceDaSessao={safeIndex}
+        prescritos={currentSession?.abdominal}
       />
 
       {/* Alongamento prescrito, quando existe. Depois do abdominal porque é a última coisa do
