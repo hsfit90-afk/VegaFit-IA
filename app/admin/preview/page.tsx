@@ -297,7 +297,18 @@ export default function PreviaDoAluno() {
             <p className="text-[11px] text-foreground-muted uppercase tracking-wider font-semibold mb-1">
               Próximo treino
             </p>
-            <p className="text-base font-bold mb-3">{sessaoDeHoje?.name ?? '—'}</p>
+            <p className="text-base font-bold">{sessaoDeHoje?.name ?? '—'}</p>
+
+            {/* ESTE CARD MOSTRA UM DIA DE PROPÓSITO, e isso precisa estar escrito.
+                É a réplica do que o aluno abre, e o dashboard dele mostra um treino por vez.
+                Sem esta linha, quem olha de cima conclui que o plano só tem o Treino A — foi
+                o que aconteceu na primeira vez que esta tela foi usada. */}
+            {(plano.sessions?.length ?? 0) > 1 && (
+              <p className="text-[11px] text-foreground-muted mb-3 mt-1">
+                É um dia por vez, como ele vê. Os {plano.sessions!.length} dias estão abaixo.
+              </p>
+            )}
+            {(plano.sessions?.length ?? 0) <= 1 && <div className="mb-3" />}
 
             <div className="flex flex-wrap gap-2 mb-4">
               <span className="text-xs text-foreground-muted bg-surface/60 px-3 py-1.5 rounded-lg border border-white/5">
@@ -317,59 +328,6 @@ export default function PreviaDoAluno() {
             >
               <Pencil className="w-4 h-4" /> EDITAR ESTE TREINO
             </Link>
-          </div>
-        </div>
-      )}
-
-      {/* O QUE MAIS APARECE NA TELA DELE.
-          O dashboard oferece aeróbico, mobilidade, abdominal e alongamento ao lado do treino.
-          Saber o que está sendo oferecido faz parte de conferir o que a pessoa recebe — e o
-          abdominal, por cair em dias alternados, não aparece todo dia. */}
-      {plano && ehOAtivo && (
-        <div className="mb-5 grid sm:grid-cols-2 gap-2.5">
-          {plano.cardio_session && (
-            <div className="rounded-xl border border-border bg-surface p-3 flex items-center gap-3">
-              <Timer className="w-4 h-4 text-primary shrink-0" />
-              <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-wider text-foreground-muted">Depois do treino</p>
-                <p className="text-sm font-medium truncate">{plano.cardio_session.name}</p>
-              </div>
-            </div>
-          )}
-          <div className="rounded-xl border border-border bg-surface p-3 flex items-center gap-3">
-            <Waves className="w-4 h-4 text-secondary shrink-0" />
-            <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-wider text-foreground-muted">Antes do treino</p>
-              <p className="text-sm font-medium truncate">
-                {(sessaoDeHoje?.warmup?.length ?? 0) > 0
-                  ? sessaoDeHoje!.warmup!.map(w => w.name).join(' · ')
-                  : 'Mobilidade — nenhuma neste dia'}
-              </p>
-            </div>
-          </div>
-          <div className="rounded-xl border border-border bg-surface p-3 flex items-center gap-3">
-            <Flame className="w-4 h-4 text-accent shrink-0" />
-            <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-wider text-foreground-muted">Abdominal</p>
-              <p className="text-sm font-medium truncate">
-                {temAbdominalNoDia(escolha.indice)
-                  ? ((sessaoDeHoje?.abdominal?.length ?? 0) > 0
-                      ? sessaoDeHoje!.abdominal!.map(a => a.name).join(' · ')
-                      : 'Sorteado na tela dele')
-                  : 'Não cai neste dia'}
-              </p>
-            </div>
-          </div>
-          <div className="rounded-xl border border-border bg-surface p-3 flex items-center gap-3">
-            <StretchHorizontal className="w-4 h-4 text-primary shrink-0" />
-            <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-wider text-foreground-muted">Quando quiser</p>
-              <p className="text-sm font-medium truncate">
-                {(sessaoDeHoje?.alongamento?.length ?? 0) > 0
-                  ? sessaoDeHoje!.alongamento!.map(a => a.name).join(' · ')
-                  : 'Alongamento livre'}
-              </p>
-            </div>
           </div>
         </div>
       )}
@@ -477,13 +435,37 @@ export default function PreviaDoAluno() {
         {(plano?.sessions ?? []).map((sessao, i) => (
           <Card key={sessao.id ?? i} className={ehOAtivo && i === escolha.indice ? 'border-primary/40' : ''}>
             <CardContent className="p-5">
-              <div className="flex flex-wrap items-center gap-2 mb-4">
+              {/* CADA DIA COM O MESMO TRATAMENTO DO CARD DE CIMA.
+                  O card do topo mostra UM dia porque é o que o dashboard do aluno mostra — ele
+                  abre um por vez. Mas quem revisa precisa julgar o plano inteiro, e um dia
+                  resumido ao lado de dois em texto corrido faz o olho pular os outros dois.
+
+                  As mesmas etiquetas, na mesma ordem: exercícios, minutos, e o que acompanha
+                  aquele dia. O abdominal aparece aqui porque cai em dias ALTERNADOS: saber em
+                  qual dia ele cai é parte de conferir o plano, e isso não dá para ver no card
+                  de um dia só. */}
+              <div className="flex flex-wrap items-center gap-2 mb-2.5">
                 <h2 className="font-outfit font-bold text-xl flex-1 min-w-0">{sessao.name}</h2>
                 {ehOAtivo && i === escolha.indice && (
                   <span className="text-[11px] font-semibold text-primary px-2 py-1 rounded-full bg-primary/10 shrink-0">
                     é este que ele abre agora
                   </span>
                 )}
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-4">
+                <span className="text-xs text-foreground-muted bg-surface-light px-2.5 py-1.5 rounded-lg border border-white/5">
+                  ⚡ {sessao.exercises?.length ?? 0} exercícios
+                </span>
+                <span className="text-xs text-foreground-muted bg-surface-light px-2.5 py-1.5 rounded-lg border border-white/5">
+                  ⏱️ ~{minutosDaSessao(sessao)} min
+                </span>
+                <span className="text-xs text-foreground-muted bg-surface-light px-2.5 py-1.5 rounded-lg border border-white/5">
+                  <Flame className="w-3 h-3 inline -mt-0.5 mr-1 text-accent" />
+                  {temAbdominalNoDia(i)
+                    ? ((sessao.abdominal?.length ?? 0) > 0 ? 'abdominal prescrito' : 'abdominal sorteado')
+                    : 'sem abdominal'}
+                </span>
               </div>
 
               {/* O aquecimento é montado no servidor quando a IA gera. Plano montado à mão
