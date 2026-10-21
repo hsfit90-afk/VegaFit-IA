@@ -873,19 +873,27 @@ export default function ActiveWorkout() {
 
             O nome da sessão desceu para 18px porque é CONTEXTO, não dado — quem está na tela
             já sabe que treino escolheu. */}
-        <div className="flex items-end justify-between gap-4 mb-3">
+        {/* EMPILHA NO CELULAR, LADO A LADO NO DESKTOP.
+            Com os dois na mesma linha num aparelho de 360px, sobravam ~200px para o título e
+            "Treino C - Glúteos, Posterior e Abdômen" virava "Treino C - G…" — cortado
+            justamente na parte que diz o que se vai treinar. Empilhado, o nome usa a largura
+            inteira e pode ocupar duas linhas; o cronômetro e a contagem dividem a linha de
+            baixo, que é curta e cabe folgada. */}
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 md:gap-4 mb-3">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted mb-1">
               Em treino
             </p>
-            <h1 className="text-lg md:text-xl font-outfit font-bold truncate">{currentSession.name}</h1>
+            <h1 className="text-lg md:text-xl font-outfit font-bold leading-tight md:truncate">
+              {currentSession.name}
+            </h1>
           </div>
 
-          <div className="text-right shrink-0">
+          <div className="flex items-end justify-between gap-4 md:block md:text-right shrink-0">
             <p className="font-mono text-3xl md:text-4xl font-bold text-primary leading-none tabular-nums">
               {formatTime(elapsedSeconds)}
             </p>
-            <p className="text-[10px] uppercase tracking-wider text-foreground-muted mt-1.5 tabular-nums">
+            <p className="text-[10px] uppercase tracking-wider text-foreground-muted tabular-nums md:mt-1.5">
               {completedSets}/{totalSets} séries · {Math.round(progressPercent)}%
             </p>
           </div>
@@ -1155,8 +1163,8 @@ export default function ActiveWorkout() {
                 <div className="col-span-1 text-center">#</div>
                 <div className="col-span-3 text-center">Carga</div>
                 <div className="col-span-3 text-center">Reps</div>
-                <div className="col-span-3 text-center" title="Repetições na Reserva">RIR</div>
-                <div className="col-span-2 text-center"></div>
+                <div className="col-span-2 text-center" title="Repetições na Reserva">RIR</div>
+                <div className="col-span-3 text-center"></div>
               </div>
               
               {ex.sets.map((set, setIndex) => (
@@ -1229,7 +1237,7 @@ export default function ActiveWorkout() {
                     </div>
                   </div>
 
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <div className={`relative flex items-center bg-black/40 rounded-xl overflow-hidden border transition-all duration-300 ${
                       set.completed ? 'border-primary/30' : 'border-border focus-within:border-blue-500/50 focus-within:bg-black/60'
                     }`}>
@@ -1252,7 +1260,7 @@ export default function ActiveWorkout() {
                     </div>
                   </div>
                   
-                  <div className="col-span-2 flex justify-center relative">
+                  <div className="col-span-3 flex justify-center relative">
                     <button 
                       onClick={() => toggleSetComplete(exIndex, setIndex)}
                       aria-pressed={set.completed}
