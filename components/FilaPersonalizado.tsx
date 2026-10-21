@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
-import { UserCheck, ExternalLink } from 'lucide-react';
+import { UserCheck, ExternalLink, Inbox } from 'lucide-react';
 import { descreverStatus, vagasDoLote } from '@/lib/treinoPersonalizado';
 import { traduzirErro } from '@/utils/mensagensDeErro';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 /**
  * Fila de Treino Personalizado no painel master.
@@ -110,11 +111,11 @@ export function FilaPersonalizado() {
       </div>
 
       {emAndamento.length === 0 ? (
-        <Card>
-          <CardContent className="p-5 text-center text-sm text-gray-400">
-            Nenhum pedido em andamento. Restam {vagas.restantes} vagas no lote.
-          </CardContent>
-        </Card>
+        <EmptyState
+          icone={<Inbox className="w-12 h-12" />}
+          titulo="Nenhum pedido em andamento"
+          descricao={`Restam ${vagas.restantes} ${vagas.restantes === 1 ? 'vaga' : 'vagas'} no lote. Quando alguém reservar, o pedido aparece aqui para você montar e entregar.`}
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {emAndamento.map(p => {

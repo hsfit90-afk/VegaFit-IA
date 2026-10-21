@@ -26,6 +26,7 @@ import { prescrever, normalizarObjetivo } from '@/lib/protocolo';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
 import { traduzirErro } from '@/utils/mensagensDeErro';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 /**
  * Montador manual de treino, só para o master.
@@ -1146,6 +1147,22 @@ export default function MontarTreino() {
 
                 Carregar ACRESCENTA um dia, não substitui o plano: montar um treino de quatro
                 dias a partir de quatro modelos é o caso que mais economiza tempo. */}
+            {/* O VAZIO PRECISA DIZER COMO SAIR DELE.
+                Antes o bloco inteiro sumia quando não havia modelo daquele objetivo, e quem
+                nunca salvou um não descobria que a função existe — ela se revela só depois
+                de usada. Agora o espaço explica de onde vem o primeiro. */}
+            {modelos.length === 0 && (
+              <div className="border-t border-border pt-4">
+                <EmptyState
+                  semCard
+                  className="py-6"
+                  icone={<Bookmark className="w-10 h-10" />}
+                  titulo={`Nenhum modelo de ${config.goal.toLowerCase()} ainda`}
+                  descricao="Monte um dia e toque no marcador no cabeçalho dele para salvar como modelo. Da próxima vez, ele entra pronto com um clique."
+                />
+              </div>
+            )}
+
             {modelos.length > 0 && (
               <div className="border-t border-border pt-4">
                 <p className="text-xs uppercase tracking-wider font-semibold text-foreground-muted mb-2.5">

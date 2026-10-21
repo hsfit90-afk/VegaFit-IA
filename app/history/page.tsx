@@ -16,8 +16,11 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { useRouter } from 'next/navigation';
 
 export default function History() {
+  const router = useRouter();
   const { history } = useAppContext();
 
   // Prepare chart data (Volume per workout)
@@ -187,12 +190,14 @@ export default function History() {
           </div>
         </>
       ) : (
-        <Card className="text-center py-20 border-dashed border-2">
-          <CardContent className="flex flex-col items-center">
-            <Dumbbell className="w-16 h-16 text-foreground-muted mx-auto mb-4 opacity-50" />
-            <h2 className="text-xl font-outfit text-foreground-muted">Nenhum treino registrado ainda.</h2>
-          </CardContent>
-        </Card>
+        /* Dizia que estava vazio e parava aí. Quem chega no histórico sem treino nenhum
+           precisa do caminho de volta, não do diagnóstico. */
+        <EmptyState
+          icone={<Dumbbell className="w-12 h-12" />}
+          titulo="Nenhum treino registrado ainda"
+          descricao="Assim que você concluir um treino, ele aparece aqui com duração, volume e as cargas que você usou."
+          acao={<Button onClick={() => router.push('/active')}>Ir treinar</Button>}
+        />
       )}
     </div>
   );

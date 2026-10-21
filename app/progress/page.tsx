@@ -9,6 +9,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ChartSkeleton } from '@/components/charts/ChartSkeleton';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 // recharts (~100 kB) sai do bundle inicial da rota. Os três gráficos vêm do mesmo módulo, então
 // compartilham um único chunk em vez de baixar a biblioteca três vezes.
@@ -366,13 +367,12 @@ export default function ProgressPage() {
                   ))}
                 </div>
               ) : (
-                <div className="py-10 text-center flex flex-col items-center">
-                  <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-3">
-                    <Trophy className="w-8 h-8 text-foreground-muted opacity-30" />
-                  </div>
-                  <p className="text-white font-semibold">Nenhum recorde ainda</p>
-                  <p className="text-sm text-foreground-muted max-w-[200px] mt-1">Conclua treinos registrando as cargas para ver seus recordes aqui.</p>
-                </div>
+                <EmptyState
+                  semCard
+                  icone={<Trophy className="w-12 h-12" />}
+                  titulo="Nenhum recorde ainda"
+                  descricao="Registre a carga de cada série durante o treino. O maior peso de cada exercício vira um recorde aqui."
+                />
               )}
             </CardContent>
           </Card>

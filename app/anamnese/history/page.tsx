@@ -7,6 +7,7 @@ import { anamneseSteps } from '@/lib/anamneseSteps';
 import Link from 'next/link';
 import { ArrowLeft, TrendingDown, TrendingUp, ClipboardList, ChevronDown, ChevronUp } from 'lucide-react';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface AnamneseHistoryEntry {
   id: string;
@@ -65,11 +66,12 @@ export default function AnamneseHistoryPage() {
       {loading ? (
         <div className="text-center text-foreground-muted py-12 text-sm">Carregando...</div>
       ) : entries.length === 0 ? (
-        <div className="bg-surface border border-border rounded-xl p-8 text-center">
-          <ClipboardList className="w-10 h-10 text-foreground-muted opacity-30 mx-auto mb-3" />
-          <p className="text-white font-medium mb-1">Nenhuma anamnese registrada ainda.</p>
-          <p className="text-sm text-foreground-muted">Assim que você preencher a anamnese, ela aparece aqui.</p>
-        </div>
+        <EmptyState
+          icone={<ClipboardList className="w-12 h-12" />}
+          titulo="Nenhuma anamnese registrada ainda"
+          descricao="A anamnese é o que faz o treino ser seu: objetivo, nível, onde você treina e o que te limita. Cada vez que você responder, fica guardada aqui para comparar."
+          acao={<Link href="/anamnese" className="inline-flex items-center justify-center h-12 px-6 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-hover transition-colors">Responder a anamnese</Link>}
+        />
       ) : (
         <div className="space-y-4">
           {newestFirst.map((entry, i) => {
