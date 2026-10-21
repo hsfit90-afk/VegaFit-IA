@@ -64,7 +64,7 @@ export function InstallPrompt() {
   if (isStandalone || !showPrompt) return null;
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-[9999] bg-surface border border-[var(--color-primary)]/30 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-5 md:hidden">
+    <div className="fixed bottom-20 left-4 right-4 z-[9999] bg-surface border border-[var(--color-primary)]/30 rounded-xl p-5 shadow-2xl animate-in slide-in-from-bottom-5 md:hidden">
       <button
         onClick={handleClose}
         aria-label="Dispensar convite para instalar o app"

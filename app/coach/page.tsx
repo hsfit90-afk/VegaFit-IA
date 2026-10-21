@@ -5,6 +5,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { Send, Bot, User } from 'lucide-react';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 import { useSomenteMaster } from "@/components/useSomenteMaster";
+import { PADDING_TELA, LARGURA_FOCO } from '@/lib/layout';
 
 interface Message {
   id: string;
@@ -97,8 +98,8 @@ export default function Coach() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] md:h-full w-full max-w-3xl mx-auto p-5 md:p-8 pb-24 md:pb-8 relative animate-fade-in">
-      <header className="p-4 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-10 md:rounded-t-[24px] md:border md:border-b-0">
+    <div className={`flex flex-col h-[calc(100vh-80px)] md:h-full w-full ${LARGURA_FOCO} mx-auto ${PADDING_TELA} pb-24 md:pb-8 relative animate-fade-in`}>
+      <header className="p-5 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-10 md:rounded-t-[24px] md:border md:border-b-0">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-primary p-[2px]">
             <div className="w-full h-full bg-background rounded-full flex items-center justify-center">
@@ -117,11 +118,11 @@ export default function Coach() {
         role="log"
         aria-live="polite"
         aria-relevant="additions"
-        className="flex-1 overflow-y-auto p-4 space-y-6 md:border-x md:border-border bg-gradient-to-b from-surface/30 to-transparent"
+        className="flex-1 overflow-y-auto p-5 space-y-6 md:border-x md:border-border bg-gradient-to-b from-surface/30 to-transparent"
       >
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] md:max-w-[70%] p-4 ${
+            <div className={`max-w-[85%] md:max-w-[70%] p-5 ${
               msg.role === 'user' 
                 ? 'bg-accent text-white rounded-[20px] rounded-br-sm shadow-[0_5px_15px_rgb(var(--color-accent-rgb)/0.2)]' 
                 : 'bg-surface backdrop-blur-md border border-border text-gray-200 rounded-[20px] rounded-bl-sm shadow-sm'
@@ -135,7 +136,7 @@ export default function Coach() {
         {isLoading && (
           <div className="flex justify-start">
             <span className="sr-only">O coach está escrevendo uma resposta.</span>
-            <div aria-hidden="true" className="bg-surface backdrop-blur-md border border-border p-4 rounded-[20px] rounded-bl-sm flex gap-2 items-center">
+            <div aria-hidden="true" className="bg-surface backdrop-blur-md border border-border p-5 rounded-[20px] rounded-bl-sm flex gap-2 items-center">
               <span className="w-2 h-2 bg-primary rounded-full animate-bounce"></span>
               <span className="w-2 h-2 bg-primary rounded-full animate-bounce delay-75"></span>
               <span className="w-2 h-2 bg-primary rounded-full animate-bounce delay-150"></span>
@@ -145,7 +146,7 @@ export default function Coach() {
         <div ref={endOfMessagesRef} />
       </div>
 
-      <div className="p-4 bg-background/90 backdrop-blur-xl border-t border-border md:rounded-b-[24px] md:border relative z-20">
+      <div className="p-5 bg-background/90 backdrop-blur-xl border-t border-border md:rounded-b-[24px] md:border relative z-20">
         {messages.length <= 2 && (
           <div className="flex overflow-x-auto pb-4 gap-2 no-scrollbar">
             {SUGGESTIONS.map((sug, i) => (
@@ -166,14 +167,14 @@ export default function Coach() {
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSend(input)}
             placeholder="Pergunte ao seu Coach..." 
-            className="w-full bg-surface border border-border rounded-2xl py-4 pl-4 pr-12 text-white focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all"
+            className="w-full bg-surface border border-border rounded-xl py-4 pl-4 pr-12 text-white focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all"
             disabled={isLoading}
           />
           <button 
             onClick={() => handleSend(input)}
             disabled={isLoading || !input.trim()}
             aria-label="Enviar pergunta ao coach"
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-primary text-black rounded-xl disabled:opacity-50 hover:scale-105 transition-all shadow-lg"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-3 bg-primary text-black rounded-xl disabled:opacity-50 hover:scale-105 transition-all shadow-lg"
           >
             <Send className="w-5 h-5" />
           </button>

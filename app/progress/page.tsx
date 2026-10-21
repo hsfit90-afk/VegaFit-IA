@@ -8,6 +8,7 @@ import { TrendingUp, Scale, Trophy, Activity, Plus, BarChart2, ChevronDown, Hist
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ChartSkeleton } from '@/components/charts/ChartSkeleton';
+import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
 
 // recharts (~100 kB) sai do bundle inicial da rota. Os três gráficos vêm do mesmo módulo, então
 // compartilham um único chunk em vez de baixar a biblioteca três vezes.
@@ -169,7 +170,7 @@ export default function ProgressPage() {
   if (!profile) return null;
 
   return (
-    <div className="p-5 md:p-8 max-w-5xl mx-auto animate-fade-in pb-28 md:pb-12">
+    <div className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
       <header className="mb-8">
         <h1 className="text-3xl md:text-4xl font-outfit font-bold flex items-center gap-3">
           <div className="p-3 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl backdrop-blur-md border border-border">
@@ -210,7 +211,7 @@ export default function ProgressPage() {
             </CardHeader>
             <CardContent>
               {isAddingWeight && (
-                <form onSubmit={handleAddWeight} className="flex gap-2 mb-6 p-4 bg-surface rounded-xl border border-border animate-fade-in">
+                <form onSubmit={handleAddWeight} className="flex gap-2 mb-6 p-5 bg-surface rounded-xl border border-border animate-fade-in">
                   <input 
                     type="number" step="0.1"
                     placeholder="Seu peso (kg)"
@@ -229,7 +230,7 @@ export default function ProgressPage() {
                   <p className="text-4xl font-mono font-bold text-white">{currentWeight.toFixed(1)} <span className="text-lg text-foreground-muted font-sans">kg</span></p>
                 </div>
                 {weightDiff !== 0 && (
-                  <div className={`px-2 py-1 rounded-md text-sm font-bold flex items-center gap-1 mb-1 ${weightDiff > 0 ? 'bg-red-500/20 text-red-400' : 'bg-primary/20 text-primary'}`}>
+                  <div className={`px-2 py-1 rounded-lg text-sm font-bold flex items-center gap-1 mb-1 ${weightDiff > 0 ? 'bg-red-500/20 text-red-400' : 'bg-primary/20 text-primary'}`}>
                     {weightDiff > 0 ? '↗' : '↘'} {Math.abs(weightDiff).toFixed(1)} kg desde o início
                   </div>
                 )}

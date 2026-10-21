@@ -172,7 +172,7 @@ export default function TreinosDosAlunos() {
       </div>
 
       {semTreino > 0 && !busca && (
-        <div className="mb-4 rounded-xl border border-warning/40 bg-warning/10 p-3.5 text-sm flex items-start gap-2.5">
+        <div className="mb-4 rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
           <p>
             {semTreino === 1
@@ -195,7 +195,7 @@ export default function TreinosDosAlunos() {
             const u = urgencia(a);
             return (
               <Card key={a.id} className={u <= 1 ? 'border-warning/40' : ''}>
-                <CardContent className="p-4 flex flex-wrap items-center gap-x-4 gap-y-3">
+                <CardContent className="p-5 flex flex-wrap items-center gap-x-4 gap-y-3">
                   <div className="flex-1 min-w-[180px]">
                     <p className="font-semibold leading-tight">
                       {a.nome || 'Sem nome'}

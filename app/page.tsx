@@ -14,6 +14,7 @@ import { musculosEmFadiga, escolherSessao, sessaoSeguinte, minutosDaSessao } fro
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
 import { CardPersonalizado } from '@/components/CardPersonalizado';
+import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
 
 export default function Dashboard() {
   // setActivePlan NÃO entra aqui: o dashboard mostra só o plano ativo, sem seletor. Estava
@@ -206,7 +207,7 @@ export default function Dashboard() {
 
   return (
     <motion.div 
-      className="p-5 md:p-8 max-w-5xl mx-auto min-h-screen pb-32"
+      className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto min-h-screen ${RODAPE_SEGURO}`}
       variants={containerVariants}
       initial="hidden"
       animate="show"
@@ -229,7 +230,7 @@ export default function Dashboard() {
         <motion.div variants={itemVariants} className="space-y-6">
           
           {/* Box de Treino */}
-          <div className="bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 rounded-3xl p-6 relative overflow-hidden shadow-[0_0_40px_rgb(var(--color-primary-rgb)/0.1)]">
+          <div className="bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 rounded-xl p-5 relative overflow-hidden shadow-[0_0_40px_rgb(var(--color-primary-rgb)/0.1)]">
             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
             
             <div className="relative z-10 mb-6">
@@ -321,7 +322,7 @@ export default function Dashboard() {
               onClick={() => router.push('/cardio')}
               className="block w-full text-left mt-4"
             >
-              <Card variant="neon-hover" className="p-4 flex items-center gap-4">
+              <Card variant="neon-hover" className="p-5 flex items-center gap-4">
                 <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                   <Timer className="w-5 h-5 text-primary" />
                 </div>
@@ -355,7 +356,7 @@ export default function Dashboard() {
             { href: '/abdominal',   icone: Flame,             quando: 'Depois do treino',        titulo: 'Abdominal',   sub: '3 exercícios de core' },
           ].map(({ href, icone: Icone, quando, titulo, sub }) => (
             <button key={href} onClick={() => router.push(href)} className="block w-full text-left mt-3">
-              <Card variant="neon-hover" className="p-4 flex items-center gap-4">
+              <Card variant="neon-hover" className="p-5 flex items-center gap-4">
                 <div className="w-11 h-11 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center justify-center shrink-0">
                   <Icone className="w-5 h-5 text-secondary" />
                 </div>
@@ -387,7 +388,7 @@ export default function Dashboard() {
                 <div className="space-y-3">
                   {achievements.map((ach, i) => (
                     <div key={i} className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-border">
-                      <div className="bg-background rounded-lg p-2 shrink-0 border border-border">{ach.icon}</div>
+                      <div className="bg-background rounded-lg p-3 shrink-0 border border-border">{ach.icon}</div>
                       <div>
                         <p className="font-bold text-sm text-white">{ach.title}</p>
                         <p className="text-[11px] text-foreground-muted">{ach.desc}</p>
@@ -447,8 +448,8 @@ export default function Dashboard() {
       {/* Dica do Dia */}
       <motion.div variants={itemVariants} className="mb-8">
         <Card variant="glass" className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 md:p-5 flex items-start gap-4">
-            <div className="bg-primary/20 p-2.5 rounded-xl flex-shrink-0">
+          <CardContent className="p-5 md:p-5 flex items-start gap-4">
+            <div className="bg-primary/20 p-3 rounded-xl flex-shrink-0">
               <Lightbulb className="w-5 h-5 text-primary" />
             </div>
             <div>
@@ -489,7 +490,7 @@ export default function Dashboard() {
               <Card key={activePlan.id} className="border-primary shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.15)] bg-surface-light relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
                 
-                <CardContent className="p-6 md:p-8 relative z-10">
+                <CardContent className="p-5 md:p-8 relative z-10">
                   <div className="flex justify-between items-start mb-6">
                     <div>
                       <span className="bg-primary/20 text-primary text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full inline-block mb-3">
@@ -563,7 +564,7 @@ export default function Dashboard() {
 
             return (
               <Card key={muscle} variant="neon-hover" className="bg-surface/50 cursor-pointer">
-                <CardContent className="p-4 flex flex-col items-center justify-center text-center gap-3">
+                <CardContent className="p-5 flex flex-col items-center justify-center text-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-surface-light flex items-center justify-center">
                     <div className={`w-3.5 h-3.5 rounded-full ${statusColor} shadow-[0_0_12px] ${glowColor}`}></div>
                   </div>
@@ -584,9 +585,9 @@ export default function Dashboard() {
 function DashboardCard({ title, value, icon: Icon, color, bg }: { title: string, value: string, icon: any, color: string, bg: string }) {
   return (
     <Card variant="neon-hover" className="group cursor-pointer">
-      <CardContent className="p-4 md:p-5">
+      <CardContent className="p-5 md:p-5">
         <div className="flex items-start justify-between mb-3">
-          <div className={`p-2 rounded-xl ${bg}`}>
+          <div className={`p-3 rounded-xl ${bg}`}>
             <Icon className={`w-4 h-4 md:w-5 md:h-5 ${color}`} />
           </div>
         </div>

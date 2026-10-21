@@ -152,7 +152,7 @@ export default function ExerciciosPorAluno() {
     return (
       <div
         key={ex.id}
-        className={`flex items-center gap-3 p-3 rounded-2xl border transition-colors ${
+        className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
           marca === 'favorito' ? 'border-primary/40 bg-primary/5'
           : marca === 'banido' ? 'border-destructive/40 bg-destructive/5'
           : 'border-border bg-surface'
@@ -180,7 +180,7 @@ export default function ExerciciosPorAluno() {
             onClick={() => marcar(ex, 'favorito')}
             disabled={ocupado || marca === 'favorito'}
             title="Priorizar: pedir à IA que inclua quando o dia tiver esse grupo muscular"
-            className={`p-2 rounded-xl border transition-colors ${
+            className={`p-3 rounded-xl border transition-colors ${
               marca === 'favorito'
                 ? 'bg-primary/20 text-primary border-primary/40'
                 : 'bg-surface-light border-white/5 text-foreground-muted hover:text-primary hover:bg-primary/10 disabled:opacity-40'
@@ -192,7 +192,7 @@ export default function ExerciciosPorAluno() {
             onClick={() => marcar(ex, 'banido')}
             disabled={ocupado || marca === 'banido'}
             title="Nunca prescrever: sai do catálogo deste aluno antes da geração"
-            className={`p-2 rounded-xl border transition-colors ${
+            className={`p-3 rounded-xl border transition-colors ${
               marca === 'banido'
                 ? 'bg-destructive/20 text-destructive border-destructive/40'
                 : 'bg-surface-light border-white/5 text-foreground-muted hover:text-destructive hover:bg-destructive/10 disabled:opacity-40'
@@ -204,7 +204,7 @@ export default function ExerciciosPorAluno() {
             onClick={() => marcar(ex, 'nenhum')}
             disabled={ocupado || marca === 'nenhum'}
             title="Tirar a marca"
-            className="p-2 rounded-xl border bg-surface-light border-white/5 text-foreground-muted hover:text-foreground disabled:opacity-30 transition-colors"
+            className="p-3 rounded-xl border bg-surface-light border-white/5 text-foreground-muted hover:text-foreground disabled:opacity-30 transition-colors"
           >
             {ocupado ? <LoadingSpinner tamanho="sm" cor="herdada" /> : <Minus className="w-4 h-4" />}
           </button>
@@ -224,7 +224,7 @@ export default function ExerciciosPorAluno() {
       </header>
 
       <Card>
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-5 space-y-3">
           <label className="block text-sm font-medium">Aluno</label>
           <select
             value={alunoId}
@@ -250,7 +250,7 @@ export default function ExerciciosPorAluno() {
           {/* A diferença de peso entre as duas marcas precisa estar escrita na tela. Banido é
               garantia; favorito é preferência, e um profissional que confunde os dois promete
               ao aluno algo que o app não cumpre. */}
-          <div className="text-xs text-foreground-muted bg-surface rounded-xl p-4 border border-border space-y-1.5">
+          <div className="text-xs text-foreground-muted bg-surface rounded-xl p-5 border border-border space-y-1.5">
             <p>
               <Ban className="w-3.5 h-3.5 inline mr-1.5 text-destructive" />
               <strong className="text-foreground">Nunca prescrever</strong> é garantido: o exercício é

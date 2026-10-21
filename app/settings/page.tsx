@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { AtivarLembretes } from '@/components/AtivarLembretes';
 import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
 import { MinhaAcademia } from '@/components/MinhaAcademia';
+import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 export default function Settings() {
   const { profile, setProfile, clearData } = useAppContext();
@@ -133,7 +134,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="p-5 md:p-8 max-w-3xl mx-auto animate-fade-in pb-28 md:pb-12">
+    <div className={`${PADDING_TELA} ${LARGURA_FOCO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
       <PageHeader
         titulo="Perfil e Configurações"
         subtitulo="Gerencie sua conta e histórico físico"
@@ -160,7 +161,7 @@ export default function Settings() {
           <div className="absolute -right-10 -top-10 text-primary/10">
             <ClipboardList className="w-40 h-40" />
           </div>
-          <CardContent className="p-6 relative z-10 flex flex-col md:flex-row items-center gap-6">
+          <CardContent className="p-5 relative z-10 flex flex-col md:flex-row items-center gap-6">
             <div className="flex-1">
               <h3 className="font-outfit text-xl font-bold text-white mb-2">Atualizar Anamnese</h3>
               {form.intent ? (
@@ -190,7 +191,7 @@ export default function Settings() {
             <div className="absolute -right-4 -top-4 text-foreground/5">
               <Dumbbell className="w-32 h-32" />
             </div>
-            <CardContent className="p-6 relative z-10 flex flex-col md:flex-row items-center gap-6">
+            <CardContent className="p-5 relative z-10 flex flex-col md:flex-row items-center gap-6">
               <div className="flex-1">
                 <h3 className="font-outfit text-xl font-bold text-white mb-2">Biblioteca de Exercícios</h3>
                 <p className="text-sm text-foreground-muted mb-4">Adicione novos exercícios com vídeos/gifs um a um, ou importe uma pasta inteira de uma vez só no modo massa.</p>
@@ -318,7 +319,7 @@ export default function Settings() {
           e um clique acidental apagaria meses de histórico de treino. */}
       {deleteOpen && (
         <div
-          className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/70 backdrop-blur-sm p-0 md:p-4"
+          className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/70 backdrop-blur-sm p-0 md:p-5"
           onClick={() => !deleting && setDeleteOpen(false)}
         >
           <div
@@ -326,7 +327,7 @@ export default function Settings() {
             aria-modal="true"
             aria-labelledby="excluir-titulo"
             aria-describedby="excluir-descricao"
-            className="bg-surface border border-destructive/30 rounded-t-3xl md:rounded-2xl w-full md:max-w-lg p-6 max-h-[90vh] overflow-y-auto"
+            className="bg-surface border border-destructive/30 rounded-t-3xl md:rounded-xl w-full md:max-w-lg p-5 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4 mb-4">

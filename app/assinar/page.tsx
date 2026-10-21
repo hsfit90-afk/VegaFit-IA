@@ -137,7 +137,7 @@ export default function Assinar() {
 
       <div className="grid md:grid-cols-2 gap-4 mb-6">
         <Card>
-          <CardContent className="p-6 flex flex-col gap-5 h-full">
+          <CardContent className="p-5 flex flex-col gap-5 h-full">
             <div>
               <p className="font-outfit font-bold text-lg">Mensal</p>
               <p className="text-sm text-foreground-muted">Para testar sem compromisso</p>
@@ -167,10 +167,10 @@ export default function Assinar() {
         </Card>
 
         <Card className="border-primary/50 relative overflow-visible">
-          <span className="absolute -top-3 left-6 bg-primary text-primary-foreground font-outfit font-bold text-[0.7rem] tracking-wider uppercase px-3 py-1 rounded-md">
+          <span className="absolute -top-3 left-6 bg-primary text-primary-foreground font-outfit font-bold text-[0.7rem] tracking-wider uppercase px-3 py-1 rounded-lg">
             Economize R$ 147
           </span>
-          <CardContent className="p-6 flex flex-col gap-5 h-full">
+          <CardContent className="p-5 flex flex-col gap-5 h-full">
             <div>
               <p className="font-outfit font-bold text-lg">Anual</p>
               <p className="text-sm text-foreground-muted">Para quem vai levar a sério</p>
@@ -206,7 +206,7 @@ export default function Assinar() {
         <p className="text-sm text-destructive mb-6" role="alert">{erro}</p>
       )}
 
-      <div className="flex items-start gap-3 p-4 rounded-xl border border-warning/30 bg-warning/5">
+      <div className="flex items-start gap-3 p-5 rounded-xl border border-warning/30 bg-warning/5">
         <ShieldCheck className="w-5 h-5 text-warning flex-none mt-0.5" />
         <p className="text-sm text-foreground-muted">
           <span className="text-foreground font-semibold">Garantia de 7 dias.</span> Se você assinar e

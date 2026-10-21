@@ -85,7 +85,7 @@ export function MinhaAcademia() {
 
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent className="p-5">
         <button
           onClick={() => setAberto(a => !a)}
           aria-expanded={aberto}
@@ -135,7 +135,7 @@ export function MinhaAcademia() {
                         : 'border-border bg-surface hover:bg-surface-hover'
                     }`}
                   >
-                    <span className={`w-5 h-5 rounded-md flex-none flex items-center justify-center mt-0.5 border ${
+                    <span className={`w-5 h-5 rounded-lg flex-none flex items-center justify-center mt-0.5 border ${
                       marcado ? 'bg-primary border-primary' : 'border-border-light'
                     }`}>
                       {marcado && <Check className="w-3.5 h-3.5 text-primary-foreground" />}

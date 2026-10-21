@@ -15,6 +15,7 @@ const VolumeHistoryChart = dynamic(() => import('@/components/charts/VolumeHisto
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
 
 export default function History() {
   const { history } = useAppContext();
@@ -83,7 +84,7 @@ export default function History() {
   };
 
   return (
-    <div className="p-5 md:p-8 max-w-5xl mx-auto animate-fade-in pb-28 md:pb-12">
+    <div className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
       <PageHeader
         titulo="Histórico de Treinos"
         subtitulo="Acompanhe sua evolução ao longo do tempo"
@@ -123,7 +124,7 @@ export default function History() {
           <div className="space-y-4">
             <h2 className="font-outfit text-xl font-semibold mb-4">Treinos Realizados</h2>
             {history.map(h => (
-              <details key={h.id} className="bg-surface border border-border rounded-2xl group overflow-hidden transition-all shadow-sm">
+              <details key={h.id} className="bg-surface border border-border rounded-xl group overflow-hidden transition-all shadow-sm">
                 <summary className="p-5 flex flex-col md:flex-row md:items-center justify-between cursor-pointer hover:bg-surface-light transition-all list-none">
                   <div>
                     <h3 className="font-outfit font-semibold text-lg text-white mb-1">{h.sessionName}</h3>
@@ -163,7 +164,7 @@ export default function History() {
                       const diff = prevVolume !== null ? exVolume - prevVolume : 0;
 
                       return (
-                        <div key={ex.workoutExerciseId} className="flex flex-col text-sm p-4 bg-surface rounded-xl gap-2 border border-border">
+                        <div key={ex.workoutExerciseId} className="flex flex-col text-sm p-5 bg-surface rounded-xl gap-2 border border-border">
                           <div className="flex justify-between items-center">
                             <span className="text-white font-medium">{ex.name}</span>
                             <span className="text-primary font-mono font-bold">{exVolume} kg</span>

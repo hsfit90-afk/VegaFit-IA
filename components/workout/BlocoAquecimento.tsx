@@ -62,7 +62,7 @@ export function BlocoAquecimento({
   const todosFeitos = feitos.size === itens.length;
 
   return (
-    <div className="mb-5 rounded-2xl border border-secondary/30 bg-secondary/5 overflow-hidden">
+    <div className="mb-5 rounded-xl border border-secondary/30 bg-secondary/5 overflow-hidden">
       <VisualizadorDeMidia
         midia={ampliado?.midia ?? null}
         titulo={ampliado?.titulo ?? ''}
@@ -72,7 +72,7 @@ export function BlocoAquecimento({
       <button
         onClick={() => setAberto(a => !a)}
         aria-expanded={aberto}
-        className="w-full flex items-center gap-3 p-4 text-left"
+        className="w-full flex items-center gap-3 p-5 text-left"
       >
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-none transition-colors ${
           todosFeitos ? 'bg-primary/20' : 'bg-secondary/20'
@@ -104,7 +104,7 @@ export function BlocoAquecimento({
                  marca como feito. Dois alvos, e botao dentro de botao e HTML invalido. */
               <div
                 key={item.name}
-                className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all ${
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                   feito ? 'border-primary/40 bg-primary/10' : 'border-border bg-surface'
                 }`}
               >
@@ -145,7 +145,7 @@ export function BlocoAquecimento({
                   aria-pressed={feito}
                   className="flex items-center gap-3 flex-1 min-w-0 text-left"
                 >
-                  <span className={`w-5 h-5 rounded-md flex-none grid place-items-center border ${
+                  <span className={`w-5 h-5 rounded-lg flex-none grid place-items-center border ${
                     feito ? 'bg-primary border-primary' : 'border-border-light'
                   }`}>
                     {feito && <Check className="w-3.5 h-3.5 text-primary-foreground" />}

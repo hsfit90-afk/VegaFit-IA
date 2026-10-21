@@ -101,7 +101,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
       {children}
       {opcoes && (
         <div
-          className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/70 backdrop-blur-sm md:p-4"
+          className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/70 backdrop-blur-sm md:p-5"
           onClick={() => fechar(false)}
         >
           <div
@@ -111,7 +111,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             aria-labelledby="confirmar-titulo"
             aria-describedby="confirmar-descricao"
             onClick={e => e.stopPropagation()}
-            className="bg-surface border border-border rounded-t-3xl md:rounded-2xl w-full md:max-w-md p-6 max-h-[85vh] overflow-y-auto vf-entrada"
+            className="bg-surface border border-border rounded-t-3xl md:rounded-xl w-full md:max-w-md p-5 max-h-[85vh] overflow-y-auto vf-entrada"
           >
             <h2
               id="confirmar-titulo"

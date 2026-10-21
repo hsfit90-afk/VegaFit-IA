@@ -26,6 +26,7 @@ import { BlocoAquecimento } from '@/components/workout/BlocoAquecimento';
 import { BlocoAbdominal } from '@/components/workout/BlocoAbdominal';
 import { BlocoAlongamento } from '@/components/workout/BlocoAlongamento';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
@@ -197,7 +198,7 @@ export default function ActiveWorkout() {
 
   if (!currentSession) {
     return (
-      <div className="p-6 md:p-10 text-center pt-20">
+      <div className="p-5 md:p-10 text-center pt-20">
         <h2 className="text-2xl font-outfit mb-4">Nenhum treino programado.</h2>
         <Button onClick={() => router.push('/generator')} size="lg">
           Gerar Treino
@@ -742,7 +743,7 @@ export default function ActiveWorkout() {
     const completedSetsCount = finishedExercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
 
     return (
-      <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-4 py-12 animate-fade-in relative overflow-hidden">
+      <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-5 py-12 animate-fade-in relative overflow-hidden">
         {/* Glow Effects */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[120%] h-[500px] bg-primary/20 rounded-[100%] blur-[120px] pointer-events-none"></div>
         
@@ -757,14 +758,14 @@ export default function ActiveWorkout() {
 
           {/* Stats Cards - Story Style */}
           <div className="grid grid-cols-3 gap-4 w-full mb-8">
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col items-center gap-3">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col items-center gap-3">
               <Timer className="w-6 h-6 text-blue-400" />
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-black text-white">{durationMin}</span>
                 <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1">min</span>
               </div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col items-center gap-3 relative overflow-hidden">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col items-center gap-3 relative overflow-hidden">
               <div className="absolute inset-0 bg-primary/10 blur-xl"></div>
               <Zap className="w-6 h-6 text-primary relative z-10" />
               <div className="flex flex-col items-center relative z-10">
@@ -772,7 +773,7 @@ export default function ActiveWorkout() {
                 <span className="text-[10px] text-primary/70 uppercase tracking-widest font-bold mt-1">kg vol</span>
               </div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col items-center gap-3">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col items-center gap-3">
               <Flame className="w-6 h-6 text-orange-400" />
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-black text-white">{completedSetsCount}</span>
@@ -783,7 +784,7 @@ export default function ActiveWorkout() {
 
           {/* PR destaque */}
           {recentPRs.length > 0 && (
-            <div className="w-full mb-8 p-5 bg-gradient-to-br from-[var(--color-gold)]/15 to-[var(--color-gold)]/5 border border-[var(--color-gold)]/40 rounded-3xl text-left relative overflow-hidden">
+            <div className="w-full mb-8 p-5 bg-gradient-to-br from-[var(--color-gold)]/15 to-[var(--color-gold)]/5 border border-[var(--color-gold)]/40 rounded-xl text-left relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-gold)]/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
               <p className="text-xs text-[var(--color-gold)] uppercase tracking-widest font-black mb-3 flex items-center gap-2 relative z-10">
                 <Trophy className="w-4 h-4" /> Novos Recordes!
@@ -807,11 +808,11 @@ export default function ActiveWorkout() {
 
           {/* Botões de ação */}
           <div className="flex flex-col gap-3 w-full mt-4">
-            <Button onClick={handleShare} size="lg" className="h-16 text-lg rounded-2xl bg-white text-black hover:bg-gray-200 shadow-xl font-bold">
+            <Button onClick={handleShare} size="lg" className="h-16 text-lg rounded-xl bg-white text-black hover:bg-gray-200 shadow-xl font-bold">
               <Share2 className="w-5 h-5 mr-2" />
               Compartilhar Resumo
             </Button>
-            <Button onClick={() => router.push('/')} variant="outline" size="lg" className="h-16 text-lg rounded-2xl border-white/20 text-white hover:bg-white/10">
+            <Button onClick={() => router.push('/')} variant="outline" size="lg" className="h-16 text-lg rounded-xl border-white/20 text-white hover:bg-white/10">
               Voltar ao Início
             </Button>
           </div>
@@ -825,7 +826,7 @@ export default function ActiveWorkout() {
 
         {showToast && (
           <div role="status" aria-live="polite" className="fixed bottom-6 left-6 right-6 md:left-auto md:right-10 md:bottom-10 flex flex-col gap-3 z-50">
-            <div className="bg-background/90 border border-primary/30 text-primary p-4 rounded-xl backdrop-blur-xl animate-fade-in shadow-[0_0_30px_rgb(var(--color-primary-rgb)/0.15)] flex items-center gap-4">
+            <div className="bg-background/90 border border-primary/30 text-primary p-5 rounded-xl backdrop-blur-xl animate-fade-in shadow-[0_0_30px_rgb(var(--color-primary-rgb)/0.15)] flex items-center gap-4">
               <div className="bg-primary/20 p-3 rounded-lg">
                 <Zap className="w-6 h-6 text-primary" />
               </div>
@@ -851,7 +852,7 @@ export default function ActiveWorkout() {
   const progressPercent = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
   return (
-    <div className="p-5 md:p-8 max-w-3xl mx-auto animate-fade-in pb-28 md:pb-12">
+    <div className={`${PADDING_TELA} ${LARGURA_FOCO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
       <header className="mb-8 sticky top-0 bg-background/80 backdrop-blur-xl z-40 py-4 border-b border-white/[0.08]">
         {/* FEATURE: Cronômetro ao vivo + nome da sessão */}
         {/* Deixa quebrar em vez de espremer o cronômetro.
@@ -886,7 +887,7 @@ export default function ActiveWorkout() {
           depois de concluir uma série parece bug, o aluno fica esperando. Esta faixa diz o
           que fazer agora. Ela se limpa sozinha na próxima série concluída. */}
       {dicaDoMetodo && (
-        <div className="mb-4 flex items-center gap-3 p-3.5 rounded-xl border border-accent/40 bg-accent/10 animate-fade-in">
+        <div className="mb-4 flex items-center gap-3 p-3 rounded-xl border border-accent/40 bg-accent/10 animate-fade-in">
           <Zap className="w-5 h-5 text-accent flex-none" />
           <p className="text-sm font-semibold leading-snug">{dicaDoMetodo}</p>
         </div>
@@ -943,7 +944,7 @@ export default function ActiveWorkout() {
                     ) : (
                       <img src={customMediaUrl} alt={ex.name} className="w-full h-full object-contain" />
                     )}
-                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded-md backdrop-blur-md flex items-center gap-1.5 border border-white/10">
+                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded-lg backdrop-blur-md flex items-center gap-1.5 border border-white/10">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
                       <span className="text-[10px] text-primary font-bold uppercase tracking-wider">Verificado</span>
                     </div>
@@ -952,7 +953,7 @@ export default function ActiveWorkout() {
               ) : (
                 /* Mesma altura aproximada da caixa com mídia (17rem + o py-3), para o card não
                    pular de tamanho entre um exercício que tem vídeo e outro que não tem. */
-                <div className="w-full bg-surface-light border-b border-border/50 h-[18.5rem] sm:h-[21.5rem] flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-full bg-surface-light border-b border-border/50 h-[18.5rem] sm:h-[21.5rem] flex flex-col items-center justify-center p-5 text-center">
                   <div className="w-16 h-16 rounded-full bg-black/30 flex items-center justify-center mb-4 border border-white/5">
                     <ImageOff className="w-8 h-8 text-foreground-muted/50" />
                   </div>
@@ -964,7 +965,7 @@ export default function ActiveWorkout() {
               )}
             </div>
 
-            <div className="p-6 md:p-8">
+            <div className="p-5 md:p-8">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 {/* min-w-0: a partir de sm isto vira linha, e sem ele um nome longo
                     ("Puxada Alta com Triângulo") empurra o que está ao lado em vez de quebrar. */}
@@ -1093,7 +1094,7 @@ export default function ActiveWorkout() {
                     </button>
                   </div>
 
-                  <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
+                  <div className="bg-white/5 px-4 py-2 rounded-xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
                      <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Séries</span>
                      <input
                        type="number"
@@ -1104,7 +1105,7 @@ export default function ActiveWorkout() {
                        className="w-12 text-center bg-transparent text-xl font-mono font-bold text-white outline-none"
                      />
                   </div>
-                  <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
+                  <div className="bg-white/5 px-4 py-2 rounded-xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
                      <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Volume Atual</span>
                      <div className="text-xl font-mono font-bold text-white flex items-baseline gap-1">
                         {ex.sets.filter(s => s.completed).reduce((acc, s) => acc + (s.reps * s.weight), 0)} <span className="text-sm text-gray-500 font-medium">kg</span>
@@ -1125,7 +1126,7 @@ export default function ActiveWorkout() {
                 <div key={setIndex}>
                 {/* A linha de técnica especial se destaca em roxo: com três linhas iguais o
                     aluno tratava o drop como série normal. */}
-                <div className={`grid grid-cols-12 gap-2 items-center p-2 md:p-3 rounded-2xl border transition-all duration-300 relative group ${
+                <div className={`grid grid-cols-12 gap-2 items-center p-3 md:p-3 rounded-xl border transition-all duration-300 relative group ${
                   set.completed
                     ? 'bg-gradient-to-r from-primary/10 to-transparent border-primary/30 shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.15)]'
                     : ehSerieEspecial(set.label)

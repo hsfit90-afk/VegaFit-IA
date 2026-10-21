@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/Input';
 import { Field } from '@/components/ui/Field';
 import { traduzirErro } from '@/utils/mensagensDeErro';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { LARGURA_AUTH } from '@/lib/layout';
+import { Button } from '@/components/ui/Button';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -70,10 +72,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white/[0.03] backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-2xl">
+    <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-5">
+      <div className={`w-full ${LARGURA_AUTH} bg-white/[0.03] backdrop-blur-md p-8 rounded-xl border border-white/10 shadow-2xl`}>
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-[var(--color-accent)]/20">
+          <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-[var(--color-accent)]/20">
             <Dumbbell className="w-8 h-8 text-black" />
           </div>
           <h1 className="text-3xl font-outfit font-bold text-white mb-2">Bem-vindo de volta</h1>
@@ -81,7 +83,7 @@ export default function Login() {
         </div>
 
         {contaExcluida && (
-          <div role="status" className="bg-primary/10 border border-primary/25 text-primary p-4 rounded-xl mb-6 text-sm flex gap-3">
+          <div role="status" className="bg-primary/10 border border-primary/25 text-primary p-5 rounded-xl mb-6 text-sm flex gap-3">
             <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold mb-1">Conta excluída</p>
@@ -93,7 +95,7 @@ export default function Login() {
         )}
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6 text-sm text-center">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-5 rounded-xl mb-6 text-sm text-center">
             {error}
           </div>
         )}
@@ -127,13 +129,14 @@ export default function Login() {
               placeholder="••••••••"
             />
           </div>
-          <button
+          <Button
             type="submit"
+            fullWidth
             disabled={loading}
-            className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            className="gap-2"
           >
-            {loading ? <LoadingSpinner tamanho="sm" rotulo="Entrando…" /> : 'Entrar'}
-          </button>
+            {loading ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Entrando…" /> : 'Entrar'}
+          </Button>
         </form>
 
         <div className="relative mb-6">

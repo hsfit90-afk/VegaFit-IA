@@ -131,7 +131,7 @@ export function AtivarLembretes({ compacto = false }: { compacto?: boolean }) {
 
   if (estado === 'bloqueado') {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-4 text-sm text-foreground-muted flex items-start gap-3">
+      <div className="rounded-xl border border-border bg-surface p-5 text-sm text-foreground-muted flex items-start gap-3">
         <BellOff className="w-4 h-4 shrink-0 mt-0.5" />
         <span>
           Os lembretes estão bloqueados para este site no seu navegador. Para voltar a
@@ -143,7 +143,7 @@ export function AtivarLembretes({ compacto = false }: { compacto?: boolean }) {
 
   if (estado === 'inscrito') {
     return (
-      <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex items-center gap-3">
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 flex items-center gap-3">
         <Check className="w-4 h-4 text-primary shrink-0" />
         <span className="text-sm flex-1">Lembretes de treino ligados.</span>
         <button onClick={desativar} className="text-xs text-foreground-muted hover:text-destructive underline shrink-0">
@@ -155,8 +155,8 @@ export function AtivarLembretes({ compacto = false }: { compacto?: boolean }) {
 
   return (
     <div className={compacto
-      ? 'w-full rounded-2xl border border-white/15 bg-white/5 p-4 text-left'
-      : 'rounded-2xl border border-border bg-surface p-4'}>
+      ? 'w-full rounded-xl border border-white/15 bg-white/5 p-5 text-left'
+      : 'rounded-xl border border-border bg-surface p-5'}>
       <p className="text-sm font-semibold mb-1 flex items-center gap-2">
         <Bell className="w-4 h-4 text-primary" /> Quer que eu te lembre do próximo?
       </p>

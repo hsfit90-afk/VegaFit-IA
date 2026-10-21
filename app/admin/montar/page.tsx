@@ -987,7 +987,7 @@ export default function MontarTreino() {
 
             {/* Saúde separada e em destaque: é o que não pode passar batido na hora de montar. */}
             {(resumo.lesoes || resumo.condicoes) && (
-              <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3.5 text-sm space-y-1.5">
+              <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm space-y-1.5">
                 {resumo.lesoes && (
                   <p><AlertTriangle className="w-4 h-4 inline mr-1.5 text-destructive" /><strong>Lesões:</strong> {resumo.lesoes}</p>
                 )}
@@ -1006,7 +1006,7 @@ export default function MontarTreino() {
           leg press num treino de casa, e não ter onde corrigir — só apagando tudo. Aconteceu
           com o treino do Joel em 09/10/2026. Os campos ficam, e o botão vira "Gerar de novo". */}
       <Card className="mb-5 border-primary/30">
-        <CardContent className="p-6 flex flex-col gap-4">
+        <CardContent className="p-5 flex flex-col gap-4">
             <div>
               <p className="font-outfit font-bold mb-1">
                 {sessoes.length === 0 ? 'Por onde começar' : 'Gerar de novo'}
@@ -1022,7 +1022,7 @@ export default function MontarTreino() {
                 foi exatamente o que entregou leg press para quem treina na sala. Aqui ele
                 para de ser silencioso. */}
             {alunoId && !temAnamnese && config.equipment === 'Academia completa' && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-warning/40 bg-warning/10 p-3.5 text-sm">
+              <div className="flex items-start gap-2.5 rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm">
                 <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                 <span>
                   Ninguém informou onde {alunoEscolhido?.name || 'este aluno'} treina, então está
@@ -1040,7 +1040,7 @@ export default function MontarTreino() {
                 <label htmlFor="g-local" className="text-xs font-semibold text-foreground-muted">Onde vai treinar</label>
                 <select id="g-local" value={config.equipment}
                   onChange={e => setConfig({ ...config, equipment: e.target.value })}
-                  className="w-full bg-surface border border-border rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary/50">
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50">
                   <option>Academia completa</option>
                   <option>Em casa</option>
                 </select>
@@ -1049,7 +1049,7 @@ export default function MontarTreino() {
                 <label htmlFor="g-objetivo" className="text-xs font-semibold text-foreground-muted">Objetivo</label>
                 <select id="g-objetivo" value={config.goal}
                   onChange={e => setConfig({ ...config, goal: e.target.value })}
-                  className="w-full bg-surface border border-border rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary/50">
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50">
                   <option>Hipertrofia</option>
                   <option>Emagrecimento</option>
                   <option>Performance</option>
@@ -1061,7 +1061,7 @@ export default function MontarTreino() {
                 <label htmlFor="g-nivel" className="text-xs font-semibold text-foreground-muted">Nível</label>
                 <select id="g-nivel" value={config.level}
                   onChange={e => setConfig({ ...config, level: e.target.value })}
-                  className="w-full bg-surface border border-border rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary/50">
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50">
                   <option>Iniciante</option>
                   <option>Intermediário</option>
                   <option>Avançado</option>
@@ -1071,7 +1071,7 @@ export default function MontarTreino() {
                 <label htmlFor="g-dias" className="text-xs font-semibold text-foreground-muted">Dias por semana</label>
                 <select id="g-dias" value={config.daysPerWeek}
                   onChange={e => setConfig({ ...config, daysPerWeek: Number(e.target.value) })}
-                  className="w-full bg-surface border border-border rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary/50">
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50">
                   {[2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
@@ -1187,7 +1187,7 @@ export default function MontarTreino() {
           dissesse o contrário. Agora o número está à vista, e abrir o resto é um ato
           explícito — não o padrão. */}
       {alunoId && sessoes.length > 0 && (
-        <div className="mb-4 rounded-xl border border-border bg-surface/60 p-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="mb-4 rounded-xl border border-border bg-surface/60 p-5 flex flex-wrap items-center gap-x-4 gap-y-2">
           {carregandoCatalogo ? (
             <p className="text-sm text-foreground-muted flex items-center gap-2">
               <LoadingSpinner tamanho="sm" rotulo="Conferindo o que cabe no que este aluno tem…" mostrarRotulo />
@@ -1247,7 +1247,7 @@ export default function MontarTreino() {
                   onClick={() => salvarComoModelo(sessao)}
                   disabled={salvandoModelo === sessao.id}
                   title="Salvar este dia como modelo, para reusar em outro aluno"
-                  className="p-2 text-foreground-muted hover:text-primary transition-colors flex-none disabled:opacity-40"
+                  className="p-3 text-foreground-muted hover:text-primary transition-colors flex-none disabled:opacity-40"
                 >
                   {salvandoModelo === sessao.id
                     ? <LoadingSpinner tamanho="sm" rotulo="Salvando o modelo…" />
@@ -1256,7 +1256,7 @@ export default function MontarTreino() {
                 <button
                   onClick={() => removeSessao(sessao.id)}
                   aria-label={`Remover ${sessao.name}`}
-                  className="p-2 text-foreground-muted hover:text-destructive transition-colors flex-none"
+                  className="p-3 text-foreground-muted hover:text-destructive transition-colors flex-none"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -1264,7 +1264,7 @@ export default function MontarTreino() {
 
               <div className="flex flex-col gap-2">
                 {sessao.exercises.map((ex, ei) => (
-                  <div key={ex.id} className="grid grid-cols-12 gap-2 items-start bg-surface/60 rounded-xl p-2.5 border border-border">
+                  <div key={ex.id} className="grid grid-cols-12 gap-2 items-start bg-surface/60 rounded-xl p-3 border border-border">
                     {/* A MINIATURA. Montar treino às cegas significa digitar um nome e torcer
                         para ser o movimento que você tem na cabeça — e o catálogo tem
                         "Puxada Alta", "Puxada Alta Invertida" e "Puxada Alta com Triângulo".
@@ -1341,7 +1341,7 @@ export default function MontarTreino() {
                             type="button"
                             onClick={() => aplicarProtocolo(sessao.id, ex.id, tipo)}
                             title={`Preenche séries, reps e descanso do protocolo para ${tipo}`}
-                            className="text-[11px] px-2 py-1 rounded-md bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors capitalize"
+                            className="text-[11px] px-2 py-1 rounded-lg bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors capitalize"
                           >
                             {tipo}
                           </button>
@@ -1432,7 +1432,7 @@ export default function MontarTreino() {
                             type="button"
                             onClick={() => igualarCarga(sessao.id, ex.id)}
                             title="Repetir a carga da primeira série nas outras"
-                            className="text-[11px] px-2 py-1 rounded-md bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors"
+                            className="text-[11px] px-2 py-1 rounded-lg bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors"
                           >
                             igualar
                           </button>
@@ -1517,7 +1517,7 @@ export default function MontarTreino() {
           chega do outro lado. O aviso fica ANTES do botão de salvar, enquanto ainda dá para
           decidir — avisar depois de salvar seria contar o que já aconteceu. */}
       {sessoes.length > 0 && editandoId && ativoId && editandoId !== ativoId && (
-        <div className="mt-5 rounded-xl border border-warning/40 bg-warning/10 p-4 flex items-start gap-3">
+        <div className="mt-5 rounded-xl border border-warning/40 bg-warning/10 p-5 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
           <p className="text-sm">
             Este não é o treino que <strong>{alunoEscolhido?.name || 'o aluno'}</strong> abre
@@ -1532,7 +1532,7 @@ export default function MontarTreino() {
           para saber é que ele treinou há pouco — então o aviso fala em possibilidade, não em
           certeza, e diz o que de fato acontece. */}
       {sessoes.length > 0 && editandoId && editandoId === ativoId && talvezTreinandoAgora && (
-        <div className="mt-5 rounded-xl border border-secondary/40 bg-secondary/10 p-4 flex items-start gap-3">
+        <div className="mt-5 rounded-xl border border-secondary/40 bg-secondary/10 p-5 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
           <p className="text-sm">
             <strong>{alunoEscolhido?.name || 'Este aluno'}</strong> treinou nas últimas horas e
@@ -1559,7 +1559,7 @@ export default function MontarTreino() {
           conta do aluno, não o que está na tela. Oferecê-la com edição pendente enganaria
           quem confia nela — que é o ponto de ela existir. */}
       {salvo && alunoId && (
-        <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 flex flex-wrap items-center gap-3">
+        <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-5 flex flex-wrap items-center gap-3">
           <Eye className="w-4 h-4 text-primary shrink-0" />
           <p className="text-sm flex-1 min-w-[200px]">
             Treino na conta de <strong>{alunoEscolhido?.name || 'aluno'}</strong>. Confira como

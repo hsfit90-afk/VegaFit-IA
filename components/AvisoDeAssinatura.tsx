@@ -127,7 +127,7 @@ function Faixa({ tom, icone, titulo, texto, acao }: {
   return (
     <Link
       href="/assinar?ver=1"
-      className={`flex items-center gap-4 p-4 rounded-2xl border ${cor} hover:brightness-110 transition-all group`}
+      className={`flex items-center gap-4 p-5 rounded-xl border ${cor} hover:brightness-110 transition-all group`}
     >
       <div className="flex-none">{icone}</div>
       <div className="flex-1 min-w-0">

@@ -10,7 +10,7 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, glass, variant = 'default', animated, children, ...props }, ref) => {
-    const baseStyles = "rounded-2xl border bg-surface text-foreground shadow-sm overflow-hidden transition-all duration-300";
+    const baseStyles = "rounded-xl border bg-surface text-foreground shadow-sm overflow-hidden transition-all duration-300";
     
     let variantStyles = "border-border";
     if (glass || variant === 'glass') {
@@ -42,7 +42,7 @@ Card.displayName = "Card";
 
 export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("flex flex-col space-y-1.5 p-5 md:p-6", className)} {...props} />
+    <div ref={ref} className={cn("flex flex-col space-y-1.5 p-5 md:p-5", className)} {...props} />
   )
 );
 CardHeader.displayName = "CardHeader";
@@ -63,7 +63,7 @@ CardDescription.displayName = "CardDescription";
 
 export const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("p-5 pt-0 md:p-6 md:pt-0", className)} {...props} />
+    <div ref={ref} className={cn("p-5 pt-0 md:p-5 md:pt-0", className)} {...props} />
   )
 );
 CardContent.displayName = "CardContent";

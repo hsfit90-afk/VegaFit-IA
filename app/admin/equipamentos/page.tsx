@@ -232,7 +232,7 @@ export default function RevisarEquipamentos() {
       ) : lista.length === 0 ? (
         // A fila vazia é o resultado do trabalho, e vale dizer o que ela significa — cada aba
         // esvazia por um motivo diferente.
-        <Card><CardContent className="p-6 text-sm text-foreground-muted flex items-start gap-3">
+        <Card><CardContent className="p-5 text-sm text-foreground-muted flex items-start gap-3">
           <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
           <span>
             {filtro === 'novos'

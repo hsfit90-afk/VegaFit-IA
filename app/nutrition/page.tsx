@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/Toast';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 import { useSomenteMaster } from "@/components/useSomenteMaster";
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 interface NutritionData {
   tmb: number;
@@ -77,7 +78,7 @@ export default function NutritionPage() {
   if (!profile) return null;
 
   return (
-    <div className="p-5 md:p-8 max-w-3xl mx-auto animate-fade-in pb-28 md:pb-12">
+    <div className={`${PADDING_TELA} ${LARGURA_FOCO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
       <header className="mb-10">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg">
@@ -116,17 +117,17 @@ export default function NutritionPage() {
         <div className="space-y-8 animate-fade-in">
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card variant="glass" className="flex flex-col items-center text-center p-6 border-orange-500/10">
+            <Card variant="glass" className="flex flex-col items-center text-center p-5 border-orange-500/10">
               <Activity className="w-8 h-8 text-blue-400 mb-2" />
               <p className="text-sm text-foreground-muted font-semibold uppercase tracking-wider mb-1">Basal</p>
               <p className="text-2xl font-bold font-mono">{data.tmb} <span className="text-sm font-sans font-normal text-foreground-muted">kcal</span></p>
             </Card>
-            <Card variant="glass" className="flex flex-col items-center text-center p-6 border-orange-500/10">
+            <Card variant="glass" className="flex flex-col items-center text-center p-5 border-orange-500/10">
               <Flame className="w-8 h-8 text-orange-400 mb-2" />
               <p className="text-sm text-foreground-muted font-semibold uppercase tracking-wider mb-1">Gasto Diário</p>
               <p className="text-2xl font-bold font-mono">{data.get} <span className="text-sm font-sans font-normal text-foreground-muted">kcal</span></p>
             </Card>
-            <Card className="flex flex-col items-center text-center p-6 bg-gradient-to-br from-orange-500/20 to-red-500/10 border-orange-500/30">
+            <Card className="flex flex-col items-center text-center p-5 bg-gradient-to-br from-orange-500/20 to-red-500/10 border-orange-500/30">
               <Target className="w-8 h-8 text-orange-500 mb-2" />
               <p className="text-sm text-orange-200 font-semibold uppercase tracking-wider mb-1">Meta</p>
               <p className="text-3xl font-bold text-white font-mono">{data.targetCalories} <span className="text-sm font-sans font-normal text-orange-300">kcal</span></p>
@@ -182,7 +183,7 @@ export default function NutritionPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {data.meals.map((meal, i) => (
-                  <div key={i} className="bg-surface p-4 rounded-xl border border-border">
+                  <div key={i} className="bg-surface p-5 rounded-xl border border-border">
                     <h4 className="font-bold text-sm mb-1">{meal.name}</h4>
                     <p className="text-sm text-foreground-muted">{meal.description}</p>
                   </div>
@@ -204,7 +205,7 @@ export default function NutritionPage() {
             </Card>
           </div>
 
-          <div className="mt-8 bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5 flex items-start gap-4">
+          <div className="mt-8 bg-blue-500/10 border border-blue-500/20 rounded-xl p-5 flex items-start gap-4">
             <Info className="w-6 h-6 text-blue-400 shrink-0 mt-0.5" />
             <div>
               <h4 className="text-blue-400 font-bold text-sm mb-1">Aviso Importante</h4>

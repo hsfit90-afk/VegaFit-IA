@@ -111,7 +111,7 @@ export default function Mobilidade() {
 
       {doDia.length > 0 && sessao && (
         <section className="mb-7">
-          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 mb-3">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 mb-3">
             <p className="text-xs uppercase tracking-wider font-semibold text-primary mb-1.5">
               Antes do seu treino de hoje
             </p>

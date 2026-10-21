@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useSomenteMaster } from "@/components/useSomenteMaster";
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
 
 const MUSCLE_GROUP_OPTIONS = [
   'Peito', 'Costas', 'Ombro', 'Bíceps', 'Tríceps', 'Antebraço', 'Pernas (quadríceps)',
@@ -251,7 +252,7 @@ export default function Library() {
    */
   if (loading) {
     return (
-      <div className="p-5 md:p-8 max-w-7xl mx-auto" role="status">
+      <div className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto`} role="status">
         <span className="sr-only">Carregando o catálogo de exercícios…</span>
         <Skeleton className="h-10 w-64 mb-6" />
         <div className="flex gap-2 mb-6 overflow-hidden">
@@ -261,7 +262,7 @@ export default function Library() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }, (_, i) => (
-            <Skeleton key={i} className="h-44 rounded-2xl" />
+            <Skeleton key={i} className="h-44 rounded-xl" />
           ))}
         </div>
       </div>
@@ -278,7 +279,7 @@ export default function Library() {
   }
 
   return (
-    <div className="p-5 md:p-8 max-w-5xl mx-auto animate-fade-in relative pb-28 md:pb-12">
+    <div className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto animate-fade-in relative ${RODAPE_SEGURO}`}>
       <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 className="text-3xl md:text-4xl font-outfit font-bold mb-4">Biblioteca de Exercícios</h1>
@@ -383,12 +384,12 @@ export default function Library() {
 
       {/* Bulk Import Modal */}
       {isBulkModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/50 backdrop-blur-sm animate-fade-in">
           <Card className="w-full max-w-md shadow-2xl relative border-primary/30">
             {bulkStatus !== 'uploading' && (
-              <button onClick={() => setIsBulkModalOpen(false)} aria-label="Fechar importação em massa" className="absolute top-4 right-4 p-2 text-foreground-muted hover:text-white transition-all">✕</button>
+              <button onClick={() => setIsBulkModalOpen(false)} aria-label="Fechar importação em massa" className="absolute top-4 right-4 p-3 text-foreground-muted hover:text-white transition-all">✕</button>
             )}
-            <CardContent className="p-6">
+            <CardContent className="p-5">
               <h2 className="text-2xl font-outfit font-bold text-white mb-6">Importação em Massa</h2>
               
               {bulkStatus === 'idle' && (
@@ -398,7 +399,7 @@ export default function Library() {
                     Eles serão organizados automaticamente pelos nomes das subpastas e cadastrados no banco de dados.
                   </p>
                   
-                  <div className="bg-surface p-4 rounded-xl mb-6 max-h-40 overflow-y-auto border border-border">
+                  <div className="bg-surface p-5 rounded-xl mb-6 max-h-40 overflow-y-auto border border-border">
                     <p className="text-xs text-foreground-muted mb-2 font-bold uppercase">Exemplo de Leitura:</p>
                     {bulkFiles.slice(0, 3).map((f, i) => (
                       <div key={i} className="text-sm text-gray-300 truncate mb-1" title={f.webkitRelativePath}>
@@ -455,10 +456,10 @@ export default function Library() {
 
       {/* Add Exercise Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/50 backdrop-blur-sm animate-fade-in">
           <Card className="w-full max-w-md shadow-2xl relative border-primary/30">
-            <button onClick={() => setIsAddModalOpen(false)} aria-label="Fechar formulário de novo exercício" className="absolute top-4 right-4 p-2 text-foreground-muted hover:text-white transition-all">✕</button>
-            <CardContent className="p-6">
+            <button onClick={() => setIsAddModalOpen(false)} aria-label="Fechar formulário de novo exercício" className="absolute top-4 right-4 p-3 text-foreground-muted hover:text-white transition-all">✕</button>
+            <CardContent className="p-5">
               <h2 className="text-2xl font-outfit font-bold text-white mb-6">Adicionar Exercício</h2>
               
               <form onSubmit={handleAddExercise} className="space-y-4">
@@ -525,7 +526,7 @@ export default function Library() {
                   ) : (
                     <div 
                       onClick={() => fileInputRef.current?.click()}
-                      className={`border-2 border-dashed ${mediaFile ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-white/5'} rounded-xl p-6 text-center cursor-pointer transition-all`}
+                      className={`border-2 border-dashed ${mediaFile ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-white/5'} rounded-xl p-5 text-center cursor-pointer transition-all`}
                     >
                       <input 
                         type="file" 
@@ -568,9 +569,9 @@ export default function Library() {
 
       {/* View Exercise Modal */}
       {selectedExercise && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedExercise(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedExercise(null)}>
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative border-primary/30" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <CardContent className="p-6 md:p-8">
+            <CardContent className="p-5 md:p-8">
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-2xl font-outfit font-bold text-white mb-2">{selectedExercise.name}</h2>
@@ -616,7 +617,7 @@ export default function Library() {
                     </div>
                   )}
                 </div>
-                <button onClick={() => setSelectedExercise(null)} className="p-2 bg-surface rounded-full hover:bg-white/10 text-foreground-muted hover:text-white transition-all">
+                <button onClick={() => setSelectedExercise(null)} className="p-3 bg-surface rounded-full hover:bg-white/10 text-foreground-muted hover:text-white transition-all">
                   ✕
                 </button>
               </div>

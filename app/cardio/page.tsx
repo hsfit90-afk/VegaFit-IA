@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { WorkoutHistoryEntry } from '@/lib/types';
 import { createClient } from '@/utils/supabase/client';
+import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 /**
  * Sessão de aeróbico, fora do rodízio A/B/C.
@@ -88,7 +89,7 @@ export default function CardioPage() {
 
   if (!plano || !cardio) {
     return (
-      <div className="min-h-screen p-5 md:p-8 max-w-3xl mx-auto">
+      <div className={`min-h-screen ${PADDING_TELA} ${LARGURA_FOCO} mx-auto`}>
         <EmptyState
           icone={<Timer className="w-10 h-10" />}
           titulo="Nenhum aeróbico no seu plano"
@@ -148,7 +149,7 @@ export default function CardioPage() {
   const rodando = startTime > 0;
 
   return (
-    <div className="min-h-screen p-5 md:p-8 max-w-3xl mx-auto pb-28 md:pb-12">
+    <div className={`min-h-screen ${PADDING_TELA} ${LARGURA_FOCO} mx-auto ${RODAPE_SEGURO}`}>
       <button
         onClick={() => router.push('/')}
         className="flex items-center gap-1 text-sm text-foreground-muted hover:text-primary transition-colors mb-6"
@@ -169,7 +170,7 @@ export default function CardioPage() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface p-3.5 mb-5 text-sm text-foreground-muted">
+      <div className="rounded-xl border border-border bg-surface p-3 mb-5 text-sm text-foreground-muted">
         Faça este aeróbico <strong className="text-foreground">depois</strong> do treino de
         força, ou num dia separado. Antes, ele compromete a carga que você consegue levantar.
       </div>
@@ -197,7 +198,7 @@ export default function CardioPage() {
                   key={opcao}
                   onClick={() => setAparelho(escolhido ? null : opcao)}
                   aria-pressed={escolhido}
-                  className={`rounded-2xl border overflow-hidden text-left transition-colors ${
+                  className={`rounded-xl border overflow-hidden text-left transition-colors ${
                     escolhido
                       ? 'bg-primary/15 border-primary'
                       : 'bg-surface/60 border-white/10 hover:border-primary/40'
@@ -226,7 +227,7 @@ export default function CardioPage() {
       )}
 
       {cardio.notes && !rodando && (
-        <Card className="p-4 mb-5 flex gap-3 items-start" glass>
+        <Card className="p-5 mb-5 flex gap-3 items-start" glass>
           <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <p className="text-sm text-foreground/80">{cardio.notes}</p>
         </Card>

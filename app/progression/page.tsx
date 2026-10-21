@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
+import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 export default function ProgressionCheckIn() {
   const toast = useToast();
@@ -84,7 +85,7 @@ export default function ProgressionCheckIn() {
   if (!profile) return null;
 
   return (
-    <div className="p-5 md:p-8 max-w-3xl mx-auto animate-fade-in pb-28 md:pb-12">
+    <div className={`${PADDING_TELA} ${LARGURA_FOCO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
       <header className="mb-10">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-accent flex items-center justify-center shadow-lg">
@@ -103,15 +104,15 @@ export default function ProgressionCheckIn() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4 mb-2">
-                <div className="bg-surface p-4 rounded-xl text-center border border-border">
+                <div className="bg-surface p-5 rounded-xl text-center border border-border">
                   <p className="text-foreground-muted text-[10px] md:text-xs mb-1 uppercase tracking-wider font-semibold">Treinos Feitos</p>
                   <p className="text-xl md:text-2xl font-bold font-mono">{lastWeekWorkouts.length}</p>
                 </div>
-                <div className="bg-surface p-4 rounded-xl text-center border border-border">
+                <div className="bg-surface p-5 rounded-xl text-center border border-border">
                   <p className="text-foreground-muted text-[10px] md:text-xs mb-1 uppercase tracking-wider font-semibold">Carga (Vol)</p>
                   <p className="text-xl md:text-2xl font-bold font-mono">{totalVolume.toLocaleString()} <span className="text-sm font-sans font-normal text-foreground-muted">kg</span></p>
                 </div>
-                <div className="bg-blue-500/10 p-4 rounded-xl text-center border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                <div className="bg-blue-500/10 p-5 rounded-xl text-center border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
                   <p className="text-blue-400 text-[10px] md:text-xs mb-1 uppercase tracking-wider font-bold">Séries Efetivas</p>
                   <p className="text-xl md:text-2xl font-bold text-blue-400 font-mono">{totalEffectiveSets}</p>
                 </div>
@@ -129,7 +130,7 @@ export default function ProgressionCheckIn() {
             <CardContent className="space-y-6">
               <div>
                 <label className="block text-sm text-foreground-muted mb-4 font-medium">Nível de Fadiga Geral</label>
-                <div className="flex justify-between items-center bg-surface p-2 rounded-xl border border-border">
+                <div className="flex justify-between items-center bg-surface p-3 rounded-xl border border-border">
                   {[1, 2, 3, 4, 5].map(num => (
                     <button
                       key={num}
@@ -203,12 +204,12 @@ export default function ProgressionCheckIn() {
                 Analisamos sua semana e fizemos micro-ajustes nas cargas e volumes para garantir que você continue tendo resultados sem estagnar.
               </p>
               
-              <div className="bg-surface w-full rounded-2xl p-6 mb-8 text-left border border-border">
+              <div className="bg-surface w-full rounded-xl p-5 mb-8 text-left border border-border">
                 <p className="font-semibold text-sm text-accent mb-2 uppercase tracking-wider">Novo Plano de Treino:</p>
                 <p className="text-2xl font-bold font-outfit">{newPlan.name}</p>
                 <p className="text-sm text-foreground-muted mt-2 flex items-center gap-2">
-                   <span className="px-2 py-1 bg-white/5 rounded-md">{newPlan.sessions.length} sessões</span>
-                   <span className="px-2 py-1 bg-white/5 rounded-md">{newPlan.split}</span>
+                   <span className="px-2 py-1 bg-white/5 rounded-lg">{newPlan.sessions.length} sessões</span>
+                   <span className="px-2 py-1 bg-white/5 rounded-lg">{newPlan.split}</span>
                 </p>
               </div>
   

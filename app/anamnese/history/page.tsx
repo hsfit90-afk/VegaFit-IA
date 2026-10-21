@@ -6,6 +6,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { anamneseSteps } from '@/lib/anamneseSteps';
 import Link from 'next/link';
 import { ArrowLeft, TrendingDown, TrendingUp, ClipboardList, ChevronDown, ChevronUp } from 'lucide-react';
+import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 interface AnamneseHistoryEntry {
   id: string;
@@ -53,7 +54,7 @@ export default function AnamneseHistoryPage() {
   const newestFirst = [...entries].reverse();
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-5 md:p-8 max-w-3xl mx-auto pb-28 md:pb-12">
+    <div className={`min-h-screen bg-background text-foreground ${PADDING_TELA} ${LARGURA_FOCO} mx-auto ${RODAPE_SEGURO}`}>
       <Link href="/settings" className="inline-flex items-center gap-2 text-foreground-muted hover:text-white text-sm mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4" /> Voltar para Configurações
       </Link>
@@ -91,7 +92,7 @@ export default function AnamneseHistoryPage() {
             const isExpanded = expandedId === entry.id;
 
             return (
-              <div key={entry.id} className="bg-surface border border-border rounded-xl p-4">
+              <div key={entry.id} className="bg-surface border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-semibold text-white">{formatDate(entry.created_at)}</span>
                   {i === 0 && <span className="text-[11px] uppercase tracking-wider text-primary font-semibold">Mais recente</span>}

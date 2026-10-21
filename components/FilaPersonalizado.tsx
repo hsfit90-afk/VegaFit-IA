@@ -111,7 +111,7 @@ export function FilaPersonalizado() {
 
       {emAndamento.length === 0 ? (
         <Card>
-          <CardContent className="p-6 text-center text-sm text-gray-400">
+          <CardContent className="p-5 text-center text-sm text-gray-400">
             Nenhum pedido em andamento. Restam {vagas.restantes} vagas no lote.
           </CardContent>
         </Card>

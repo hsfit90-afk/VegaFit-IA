@@ -197,7 +197,7 @@ export default function Abdominal() {
           return (
             <div
               key={ex.id}
-              className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+              className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                 feito ? 'border-primary/40 bg-primary/10' : 'border-border bg-surface'
               }`}
             >
@@ -217,7 +217,7 @@ export default function Abdominal() {
                     ) : (
                       <img src={ex.mediaUrl} alt="" className="w-full h-full object-contain opacity-90" />
                     )}
-                    <span className="absolute bottom-1 right-1 w-6 h-6 rounded-md bg-black/60 grid place-items-center">
+                    <span className="absolute bottom-1 right-1 w-6 h-6 rounded-lg bg-black/60 grid place-items-center">
                       <Maximize2 className="w-3 h-3 text-white/80" />
                     </span>
                   </>
@@ -232,7 +232,7 @@ export default function Abdominal() {
                 aria-pressed={feito}
                 className="flex items-center gap-3 flex-1 min-w-0 text-left"
               >
-                <span className={`w-5 h-5 rounded-md flex-none grid place-items-center border ${
+                <span className={`w-5 h-5 rounded-lg flex-none grid place-items-center border ${
                   feito ? 'bg-primary border-primary' : 'border-border-light'
                 }`}>
                   {feito && <Check className="w-3.5 h-3.5 text-primary-foreground" />}

@@ -173,7 +173,7 @@ export default function Onboarding() {
         <div className="flex flex-col items-center justify-center p-8 text-center max-w-sm">
           <div className="relative mb-8">
             <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse"></div>
-            <div className="w-20 h-20 bg-surface border border-primary/50 rounded-2xl flex items-center justify-center relative z-10 shadow-[0_0_40px_rgb(var(--color-primary-rgb)/0.2)]">
+            <div className="w-20 h-20 bg-surface border border-primary/50 rounded-xl flex items-center justify-center relative z-10 shadow-[0_0_40px_rgb(var(--color-primary-rgb)/0.2)]">
               <Sparkles className="w-10 h-10 text-primary animate-pulse" />
             </div>
           </div>
@@ -224,7 +224,7 @@ export default function Onboarding() {
                   type="text" 
                   value={name} 
                   onChange={e => setName(e.target.value)} 
-                  className="w-full bg-surface border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none px-6 py-5 text-xl text-foreground font-medium transition-all rounded-2xl shadow-lg" 
+                  className="w-full bg-surface border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none px-6 py-5 text-xl text-foreground font-medium transition-all rounded-xl shadow-lg" 
                   placeholder="Seu nome..." 
                   autoFocus
                 />
@@ -245,7 +245,7 @@ export default function Onboarding() {
                       key={g.id} 
                       onClick={() => setGoal(g.id)} 
                       aria-pressed={goal === g.id}
-                      className={`w-full text-left p-5 rounded-2xl border transition-all flex items-center gap-4 ${goal === g.id ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgb(var(--color-primary-rgb)/0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
+                      className={`w-full text-left p-5 rounded-xl border transition-all flex items-center gap-4 ${goal === g.id ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgb(var(--color-primary-rgb)/0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
                     >
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${goal === g.id ? 'bg-primary/20 text-primary' : 'bg-black/20 text-foreground-muted'}`}>
                         <g.icon className="w-6 h-6" />
@@ -274,7 +274,7 @@ export default function Onboarding() {
                       key={l.id} 
                       onClick={() => setLevel(l.id)} 
                       aria-pressed={level === l.id}
-                      className={`w-full text-left p-5 rounded-2xl border transition-all relative overflow-hidden ${level === l.id ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgb(var(--color-primary-rgb)/0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
+                      className={`w-full text-left p-5 rounded-xl border transition-all relative overflow-hidden ${level === l.id ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgb(var(--color-primary-rgb)/0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
                     >
                       <div className="text-lg font-semibold text-foreground mb-1">{l.label}</div>
                       <div className="text-sm text-foreground-muted pr-8">{l.desc}</div>
@@ -331,7 +331,7 @@ export default function Onboarding() {
                 <h1 className="text-3xl font-bold text-foreground mb-2 tracking-tight">Frequência ideal</h1>
                 <p className="text-foreground-muted mb-10">Recomendamos 4 a 5 dias para resultados consistentes.</p>
                 
-                <div className="flex flex-col items-center mb-12 bg-surface/50 py-8 rounded-3xl border border-border">
+                <div className="flex flex-col items-center mb-12 bg-surface/50 py-8 rounded-xl border border-border">
                   <div className="flex items-center justify-center gap-6 mb-4">
                     <button onClick={() => adjustNumber(setDays, -1, 1, 7)} aria-label="Diminuir dias por semana" className="w-12 h-12 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-xl active:scale-95 shadow-md transition-transform"><Minus /></button>
                     <div className="text-5xl font-black text-foreground w-20 text-center">{days}</div>
@@ -352,7 +352,7 @@ export default function Onboarding() {
                       key={d.v} 
                       onClick={() => setDuration(d.v)}
                       aria-pressed={duration === d.v}
-                      className={`p-4 rounded-2xl border text-left transition-all ${duration === d.v ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgb(var(--color-primary-rgb)/0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
+                      className={`p-5 rounded-xl border text-left transition-all ${duration === d.v ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgb(var(--color-primary-rgb)/0.15)] scale-[1.02]' : 'bg-surface border-border hover:border-border-light hover:scale-[1.01]'}`}
                     >
                       <div className="font-bold text-foreground mb-1">{d.label}</div>
                       <div className="text-xs text-foreground-muted">{d.desc}</div>
@@ -366,7 +366,7 @@ export default function Onboarding() {
         </div>
 
         {/* Fixed Bottom Action */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent pt-12 z-20">
+        <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-background via-background to-transparent pt-12 z-20">
           <button 
             onClick={step === totalSteps ? handleComplete : nextStep} 
             disabled={step === 1 && !name}

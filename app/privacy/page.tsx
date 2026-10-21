@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { LARGURA_FOCO } from '@/lib/layout';
 
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-background text-foreground font-inter pb-20">
-      <div className="max-w-3xl mx-auto px-5 md:px-8 py-10">
+      <div className={`${LARGURA_FOCO} mx-auto px-5 md:px-8 py-10`}>
         <Link href="/settings" className="inline-flex items-center gap-2 text-sm text-foreground-muted hover:text-primary transition-colors mb-8">
           <ArrowLeft className="w-4 h-4" /> Voltar
         </Link>
@@ -19,7 +20,7 @@ export default function PrivacyPolicyPage() {
 
         <div className="space-y-8 text-sm leading-relaxed text-foreground-muted">
 
-          <section className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <section className="rounded-xl border border-primary/30 bg-primary/5 p-5">
             <p className="text-foreground">
               <strong className="text-white">Aviso importante:</strong> este documento descreve, de forma transparente, quais dados o VegaFit coleta e como os utiliza — incluindo dados de saúde preenchidos na anamnese. Ele foi escrito para refletir com precisão o funcionamento técnico do app. Antes de publicar esta política para o público, recomendamos revisão por um advogado especializado em proteção de dados (LGPD), especialmente pelos dados de saúde envolvidos.
             </p>
