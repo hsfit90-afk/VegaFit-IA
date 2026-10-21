@@ -3,9 +3,13 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Dumbbell, Loader2, CheckCircle2 } from 'lucide-react';
+import { Dumbbell, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Field } from '@/components/ui/Field';
+import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { LARGURA_AUTH } from '@/lib/layout';
+import { Button } from '@/components/ui/Button';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -41,7 +45,7 @@ export default function ResetPassword() {
     setLoading(false);
 
     if (error) {
-      setError(error.message);
+      setError(traduzirErro(error));
     } else {
       setSuccess(true);
       setTimeout(() => router.push('/login'), 2500);
@@ -49,10 +53,10 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white/[0.03] backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-2xl">
+    <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-5">
+      <div className={`w-full ${LARGURA_AUTH} bg-white/[0.03] backdrop-blur-md p-8 rounded-xl border border-white/10 shadow-2xl`}>
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-[var(--color-accent)]/20">
+          <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-[var(--color-accent)]/20">
             <Dumbbell className="w-8 h-8 text-black" />
           </div>
           <h1 className="text-3xl font-outfit font-bold text-white mb-2">Nova senha</h1>
@@ -60,7 +64,7 @@ export default function ResetPassword() {
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6 text-sm text-center">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-5 rounded-xl mb-6 text-sm text-center">
             {error}
           </div>
         )}
@@ -71,7 +75,7 @@ export default function ResetPassword() {
             <p>Senha atualizada! Redirecionando para o login...</p>
           </div>
         ) : hasSession === false ? (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm text-center">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-5 rounded-xl text-sm text-center">
             Este link de redefinição expirou ou é inválido. Solicite um novo em &quot;Esqueceu sua senha?&quot; na tela de login.
           </div>
         ) : (
@@ -82,13 +86,14 @@ export default function ResetPassword() {
             <Field label="Confirmar nova senha" htmlFor="reset-password-confirmar-nova-senha">
               <Input id="reset-password-confirmar-nova-senha" variant="auth" type="password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" />
             </Field>
-            <button
+            <Button
               type="submit"
+              fullWidth
               disabled={loading || hasSession === null}
-              className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="gap-2"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar nova senha'}
-            </button>
+              {loading ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Salvando…" /> : 'Salvar nova senha'}
+            </Button>
           </form>
         )}
       </div>

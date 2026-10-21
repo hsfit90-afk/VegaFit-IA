@@ -15,8 +15,12 @@ const VolumeHistoryChart = dynamic(() => import('@/components/charts/VolumeHisto
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { useRouter } from 'next/navigation';
 
 export default function History() {
+  const router = useRouter();
   const { history } = useAppContext();
 
   // Prepare chart data (Volume per workout)
@@ -83,17 +87,18 @@ export default function History() {
   };
 
   return (
-    <div className="p-5 md:p-8 max-w-5xl mx-auto animate-fade-in pb-28 md:pb-12">
+    <div className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
       <PageHeader
-        titulo="Histórico de Treinos"
-        subtitulo="Acompanhe sua evolução ao longo do tempo"
+        etiqueta="O que você já fez"
+        titulo="Histórico"
+        subtitulo="Cada treino concluído, com duração, volume e as cargas que você usou."
       />
 
       {history.length > 0 ? (
         <>
           <Card className="mb-10">
             <CardHeader className="flex flex-row justify-between items-center pb-2">
-               <CardTitle className="text-primary m-0">Progressão de Volume (kg)</CardTitle>
+               <CardTitle className="text-[10px] uppercase tracking-[0.18em] text-foreground-muted font-semibold m-0">Progressão de volume · kg</CardTitle>
                {(leftBounds !== null || rightBounds !== null) && (
                  <Button 
                    onClick={zoomOut}
@@ -123,7 +128,7 @@ export default function History() {
           <div className="space-y-4">
             <h2 className="font-outfit text-xl font-semibold mb-4">Treinos Realizados</h2>
             {history.map(h => (
-              <details key={h.id} className="bg-surface border border-border rounded-2xl group overflow-hidden transition-all shadow-sm">
+              <details key={h.id} className="bg-surface border border-border rounded-xl group overflow-hidden transition-all shadow-sm">
                 <summary className="p-5 flex flex-col md:flex-row md:items-center justify-between cursor-pointer hover:bg-surface-light transition-all list-none">
                   <div>
                     <h3 className="font-outfit font-semibold text-lg text-white mb-1">{h.sessionName}</h3>
@@ -163,7 +168,7 @@ export default function History() {
                       const diff = prevVolume !== null ? exVolume - prevVolume : 0;
 
                       return (
-                        <div key={ex.workoutExerciseId} className="flex flex-col text-sm p-4 bg-surface rounded-xl gap-2 border border-border">
+                        <div key={ex.workoutExerciseId} className="flex flex-col text-sm p-5 bg-surface rounded-xl gap-2 border border-border">
                           <div className="flex justify-between items-center">
                             <span className="text-white font-medium">{ex.name}</span>
                             <span className="text-primary font-mono font-bold">{exVolume} kg</span>
@@ -186,12 +191,14 @@ export default function History() {
           </div>
         </>
       ) : (
-        <Card className="text-center py-20 border-dashed border-2">
-          <CardContent className="flex flex-col items-center">
-            <Dumbbell className="w-16 h-16 text-foreground-muted mx-auto mb-4 opacity-50" />
-            <h2 className="text-xl font-outfit text-foreground-muted">Nenhum treino registrado ainda.</h2>
-          </CardContent>
-        </Card>
+        /* Dizia que estava vazio e parava aí. Quem chega no histórico sem treino nenhum
+           precisa do caminho de volta, não do diagnóstico. */
+        <EmptyState
+          icone={<Dumbbell className="w-12 h-12" />}
+          titulo="Nenhum treino registrado ainda"
+          descricao="Assim que você concluir um treino, ele aparece aqui com duração, volume e as cargas que você usou."
+          acao={<Button onClick={() => router.push('/active')}>Ir treinar</Button>}
+        />
       )}
     </div>
   );

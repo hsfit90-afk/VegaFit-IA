@@ -48,7 +48,7 @@ export function CardPersonalizado() {
   return (
     <Link
       href="/personalizado"
-      className={`group flex items-center gap-4 p-4 rounded-2xl border transition-all ${
+      className={`group flex items-center gap-4 p-5 rounded-xl border transition-all ${
         urgente
           ? 'border-warning/40 bg-gradient-to-r from-warning/10 to-transparent hover:border-warning/60'
           : 'border-accent/25 bg-gradient-to-r from-accent/10 to-transparent hover:border-accent/50'

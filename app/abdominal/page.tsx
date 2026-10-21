@@ -6,7 +6,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Loader2, Shuffle, Check, ImageOff, Flame, Maximize2 } from 'lucide-react';
+import { Shuffle, Check, ImageOff, Flame, Maximize2 } from 'lucide-react';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 import { PREFIXO_AVULSO } from '@/lib/trainingUnlock';
@@ -14,6 +14,7 @@ import { prescrever, normalizarObjetivo, descreverSemana } from '@/lib/protocolo
 import { computePeriodization } from '@/lib/periodization';
 import { filtrarParaCasa } from '@/lib/equipamentoCasa';
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Abdominal como sessão avulsa.
@@ -155,7 +156,7 @@ export default function Abdominal() {
   };
 
   if (!catalogo) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return <LoadingSpinner tela tamanho="lg" />;
   }
 
   return (
@@ -196,7 +197,7 @@ export default function Abdominal() {
           return (
             <div
               key={ex.id}
-              className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+              className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                 feito ? 'border-primary/40 bg-primary/10' : 'border-border bg-surface'
               }`}
             >
@@ -216,7 +217,7 @@ export default function Abdominal() {
                     ) : (
                       <img src={ex.mediaUrl} alt="" className="w-full h-full object-contain opacity-90" />
                     )}
-                    <span className="absolute bottom-1 right-1 w-6 h-6 rounded-md bg-black/60 grid place-items-center">
+                    <span className="absolute bottom-1 right-1 w-6 h-6 rounded-lg bg-black/60 grid place-items-center">
                       <Maximize2 className="w-3 h-3 text-white/80" />
                     </span>
                   </>
@@ -231,7 +232,7 @@ export default function Abdominal() {
                 aria-pressed={feito}
                 className="flex items-center gap-3 flex-1 min-w-0 text-left"
               >
-                <span className={`w-5 h-5 rounded-md flex-none grid place-items-center border ${
+                <span className={`w-5 h-5 rounded-lg flex-none grid place-items-center border ${
                   feito ? 'bg-primary border-primary' : 'border-border-light'
                 }`}>
                   {feito && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
@@ -257,7 +258,7 @@ export default function Abdominal() {
         </Button>
         <div className="flex-1" />
         <Button onClick={concluir} disabled={salvando || feitos.size === 0} className="sm:w-auto">
-          {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : `Concluir (${feitos.size}/${sessao.length})`}
+          {salvando ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Salvando…" /> : `Concluir (${feitos.size}/${sessao.length})`}
         </Button>
       </div>
     </div>

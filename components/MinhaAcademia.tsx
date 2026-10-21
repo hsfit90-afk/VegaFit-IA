@@ -5,10 +5,12 @@ import { createClient } from '@/utils/supabase/client';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { Dumbbell, Loader2, Check } from 'lucide-react';
+import { Dumbbell, Check } from 'lucide-react';
 import { EQUIPAMENTOS, resumirAusentes } from '@/lib/equipamentoAusente';
 import { EQUIPAMENTOS_CASA, resumirCasa } from '@/lib/equipamentoCasa';
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
+import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * "O que a minha academia não tem" — opcional, no Perfil.
@@ -73,7 +75,7 @@ export function MinhaAcademia() {
       if (error) throw new Error(error.message);
       toast.sucesso('Pronto. Seus próximos treinos já respeitam isso.');
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui salvar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui salvar.'));
     } finally {
       setSalvando(false);
     }
@@ -83,7 +85,7 @@ export function MinhaAcademia() {
 
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent className="p-5">
         <button
           onClick={() => setAberto(a => !a)}
           aria-expanded={aberto}
@@ -133,7 +135,7 @@ export function MinhaAcademia() {
                         : 'border-border bg-surface hover:bg-surface-hover'
                     }`}
                   >
-                    <span className={`w-5 h-5 rounded-md flex-none flex items-center justify-center mt-0.5 border ${
+                    <span className={`w-5 h-5 rounded-lg flex-none flex items-center justify-center mt-0.5 border ${
                       marcado ? 'bg-primary border-primary' : 'border-border-light'
                     }`}>
                       {marcado && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
@@ -152,7 +154,7 @@ export function MinhaAcademia() {
             <p className="text-xs text-foreground-muted">{emCasa ? resumirCasa(ausentes) : resumirAusentes(ausentes)}</p>
 
             <Button onClick={salvar} disabled={salvando} className="w-full sm:w-auto sm:self-start">
-              {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar'}
+              {salvando ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Salvando…" /> : 'Salvar'}
             </Button>
           </div>
         )}

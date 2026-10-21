@@ -9,6 +9,7 @@ import { Check } from 'lucide-react';
 import { anamneseSteps as steps, type AnamneseStep, type AnamneseField } from '@/lib/anamneseSteps';
 import { EQUIPAMENTOS_CASA } from '@/lib/equipamentoCasa';
 import { passosEssenciais } from '@/lib/anamneseEssencial';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 export default function AnamnesePage() {
   const router = useRouter();
@@ -229,8 +230,10 @@ export default function AnamnesePage() {
       showToast("Respostas salvas e copiadas!");
       setTimeout(() => router.push('/'), 2000);
       
-    } catch (err: any) {
-      showToast("Erro ao salvar: " + err.message);
+    } catch (err: unknown) {
+      // O erro aqui vem do banco ou da rede, e os dois falam inglês. O padrão cobre o caso
+      // desconhecido sem jogar jargão na tela de quem acabou de responder 30 perguntas.
+      showToast(traduzirErro(err, 'Não consegui salvar suas respostas. Tente de novo.'));
     } finally {
       setIsSaving(false);
     }
@@ -311,7 +314,7 @@ export default function AnamnesePage() {
               if (!hasAny) return null;
               
               return (
-                <div key={step.id} className="bg-surface border border-border rounded-xl p-4 mb-3.5">
+                <div key={step.id} className="bg-surface border border-border rounded-xl p-5 mb-3.5">
                   <h4 className="font-outfit text-[13px] font-semibold uppercase tracking-[0.08em] text-primary mb-2.5">{step.title}</h4>
                   {camposVisiveis(step).map(f => {
                     const v = answers[f.id];
@@ -328,7 +331,7 @@ export default function AnamnesePage() {
               );
             })}
 
-            <label className="flex items-start gap-3 bg-surface border border-border rounded-xl p-4 mt-2 cursor-pointer">
+            <label className="flex items-start gap-3 bg-surface border border-border rounded-xl p-5 mt-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={consentAccepted}
@@ -359,7 +362,7 @@ export default function AnamnesePage() {
                       placeholder={f.placeholder}
                       value={answers[f.id] || ''}
                       onChange={e => handleChange(f.id, e.target.value)}
-                      className="w-full bg-surface border border-border focus:border-primary rounded-[10px] text-foreground font-inter text-base p-3.5 outline-none transition-colors"
+                      className="w-full bg-surface border border-border focus:border-primary rounded-[10px] text-foreground font-inter text-base p-3 outline-none transition-colors"
                     />
                     {f.hint && <div className="text-xs text-foreground-muted/70 mt-1.5">{f.hint}</div>}
                   </>
@@ -370,7 +373,7 @@ export default function AnamnesePage() {
                     placeholder={f.placeholder}
                     value={answers[f.id] || ''}
                     onChange={e => handleChange(f.id, e.target.value)}
-                    className="w-full bg-surface border border-border focus:border-primary rounded-[10px] text-foreground font-inter text-base p-3.5 outline-none transition-colors resize-y min-h-[88px] leading-[1.5]"
+                    className="w-full bg-surface border border-border focus:border-primary rounded-[10px] text-foreground font-inter text-base p-3 outline-none transition-colors resize-y min-h-[88px] leading-[1.5]"
                   />
                 )}
 
@@ -455,7 +458,7 @@ export default function AnamnesePage() {
           {!reviewMode && currentStepIndex > 0 && (
             <button
               onClick={handleBack}
-              className="flex-none w-[88px] p-4 rounded-xl font-inter text-[15px] font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-surface-hover text-foreground"
+              className="flex-none w-[88px] p-5 rounded-xl font-inter text-[15px] font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-surface-hover text-foreground"
             >
               Voltar
             </button>
@@ -463,7 +466,7 @@ export default function AnamnesePage() {
           {reviewMode && (
             <button
               onClick={handleBack}
-              className="flex-none w-[88px] p-4 rounded-xl font-inter text-[15px] font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-surface-hover text-foreground"
+              className="flex-none w-[88px] p-5 rounded-xl font-inter text-[15px] font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-surface-hover text-foreground"
             >
               Voltar
             </button>
@@ -471,7 +474,7 @@ export default function AnamnesePage() {
           <button
             onClick={handleNext}
             disabled={isSaving || (reviewMode && !consentAccepted)}
-            className="flex-1 p-4 rounded-xl font-inter text-[15px] font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-primary text-primary-foreground disabled:opacity-50 disabled:active:scale-100"
+            className="flex-1 p-5 rounded-xl font-inter text-[15px] font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-primary text-primary-foreground disabled:opacity-50 disabled:active:scale-100"
           >
             {isSaving ? 'Salvando...' : (reviewMode ? 'Salvar Perfil' : (currentStepIndex === activeSteps.length - 1 ? 'Revisar' : 'Próximo'))}
           </button>

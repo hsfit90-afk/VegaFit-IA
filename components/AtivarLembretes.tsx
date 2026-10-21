@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Bell, BellOff, Loader2, Check } from 'lucide-react';
+import { Bell, BellOff, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
+import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Pede permissão de notificação e inscreve o aluno nos lembretes de treino.
@@ -98,7 +100,7 @@ export function AtivarLembretes({ compacto = false }: { compacto?: boolean }) {
       toast.sucesso('Pronto. Vou te lembrar na hora do treino.');
     } catch (e) {
       setEstado('pode-pedir');
-      toast.erro(e instanceof Error ? e.message : 'Não consegui ativar os lembretes.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui ativar os lembretes.'));
     }
   };
 
@@ -129,7 +131,7 @@ export function AtivarLembretes({ compacto = false }: { compacto?: boolean }) {
 
   if (estado === 'bloqueado') {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-4 text-sm text-foreground-muted flex items-start gap-3">
+      <div className="rounded-xl border border-border bg-surface p-5 text-sm text-foreground-muted flex items-start gap-3">
         <BellOff className="w-4 h-4 shrink-0 mt-0.5" />
         <span>
           Os lembretes estão bloqueados para este site no seu navegador. Para voltar a
@@ -141,7 +143,7 @@ export function AtivarLembretes({ compacto = false }: { compacto?: boolean }) {
 
   if (estado === 'inscrito') {
     return (
-      <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex items-center gap-3">
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 flex items-center gap-3">
         <Check className="w-4 h-4 text-primary shrink-0" />
         <span className="text-sm flex-1">Lembretes de treino ligados.</span>
         <button onClick={desativar} className="text-xs text-foreground-muted hover:text-destructive underline shrink-0">
@@ -153,8 +155,8 @@ export function AtivarLembretes({ compacto = false }: { compacto?: boolean }) {
 
   return (
     <div className={compacto
-      ? 'w-full rounded-2xl border border-white/15 bg-white/5 p-4 text-left'
-      : 'rounded-2xl border border-border bg-surface p-4'}>
+      ? 'w-full rounded-xl border border-white/15 bg-white/5 p-5 text-left'
+      : 'rounded-xl border border-border bg-surface p-5'}>
       <p className="text-sm font-semibold mb-1 flex items-center gap-2">
         <Bell className="w-4 h-4 text-primary" /> Quer que eu te lembre do próximo?
       </p>
@@ -162,7 +164,7 @@ export function AtivarLembretes({ compacto = false }: { compacto?: boolean }) {
         Um aviso no celular nos dias de treino. Dá para desligar quando quiser.
       </p>
       <Button onClick={ativar} disabled={estado === 'pedindo'} size="sm">
-        {estado === 'pedindo' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ativar lembretes'}
+        {estado === 'pedindo' ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Ativando…" /> : 'Ativar lembretes'}
       </Button>
     </div>
   );

@@ -6,8 +6,10 @@ import { useSomenteMaster } from '@/components/useSomenteMaster';
 import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { Loader2, Search, Pencil, Eye, AlertTriangle, Plus } from 'lucide-react';
+import { Search, Pencil, Eye, AlertTriangle, Plus } from 'lucide-react';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
+import { traduzirErro } from '@/utils/mensagensDeErro';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 /**
  * Os treinos dos alunos, numa lista só.
@@ -69,7 +71,7 @@ export default function TreinosDosAlunos() {
         setAlunos((await r.json()).alunos ?? []);
       } catch (e) {
         setAlunos([]);
-        toast.erro(e instanceof Error ? e.message : 'Não consegui carregar os alunos.');
+        toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui carregar os alunos.'));
       }
     })();
     // toast muda a cada render e refaria a busca em loop; isto roda uma vez.
@@ -111,8 +113,34 @@ export default function TreinosDosAlunos() {
     [alunos]
   );
 
+  /**
+   * ESQUELETO COM A SILHUETA DA LISTA, e não um spinner no meio da tela.
+   *
+   * Spinner centralizado não diz o que vem: a tela fica vazia, pisca, e o conteúdo aparece de
+   * uma vez deslocando tudo. O esqueleto já ocupa o lugar certo — cabeçalho, busca e as
+   * linhas de aluno —, então a chegada do dado não mexe no layout e quem olha entende, antes
+   * de qualquer texto, que o que vem é uma lista.
+   *
+   * O `role="status"` com o rótulo escondido é o que o spinner anterior dava a quem usa
+   * leitor de tela e um esqueleto puro perderia.
+   */
   if (!ehMaster || alunos === null) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return (
+      <div className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto ${RODAPE_SEGURO}`} role="status">
+        <span className="sr-only">Carregando os alunos…</span>
+        <Skeleton className="h-10 w-72 mb-2" />
+        <Skeleton className="h-4 w-96 mb-6" />
+        <div className="flex gap-3 mb-5">
+          <Skeleton className="h-11 flex-1" />
+          <Skeleton className="h-11 w-44" />
+        </div>
+        <div className="flex flex-col gap-2.5">
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton key={i} className="h-[86px] rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -144,7 +172,7 @@ export default function TreinosDosAlunos() {
       </div>
 
       {semTreino > 0 && !busca && (
-        <div className="mb-4 rounded-xl border border-warning/40 bg-warning/10 p-3.5 text-sm flex items-start gap-2.5">
+        <div className="mb-4 rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
           <p>
             {semTreino === 1
@@ -167,7 +195,7 @@ export default function TreinosDosAlunos() {
             const u = urgencia(a);
             return (
               <Card key={a.id} className={u <= 1 ? 'border-warning/40' : ''}>
-                <CardContent className="p-4 flex flex-wrap items-center gap-x-4 gap-y-3">
+                <CardContent className="p-5 flex flex-wrap items-center gap-x-4 gap-y-3">
                   <div className="flex-1 min-w-[180px]">
                     <p className="font-semibold leading-tight">
                       {a.nome || 'Sem nome'}

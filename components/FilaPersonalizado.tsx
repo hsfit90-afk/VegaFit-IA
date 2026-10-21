@@ -3,8 +3,11 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
-import { UserCheck, Loader2, ExternalLink } from 'lucide-react';
+import { UserCheck, ExternalLink, Inbox } from 'lucide-react';
 import { descreverStatus, vagasDoLote } from '@/lib/treinoPersonalizado';
+import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 /**
  * Fila de Treino Personalizado no painel master.
@@ -75,14 +78,14 @@ export function FilaPersonalizado() {
       setPedidos(p => (p ?? []).map(x => (x.id === id ? { ...x, ...data.pedido } : x)));
       toast.sucesso(rotulo);
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui alterar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui alterar.'));
     } finally {
       setMexendo(null);
     }
   };
 
   if (pedidos === null) {
-    return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+    return <div className="flex justify-center py-8"><LoadingSpinner /></div>;
   }
 
   // O limite vem do servidor junto com a lista; aqui so contamos o que ja foi usado.
@@ -108,11 +111,11 @@ export function FilaPersonalizado() {
       </div>
 
       {emAndamento.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center text-sm text-gray-400">
-            Nenhum pedido em andamento. Restam {vagas.restantes} vagas no lote.
-          </CardContent>
-        </Card>
+        <EmptyState
+          icone={<Inbox className="w-12 h-12" />}
+          titulo="Nenhum pedido em andamento"
+          descricao={`Restam ${vagas.restantes} ${vagas.restantes === 1 ? 'vaga' : 'vagas'} no lote. Quando alguém reservar, o pedido aparece aqui para você montar e entregar.`}
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {emAndamento.map(p => {

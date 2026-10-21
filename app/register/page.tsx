@@ -4,9 +4,13 @@ import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Dumbbell, Loader2, MailCheck } from 'lucide-react';
+import { Dumbbell, MailCheck } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Field } from '@/components/ui/Field';
+import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { LARGURA_AUTH } from '@/lib/layout';
+import { Button } from '@/components/ui/Button';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -33,7 +37,7 @@ export default function Register() {
     });
 
     if (error) {
-      setError(error.message);
+      setError(traduzirErro(error));
       setLoading(false);
     } else if (data?.session) {
       window.location.href = `/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`;
@@ -47,10 +51,10 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white/[0.03] backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-2xl">
+    <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-5">
+      <div className={`w-full ${LARGURA_AUTH} bg-white/[0.03] backdrop-blur-md p-8 rounded-xl border border-white/10 shadow-2xl`}>
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-[var(--color-accent)]/20">
+          <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-[var(--color-accent)]/20">
             <Dumbbell className="w-8 h-8 text-black" />
           </div>
           <h1 className="text-3xl font-outfit font-bold text-white mb-2">Criar Conta</h1>
@@ -58,7 +62,7 @@ export default function Register() {
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6 text-sm text-center">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-5 rounded-xl mb-6 text-sm text-center">
             {error}
           </div>
         )}
@@ -76,13 +80,14 @@ export default function Register() {
             <Field label="Senha" htmlFor="register-senha">
               <Input id="register-senha" variant="auth" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" minLength={6} />
             </Field>
-            <button
+            <Button
               type="submit"
+              fullWidth
               disabled={loading}
-              className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-black font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="gap-2"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Criar Conta'}
-            </button>
+              {loading ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Criando a conta…" /> : 'Criar Conta'}
+            </Button>
 
             {/* Dizer o preço ANTES do cadastro. Quem descobre a cobrança só no oitavo dia se
                 sente enganado e pede reembolso — mesmo tendo gostado do treino. Avisar aqui

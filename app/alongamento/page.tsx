@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Card, CardContent } from '@/components/ui/Card';
-import { StretchHorizontal, Loader2, Clock } from 'lucide-react';
+import { StretchHorizontal, Clock } from 'lucide-react';
 import { ListaComCronometro, type ItemDaLista } from '@/components/workout/ListaComCronometro';
 import { selecionarAlongamento } from '@/lib/preparoFinalizacao';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Alongamento, em tela própria.
@@ -49,7 +50,7 @@ export default function Alongamento() {
   }, [catalogo, grupo]);
 
   if (!catalogo) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return <LoadingSpinner tela tamanho="lg" />;
   }
 
   return (

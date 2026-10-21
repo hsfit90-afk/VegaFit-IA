@@ -4,9 +4,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/Button';
-import { CheckCircle2, Loader2, Clock } from 'lucide-react';
+import { CheckCircle2, Clock } from 'lucide-react';
 import { estadoDeAcesso } from '@/lib/subscription';
 import { PADDING_TELA, LARGURA_AUTH } from '@/lib/layout';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Para onde o Mercado Pago devolve o aluno depois do checkout.
@@ -83,7 +84,7 @@ export default function RetornoDoPagamento() {
     <div className={`${PADDING_TELA} ${LARGURA_AUTH} mx-auto min-h-[70vh] flex flex-col items-center justify-center text-center gap-5 animate-fade-in`}>
       {situacao === 'conferindo' && (
         <>
-          <Loader2 className="w-10 h-10 text-primary animate-spin" />
+          <LoadingSpinner tamanho="lg" rotulo="Confirmando o pagamento…" />
           <h1 className="text-2xl font-outfit font-bold">Confirmando seu pagamento…</h1>
           <p className="text-foreground-muted text-sm">Leva alguns segundos. Não feche esta tela.</p>
         </>

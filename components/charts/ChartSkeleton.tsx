@@ -17,7 +17,7 @@ export function ChartSkeleton() {
     <div className="w-full h-full flex flex-col gap-3" aria-hidden="true">
       <div className="flex-1 flex items-end gap-2">
         {barras.map((altura, i) => (
-          <Skeleton key={i} className={`flex-1 rounded-md ${altura}`} />
+          <Skeleton key={i} className={`flex-1 rounded-lg ${altura}`} />
         ))}
       </div>
       <Skeleton className="h-3 w-full rounded" />

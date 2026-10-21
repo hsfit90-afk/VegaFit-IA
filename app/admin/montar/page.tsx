@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark, Eye, Pencil, ChevronUp, ChevronDown, Home } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark, Eye, Pencil, ChevronUp, ChevronDown, Home } from 'lucide-react';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { EditorDePreparo, type ItemDePreparo } from '@/components/admin/EditorDePreparo';
 import {
@@ -24,6 +24,9 @@ import { moverNaLista, ajustarCargas, aplicarCargaEmTodas } from '@/lib/edicaoDe
 
 import { prescrever, normalizarObjetivo } from '@/lib/protocolo';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
+import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 /**
  * Montador manual de treino, só para o master.
@@ -443,7 +446,7 @@ export default function MontarTreino() {
         if (!cancelado) {
           setResumo(null);
           setTemAnamnese(false);
-          toast.erro(e instanceof Error ? e.message : 'Não consegui carregar o aluno.');
+          toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui carregar o aluno.'));
         }
       } finally {
         if (!cancelado) {
@@ -659,7 +662,7 @@ export default function MontarTreino() {
       setModelos(m => [d.modelo, ...m]);
       toast.sucesso(`Modelo "${d.modelo.nome}" salvo em ${config.goal}.`);
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui salvar o modelo.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui salvar o modelo.'));
     } finally {
       setSalvandoModelo(null);
     }
@@ -786,7 +789,7 @@ export default function MontarTreino() {
       if (!nome) setNome(`Treino de ${alunoEscolhido?.name || 'aluno'}`);
       toast.sucesso('Plano gerado. Agora é só ajustar o que você mudaria.');
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui gerar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui gerar.'));
     } finally {
       setGerando(false);
     }
@@ -848,7 +851,7 @@ export default function MontarTreino() {
       // Conferir o que chegou do outro lado e parte da entrega, nao um extra.
       setSalvo(true);
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui salvar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui salvar.'));
     } finally {
       setSalvando(false);
     }
@@ -882,7 +885,7 @@ export default function MontarTreino() {
   }, [ultimoTreino, JANELA_DO_CACHE_MS]);
 
   if (!ehMaster || carregando) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return <LoadingSpinner tela tamanho="lg" />;
   }
 
   return (
@@ -936,7 +939,7 @@ export default function MontarTreino() {
       {alunoId && carregandoAluno && (
         <Card className="mb-5">
           <CardContent className="p-5 flex items-center gap-2 text-sm text-foreground-muted">
-            <Loader2 className="w-4 h-4 animate-spin" /> Buscando a anamnese do aluno…
+            <LoadingSpinner tamanho="sm" rotulo="Buscando a anamnese do aluno…" mostrarRotulo />
           </CardContent>
         </Card>
       )}
@@ -944,10 +947,12 @@ export default function MontarTreino() {
       {alunoId && !carregandoAluno && resumo && (
         <Card className="mb-5">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <p className="font-outfit font-bold">O que {alunoEscolhido?.name || 'o aluno'} respondeu</p>
+            {/* Nome de aluno é texto de tamanho imprevisível ("Sandro Camilo da Silva"), e a
+                tarja ao lado não pode encolher — `shrink-0` nela, `min-w-0` no título. */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <p className="font-outfit font-bold min-w-0">O que {alunoEscolhido?.name || 'o aluno'} respondeu</p>
               {!temAnamnese && (
-                <span className="text-xs px-2.5 py-1 rounded-full bg-warning/15 text-warning font-semibold">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-warning/15 text-warning font-semibold shrink-0">
                   Sem anamnese
                 </span>
               )}
@@ -983,7 +988,7 @@ export default function MontarTreino() {
 
             {/* Saúde separada e em destaque: é o que não pode passar batido na hora de montar. */}
             {(resumo.lesoes || resumo.condicoes) && (
-              <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3.5 text-sm space-y-1.5">
+              <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm space-y-1.5">
                 {resumo.lesoes && (
                   <p><AlertTriangle className="w-4 h-4 inline mr-1.5 text-destructive" /><strong>Lesões:</strong> {resumo.lesoes}</p>
                 )}
@@ -1002,7 +1007,7 @@ export default function MontarTreino() {
           leg press num treino de casa, e não ter onde corrigir — só apagando tudo. Aconteceu
           com o treino do Joel em 09/10/2026. Os campos ficam, e o botão vira "Gerar de novo". */}
       <Card className="mb-5 border-primary/30">
-        <CardContent className="p-6 flex flex-col gap-4">
+        <CardContent className="p-5 flex flex-col gap-4">
             <div>
               <p className="font-outfit font-bold mb-1">
                 {sessoes.length === 0 ? 'Por onde começar' : 'Gerar de novo'}
@@ -1018,7 +1023,7 @@ export default function MontarTreino() {
                 foi exatamente o que entregou leg press para quem treina na sala. Aqui ele
                 para de ser silencioso. */}
             {alunoId && !temAnamnese && config.equipment === 'Academia completa' && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-warning/40 bg-warning/10 p-3.5 text-sm">
+              <div className="flex items-start gap-2.5 rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm">
                 <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                 <span>
                   Ninguém informou onde {alunoEscolhido?.name || 'este aluno'} treina, então está
@@ -1036,7 +1041,7 @@ export default function MontarTreino() {
                 <label htmlFor="g-local" className="text-xs font-semibold text-foreground-muted">Onde vai treinar</label>
                 <select id="g-local" value={config.equipment}
                   onChange={e => setConfig({ ...config, equipment: e.target.value })}
-                  className="w-full bg-surface border border-border rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary/50">
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50">
                   <option>Academia completa</option>
                   <option>Em casa</option>
                 </select>
@@ -1045,7 +1050,7 @@ export default function MontarTreino() {
                 <label htmlFor="g-objetivo" className="text-xs font-semibold text-foreground-muted">Objetivo</label>
                 <select id="g-objetivo" value={config.goal}
                   onChange={e => setConfig({ ...config, goal: e.target.value })}
-                  className="w-full bg-surface border border-border rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary/50">
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50">
                   <option>Hipertrofia</option>
                   <option>Emagrecimento</option>
                   <option>Performance</option>
@@ -1057,7 +1062,7 @@ export default function MontarTreino() {
                 <label htmlFor="g-nivel" className="text-xs font-semibold text-foreground-muted">Nível</label>
                 <select id="g-nivel" value={config.level}
                   onChange={e => setConfig({ ...config, level: e.target.value })}
-                  className="w-full bg-surface border border-border rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary/50">
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50">
                   <option>Iniciante</option>
                   <option>Intermediário</option>
                   <option>Avançado</option>
@@ -1067,7 +1072,7 @@ export default function MontarTreino() {
                 <label htmlFor="g-dias" className="text-xs font-semibold text-foreground-muted">Dias por semana</label>
                 <select id="g-dias" value={config.daysPerWeek}
                   onChange={e => setConfig({ ...config, daysPerWeek: Number(e.target.value) })}
-                  className="w-full bg-surface border border-border rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary/50">
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50">
                   {[2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
@@ -1086,7 +1091,7 @@ export default function MontarTreino() {
                 className="flex-1"
               >
                 {gerando
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Gerando o treino…" />
                   : <><Sparkles className="w-4 h-4" /> {sessoes.length === 0 ? 'Gerar com IA e ajustar' : 'Gerar de novo'}</>}
               </Button>
               {/* Só enquanto não há plano: depois de gerar, o rodapé já tem "Adicionar dia",
@@ -1142,6 +1147,22 @@ export default function MontarTreino() {
 
                 Carregar ACRESCENTA um dia, não substitui o plano: montar um treino de quatro
                 dias a partir de quatro modelos é o caso que mais economiza tempo. */}
+            {/* O VAZIO PRECISA DIZER COMO SAIR DELE.
+                Antes o bloco inteiro sumia quando não havia modelo daquele objetivo, e quem
+                nunca salvou um não descobria que a função existe — ela se revela só depois
+                de usada. Agora o espaço explica de onde vem o primeiro. */}
+            {modelos.length === 0 && (
+              <div className="border-t border-border pt-4">
+                <EmptyState
+                  semCard
+                  className="py-6"
+                  icone={<Bookmark className="w-10 h-10" />}
+                  titulo={`Nenhum modelo de ${config.goal.toLowerCase()} ainda`}
+                  descricao="Monte um dia e toque no marcador no cabeçalho dele para salvar como modelo. Da próxima vez, ele entra pronto com um clique."
+                />
+              </div>
+            )}
+
             {modelos.length > 0 && (
               <div className="border-t border-border pt-4">
                 <p className="text-xs uppercase tracking-wider font-semibold text-foreground-muted mb-2.5">
@@ -1183,10 +1204,10 @@ export default function MontarTreino() {
           dissesse o contrário. Agora o número está à vista, e abrir o resto é um ato
           explícito — não o padrão. */}
       {alunoId && sessoes.length > 0 && (
-        <div className="mb-4 rounded-xl border border-border bg-surface/60 p-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="mb-4 rounded-xl border border-border bg-surface/60 p-5 flex flex-wrap items-center gap-x-4 gap-y-2">
           {carregandoCatalogo ? (
             <p className="text-sm text-foreground-muted flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" /> Conferindo o que cabe no que este aluno tem…
+              <LoadingSpinner tamanho="sm" rotulo="Conferindo o que cabe no que este aluno tem…" mostrarRotulo />
             </p>
           ) : (
             <>
@@ -1243,16 +1264,16 @@ export default function MontarTreino() {
                   onClick={() => salvarComoModelo(sessao)}
                   disabled={salvandoModelo === sessao.id}
                   title="Salvar este dia como modelo, para reusar em outro aluno"
-                  className="p-2 text-foreground-muted hover:text-primary transition-colors flex-none disabled:opacity-40"
+                  className="p-3 text-foreground-muted hover:text-primary transition-colors flex-none disabled:opacity-40"
                 >
                   {salvandoModelo === sessao.id
-                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    ? <LoadingSpinner tamanho="sm" rotulo="Salvando o modelo…" />
                     : <BookmarkPlus className="w-4 h-4" />}
                 </button>
                 <button
                   onClick={() => removeSessao(sessao.id)}
                   aria-label={`Remover ${sessao.name}`}
-                  className="p-2 text-foreground-muted hover:text-destructive transition-colors flex-none"
+                  className="p-3 text-foreground-muted hover:text-destructive transition-colors flex-none"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -1260,7 +1281,7 @@ export default function MontarTreino() {
 
               <div className="flex flex-col gap-2">
                 {sessao.exercises.map((ex, ei) => (
-                  <div key={ex.id} className="grid grid-cols-12 gap-2 items-start bg-surface/60 rounded-xl p-2.5 border border-border">
+                  <div key={ex.id} className="grid grid-cols-12 gap-2 items-start bg-surface/60 rounded-xl p-3 border border-border">
                     {/* A MINIATURA. Montar treino às cegas significa digitar um nome e torcer
                         para ser o movimento que você tem na cabeça — e o catálogo tem
                         "Puxada Alta", "Puxada Alta Invertida" e "Puxada Alta com Triângulo".
@@ -1337,7 +1358,7 @@ export default function MontarTreino() {
                             type="button"
                             onClick={() => aplicarProtocolo(sessao.id, ex.id, tipo)}
                             title={`Preenche séries, reps e descanso do protocolo para ${tipo}`}
-                            className="text-[11px] px-2 py-1 rounded-md bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors capitalize"
+                            className="text-[11px] px-2 py-1 rounded-lg bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors capitalize"
                           >
                             {tipo}
                           </button>
@@ -1428,7 +1449,7 @@ export default function MontarTreino() {
                             type="button"
                             onClick={() => igualarCarga(sessao.id, ex.id)}
                             title="Repetir a carga da primeira série nas outras"
-                            className="text-[11px] px-2 py-1 rounded-md bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors"
+                            className="text-[11px] px-2 py-1 rounded-lg bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors"
                           >
                             igualar
                           </button>
@@ -1513,7 +1534,7 @@ export default function MontarTreino() {
           chega do outro lado. O aviso fica ANTES do botão de salvar, enquanto ainda dá para
           decidir — avisar depois de salvar seria contar o que já aconteceu. */}
       {sessoes.length > 0 && editandoId && ativoId && editandoId !== ativoId && (
-        <div className="mt-5 rounded-xl border border-warning/40 bg-warning/10 p-4 flex items-start gap-3">
+        <div className="mt-5 rounded-xl border border-warning/40 bg-warning/10 p-5 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
           <p className="text-sm">
             Este não é o treino que <strong>{alunoEscolhido?.name || 'o aluno'}</strong> abre
@@ -1528,7 +1549,7 @@ export default function MontarTreino() {
           para saber é que ele treinou há pouco — então o aviso fala em possibilidade, não em
           certeza, e diz o que de fato acontece. */}
       {sessoes.length > 0 && editandoId && editandoId === ativoId && talvezTreinandoAgora && (
-        <div className="mt-5 rounded-xl border border-secondary/40 bg-secondary/10 p-4 flex items-start gap-3">
+        <div className="mt-5 rounded-xl border border-secondary/40 bg-secondary/10 p-5 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
           <p className="text-sm">
             <strong>{alunoEscolhido?.name || 'Este aluno'}</strong> treinou nas últimas horas e
@@ -1546,7 +1567,7 @@ export default function MontarTreino() {
           </Button>
           <div className="flex-1" />
           <Button onClick={salvar} disabled={salvando} className="sm:w-auto">
-            {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4" /> Salvar na conta do aluno</>}
+            {salvando ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Salvando…" /> : <><Save className="w-4 h-4" /> Salvar na conta do aluno</>}
           </Button>
         </div>
       )}
@@ -1555,7 +1576,7 @@ export default function MontarTreino() {
           conta do aluno, não o que está na tela. Oferecê-la com edição pendente enganaria
           quem confia nela — que é o ponto de ela existir. */}
       {salvo && alunoId && (
-        <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 flex flex-wrap items-center gap-3">
+        <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-5 flex flex-wrap items-center gap-3">
           <Eye className="w-4 h-4 text-primary shrink-0" />
           <p className="text-sm flex-1 min-w-[200px]">
             Treino na conta de <strong>{alunoEscolhido?.name || 'aluno'}</strong>. Confira como

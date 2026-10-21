@@ -56,7 +56,7 @@ export function VisualizadorDeMidia({
       aria-modal="true"
       aria-label={titulo}
       onClick={onFechar}
-      className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-5 animate-fade-in"
     >
       <button
         onClick={onFechar}
@@ -68,7 +68,7 @@ export function VisualizadorDeMidia({
 
       {/* O clique na mídia não fecha: a pessoa vai querer olhar sem medo de perder a tela. */}
       <div onClick={e => e.stopPropagation()} className="w-full max-w-lg">
-        <div className="w-full aspect-square rounded-2xl bg-white/5 overflow-hidden grid place-items-center">
+        <div className="w-full aspect-square rounded-xl bg-white/5 overflow-hidden grid place-items-center">
           {midia.endsWith('.mp4') ? (
             <video src={midia} autoPlay loop muted playsInline className="w-full h-full object-contain" />
           ) : (

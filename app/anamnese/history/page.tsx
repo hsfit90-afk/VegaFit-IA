@@ -6,6 +6,8 @@ import { useAppContext } from '@/app/context/AppContext';
 import { anamneseSteps } from '@/lib/anamneseSteps';
 import Link from 'next/link';
 import { ArrowLeft, TrendingDown, TrendingUp, ClipboardList, ChevronDown, ChevronUp } from 'lucide-react';
+import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface AnamneseHistoryEntry {
   id: string;
@@ -53,7 +55,7 @@ export default function AnamneseHistoryPage() {
   const newestFirst = [...entries].reverse();
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-5 md:p-8 max-w-3xl mx-auto pb-28 md:pb-12">
+    <div className={`min-h-screen bg-background text-foreground ${PADDING_TELA} ${LARGURA_FOCO} mx-auto ${RODAPE_SEGURO}`}>
       <Link href="/settings" className="inline-flex items-center gap-2 text-foreground-muted hover:text-white text-sm mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4" /> Voltar para Configurações
       </Link>
@@ -64,11 +66,12 @@ export default function AnamneseHistoryPage() {
       {loading ? (
         <div className="text-center text-foreground-muted py-12 text-sm">Carregando...</div>
       ) : entries.length === 0 ? (
-        <div className="bg-surface border border-border rounded-xl p-8 text-center">
-          <ClipboardList className="w-10 h-10 text-foreground-muted opacity-30 mx-auto mb-3" />
-          <p className="text-white font-medium mb-1">Nenhuma anamnese registrada ainda.</p>
-          <p className="text-sm text-foreground-muted">Assim que você preencher a anamnese, ela aparece aqui.</p>
-        </div>
+        <EmptyState
+          icone={<ClipboardList className="w-12 h-12" />}
+          titulo="Nenhuma anamnese registrada ainda"
+          descricao="A anamnese é o que faz o treino ser seu: objetivo, nível, onde você treina e o que te limita. Cada vez que você responder, fica guardada aqui para comparar."
+          acao={<Link href="/anamnese" className="inline-flex items-center justify-center h-12 px-6 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-hover transition-colors">Responder a anamnese</Link>}
+        />
       ) : (
         <div className="space-y-4">
           {newestFirst.map((entry, i) => {
@@ -91,7 +94,7 @@ export default function AnamneseHistoryPage() {
             const isExpanded = expandedId === entry.id;
 
             return (
-              <div key={entry.id} className="bg-surface border border-border rounded-xl p-4">
+              <div key={entry.id} className="bg-surface border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-semibold text-white">{formatDate(entry.created_at)}</span>
                   {i === 0 && <span className="text-[11px] uppercase tracking-wider text-primary font-semibold">Mais recente</span>}

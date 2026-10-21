@@ -19,7 +19,7 @@ export function PeriodizationResetNotice({
   if (diasParado === null) return null;
 
   return (
-    <div className="mb-6 p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-100 flex items-start gap-3">
+    <div className="mb-6 p-5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-100 flex items-start gap-3">
       <RefreshCw className="w-5 h-5 mt-0.5 shrink-0 text-amber-400" aria-hidden="true" />
       <div className="flex-1 text-sm leading-relaxed">
         <p className="font-semibold text-amber-300 mb-1">Periodização reiniciada</p>

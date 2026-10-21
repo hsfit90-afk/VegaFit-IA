@@ -8,10 +8,12 @@ import { useSomenteMaster } from '@/components/useSomenteMaster';
 import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
-import { Loader2, ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriangle, Check, Trash2, StretchHorizontal, Flame, Pencil } from 'lucide-react';
+import { ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriangle, Check, Trash2, StretchHorizontal, Flame, Pencil } from 'lucide-react';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 import { escolherSessao, minutosDaSessao } from '@/lib/proximoTreino';
 import { temAbdominalNoDia } from '@/lib/protocolo';
+import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * O treino do aluno, como ele vai ver.
@@ -181,7 +183,7 @@ export default function PreviaDoAluno() {
       setVendo(planoId);
       toast.sucesso('Este passou a ser o treino que o aluno abre.');
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Nao consegui ativar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Nao consegui ativar.'));
     } finally {
       setMexendo(false);
     }
@@ -206,7 +208,7 @@ export default function PreviaDoAluno() {
   };
 
   if (!ehMaster) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return <LoadingSpinner tela tamanho="lg" />;
   }
 
   if (!alunoId) {
@@ -220,7 +222,7 @@ export default function PreviaDoAluno() {
   }
 
   if (planos === null) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return <LoadingSpinner tela tamanho="lg" />;
   }
 
   return (
@@ -253,7 +255,7 @@ export default function PreviaDoAluno() {
       </header>
 
       {!plano && (
-        <Card><CardContent className="p-6 text-sm text-foreground-muted">
+        <Card><CardContent className="p-5 text-sm text-foreground-muted">
           Este aluno ainda não tem nenhum treino salvo. Monte um no{' '}
           <Link href="/admin/montar" className="text-primary underline">montador</Link>.
         </CardContent></Card>
@@ -264,7 +266,7 @@ export default function PreviaDoAluno() {
           tivesse um dia só — duas vezes. O card graúdo agora é de CADA dia, logo abaixo; aqui
           fica só o que vale para o plano inteiro: o estado da conta e o botão de editar. */}
       {plano && (
-        <div className="mb-5 rounded-2xl border border-border bg-surface p-4 flex flex-wrap items-center gap-x-4 gap-y-3">
+        <div className="mb-5 rounded-xl border border-border bg-surface p-5 flex flex-wrap items-center gap-x-4 gap-y-3">
           <div className="flex-1 min-w-[200px]">
             <p className="text-xs uppercase tracking-wider font-semibold text-foreground-muted">
               {ehOAtivo ? 'O treino que ele abre' : 'Treino guardado, que ele NÃO abre'}
@@ -305,7 +307,7 @@ export default function PreviaDoAluno() {
           localStorage do aparelho dele, fora do alcance de todo mundo. */}
       {planos.length > 0 && (
         <Card className="mb-5">
-          <CardContent className="p-4">
+          <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider font-semibold text-foreground-muted mb-3">
               Treinos na conta ({planos.length})
             </p>
@@ -316,7 +318,7 @@ export default function PreviaDoAluno() {
                 return (
                   <div
                     key={pl.id}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-sm ${
+                    className={`flex items-center gap-2.5 p-3 rounded-xl border text-sm ${
                       olhando ? 'border-primary/40 bg-primary/5' : 'border-border bg-surface'
                     }`}
                   >
@@ -367,7 +369,7 @@ export default function PreviaDoAluno() {
 
       {plano?.cardio_session && (
         <Card className="mb-4">
-          <CardContent className="p-4 flex items-center gap-3">
+          <CardContent className="p-5 flex items-center gap-3">
             <Timer className="w-5 h-5 text-primary shrink-0" />
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-wider font-semibold text-primary">Depois do treino</p>
@@ -398,7 +400,7 @@ export default function PreviaDoAluno() {
           return (
           <div
             key={sessao.id ?? i}
-            className={`rounded-3xl border p-5 md:p-6 relative overflow-hidden ${
+            className={`rounded-xl border p-5 md:p-5 relative overflow-hidden ${
               ehODeHoje
                 ? 'bg-gradient-to-br from-primary/20 to-secondary/20 border-primary/30'
                 : 'bg-gradient-to-br from-surface-light to-surface border-border'
@@ -465,7 +467,7 @@ export default function PreviaDoAluno() {
                 {(sessao.exercises ?? []).map((ex, j) => {
                   const midia = midiaDe(ex);
                   return (
-                    <div key={ex.id ?? j} className="flex gap-3 p-2.5 rounded-xl border border-border bg-surface">
+                    <div key={ex.id ?? j} className="flex gap-3 p-3 rounded-xl border border-border bg-surface">
                       <button
                         type="button"
                         onClick={() => midia && setAmpliado({ midia, titulo: ex.name, sub: ex.muscleGroup })}

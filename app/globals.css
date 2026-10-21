@@ -1,6 +1,29 @@
 @import "tailwindcss";
 
 @theme {
+  /*
+   * TIPOGRAFIA — os tokens que faltavam.
+   *
+   * O app carrega Inter e Outfit pelo next/font desde sempre, e 43 arquivos usam a classe
+   * `font-outfit` (105 ocorrências, em praticamente todo título). Só que a classe NUNCA
+   * EXISTIU: no Tailwind v4 um utilitário `font-x` só é gerado a partir de um token
+   * `--font-x` declarado aqui, e não havia nenhum. E o `font-sans` do <body> caía na pilha
+   * padrão do Tailwind — a do sistema operacional —, não na Inter.
+   *
+   * Resultado até 21/10/2026: as duas fontes eram baixadas e nenhuma era aplicada. O app
+   * renderizava em Segoe UI no Windows, San Francisco no iPhone e Roboto no Android.
+   *
+   * É a mesma armadilha que já tinha mordido a cor `accent`, documentada vinte linhas abaixo:
+   * token que não existe no @theme não vira classe, e o elemento fica em silêncio herdando
+   * do pai. Nada quebra, nada avisa.
+   *
+   * As variáveis `--fonte-*` vêm do next/font e são declaradas no <html> (ver app/layout.tsx).
+   * A pilha de reserva importa: enquanto a fonte baixa, ou se ela falhar, o texto cai em algo
+   * próximo em vez de pular de métrica.
+   */
+  --font-sans: var(--fonte-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-outfit: var(--fonte-outfit), var(--fonte-inter), ui-sans-serif, system-ui, sans-serif;
+
   /* Core Colors - Minimalist Mint */
   --color-background: #151718;
   --color-surface: #202325;

@@ -145,7 +145,7 @@ export function BlocoAbdominal({
   const todosFeitos = feitos.size === escolhidos.length;
 
   return (
-    <div className="mt-5 rounded-2xl border border-accent/30 bg-accent/5 overflow-hidden">
+    <div className="mt-5 rounded-xl border border-accent/30 bg-accent/5 overflow-hidden">
       <VisualizadorDeMidia
         midia={ampliado?.mediaUrl ?? null}
         titulo={ampliado?.name ?? ''}
@@ -155,7 +155,7 @@ export function BlocoAbdominal({
       <button
         onClick={() => setAberto(a => !a)}
         aria-expanded={aberto}
-        className="w-full flex items-center gap-3 p-4 text-left"
+        className="w-full flex items-center gap-3 p-5 text-left"
       >
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-none transition-colors ${
           todosFeitos ? 'bg-primary/20' : 'bg-accent/20'
@@ -186,7 +186,7 @@ export function BlocoAbdominal({
             return (
               <div
                 key={ex.name}
-                className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all ${
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                   feito ? 'border-primary/40 bg-primary/10' : 'border-border bg-surface'
                 }`}
               >
@@ -219,7 +219,7 @@ export function BlocoAbdominal({
                   aria-pressed={feito}
                   className="flex items-center gap-3 flex-1 min-w-0 text-left"
                 >
-                  <span className={`w-5 h-5 rounded-md flex-none grid place-items-center border ${
+                  <span className={`w-5 h-5 rounded-lg flex-none grid place-items-center border ${
                     feito ? 'bg-primary border-primary' : 'border-border-light'
                   }`}>
                     {feito && <Check className="w-3.5 h-3.5 text-primary-foreground" />}

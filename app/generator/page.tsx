@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { computeUnlock, textoBloqueio, type MethodId } from '@/lib/trainingUnlock';
-import { Zap, Loader2 } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { Exercise as DbExercise } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { getExercises } from '@/lib/db/exercises';
@@ -16,6 +16,9 @@ import Link from 'next/link';
 import { LIMITE_PREFERENCIAS } from '@/lib/aiHealthContext';
 import { faltamEssenciais, ROTULO_ESSENCIAL } from '@/lib/anamneseEssencial';
 import { createClient } from '@/utils/supabase/client';
+import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 export default function Generator() {
   const { addWorkoutPlan, profile, history } = useAppContext();
@@ -290,14 +293,17 @@ export default function Generator() {
       // Salva e vai direto para treinar — sem prévia desnecessária
       addWorkoutPlan(plan);
       router.push('/active');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      // A rota de geração já responde em português; o padrão preserva essa mensagem. O
+      // tradutor entra para o que ela não cobre — perder o sinal no meio de uma geração de
+      // 40 segundos é o caso mais provável aqui.
+      setError(traduzirErro(err, err instanceof Error ? err.message : undefined));
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-5 md:p-8 max-w-3xl mx-auto animate-fade-in pb-28 md:pb-12">
+    <div className={`${PADDING_TELA} ${LARGURA_FOCO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
       <header className="mb-10">
         <h1 className="text-3xl md:text-4xl font-outfit font-bold flex items-center gap-3">
           <div className="p-3 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl backdrop-blur-md border border-border">
@@ -319,7 +325,7 @@ export default function Generator() {
           Três perguntas, não as quarenta e oito. O resto fica para depois. */}
       {faltam.length > 0 && (
         <Card className="mb-6 border-warning/40">
-          <CardContent className="p-6">
+          <CardContent className="p-5">
             <h2 className="font-outfit font-bold text-lg mb-2">Faltam três respostas</h2>
             <p className="text-sm text-foreground-muted leading-relaxed mb-4 max-w-prose">
               Sem elas o treino sai genérico: o app não sabe se você treina em casa ou na
@@ -341,12 +347,12 @@ export default function Generator() {
       )}
 
       <Card>
-        <CardContent className="p-6 md:p-8">
+        <CardContent className="p-5 md:p-8">
           <form onSubmit={handleGenerate} className="space-y-8">
             {/* assertive: o aluno precisa saber na hora que a geração falhou */}
             <div role="alert" aria-live="assertive">
               {error && (
-                <div className="p-4 bg-destructive/10 border border-destructive/50 rounded-xl text-destructive text-sm">
+                <div className="p-5 bg-destructive/10 border border-destructive/50 rounded-xl text-destructive text-sm">
                   {error}
                 </div>
               )}
@@ -575,7 +581,7 @@ export default function Generator() {
               className="text-lg font-bold shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.2)]"
             >
               {loading
-                ? <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                ? <LoadingSpinner cor="herdada" rotulo="Gerando o treino…" className="mr-2" />
                 : <Zap className="w-6 h-6 mr-2" />
               }
               {loading ? 'Gerando e salvando treino...' : 'Gerar Treino com IA'}

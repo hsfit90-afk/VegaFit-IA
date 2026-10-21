@@ -5,9 +5,11 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
-import { UserCheck, Loader2, Check, Clock, CalendarDays, ExternalLink } from 'lucide-react';
+import { UserCheck, Check, Clock, CalendarDays, ExternalLink } from 'lucide-react';
 import { descreverStatus, prazoDeEntrega } from '@/lib/treinoPersonalizado';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
+import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Treino Personalizado: o treino montado à mão pelo profissional.
@@ -81,7 +83,7 @@ export default function TreinoPersonalizado() {
       setObjetivo(''); setObservacoes('');
       await carregar();
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui registrar o pedido.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui registrar o pedido.'));
     } finally {
       setEnviando(false);
     }
@@ -89,9 +91,7 @@ export default function TreinoPersonalizado() {
 
   if (!estado) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="w-7 h-7 animate-spin text-primary" />
-      </div>
+      <LoadingSpinner tela tamanho="lg" />
     );
   }
 
@@ -123,7 +123,7 @@ export default function TreinoPersonalizado() {
           do próprio pedido, não abrir outro. */}
       {emAberto ? (
         <Card className="border-primary/40 mb-6">
-          <CardContent className="p-6 flex flex-col gap-4">
+          <CardContent className="p-5 flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <Clock className="w-5 h-5 text-primary flex-none" />
               <div>
@@ -168,7 +168,7 @@ export default function TreinoPersonalizado() {
       ) : (
         <>
           <Card className="mb-6">
-            <CardContent className="p-6 flex flex-col gap-5">
+            <CardContent className="p-5 flex flex-col gap-5">
               {/* O NÚMERO GRANDE É O MENSAL, e o total vem embaixo.
                   R$ 99 e R$ 297 são o mesmo preço, e o primeiro é o que a pessoa compara com
                   o que ela pagaria numa consultoria. Esconder o total seria outra coisa — ele
@@ -211,7 +211,7 @@ export default function TreinoPersonalizado() {
               </div>
 
               {estado.promocional && (
-                <p className="text-sm bg-primary/10 border border-primary/30 rounded-xl p-3.5 leading-relaxed">
+                <p className="text-sm bg-primary/10 border border-primary/30 rounded-xl p-3 leading-relaxed">
                   <strong className="text-primary">R$ 147 era o preço de um treino só.</strong>{' '}
                   Agora é o que custam os três meses inteiros — enquanto durarem as vagas do
                   primeiro lote.
@@ -237,7 +237,7 @@ export default function TreinoPersonalizado() {
 
           {estado.esgotado ? (
             <Card className="border-border">
-              <CardContent className="p-6 text-center">
+              <CardContent className="p-5 text-center">
                 <p className="font-outfit font-bold mb-1">As vagas deste lote acabaram.</p>
                 <p className="text-sm text-foreground-muted">
                   O limite existe porque cada treino é montado à mão — prefiro entregar poucos bem
@@ -247,7 +247,7 @@ export default function TreinoPersonalizado() {
             </Card>
           ) : (
             <Card>
-              <CardContent className="p-6 flex flex-col gap-4">
+              <CardContent className="p-5 flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="objetivo" className="text-sm font-semibold">
                     O que você quer alcançar?
@@ -280,7 +280,7 @@ export default function TreinoPersonalizado() {
                 </div>
 
                 <Button onClick={pedir} disabled={enviando} className="w-full">
-                  {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : `Reservar minha vaga e falar no WhatsApp`}
+                  {enviando ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Enviando…" /> : `Reservar minha vaga e falar no WhatsApp`}
                 </Button>
                 <p className="text-xs text-foreground-muted text-center">
                   Ao reservar, você fala comigo no WhatsApp para acertar o pagamento. A vaga fica sua enquanto a gente conversa.

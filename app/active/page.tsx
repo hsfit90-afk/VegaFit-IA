@@ -5,7 +5,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { AtivarLembretes } from '@/components/AtivarLembretes';
 import { computePeriodization } from '@/lib/periodization';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart } from 'lucide-react';
+import { Check, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart, CalendarDays, Lock, Pause } from 'lucide-react';
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -25,6 +25,8 @@ import { descansoAposSerie, avisoDoProximoPasso, fatorDeCarga, rotuloCurto, ehSe
 import { BlocoAquecimento } from '@/components/workout/BlocoAquecimento';
 import { BlocoAbdominal } from '@/components/workout/BlocoAbdominal';
 import { BlocoAlongamento } from '@/components/workout/BlocoAlongamento';
+import { traduzirErro } from '@/utils/mensagensDeErro';
+import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
@@ -196,7 +198,7 @@ export default function ActiveWorkout() {
 
   if (!currentSession) {
     return (
-      <div className="p-6 md:p-10 text-center pt-20">
+      <div className="p-5 md:p-10 text-center pt-20">
         <h2 className="text-2xl font-outfit mb-4">Nenhum treino programado.</h2>
         <Button onClick={() => router.push('/generator')} size="lg">
           Gerar Treino
@@ -305,8 +307,10 @@ export default function ActiveWorkout() {
       } else {
          setRestEndTime(0);
       }
-    } catch (e: any) {
-      toast.erro("Erro ao ticar: " + e.message);
+    } catch (e: unknown) {
+      // "Erro ao ticar" era jargão de quem escreveu, não de quem treina — e vinha colado à
+      // mensagem técnica do navegador. Só o texto mudou; o fluxo do catch é o mesmo.
+      toast.erro(traduzirErro(e, 'Não consegui marcar essa série. Tente tocar de novo.'));
     }
   };
 
@@ -739,7 +743,7 @@ export default function ActiveWorkout() {
     const completedSetsCount = finishedExercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
 
     return (
-      <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-4 py-12 animate-fade-in relative overflow-hidden">
+      <div className="min-h-screen bg-[var(--color-background-deep)] flex flex-col items-center justify-center p-5 py-12 animate-fade-in relative overflow-hidden">
         {/* Glow Effects */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[120%] h-[500px] bg-primary/20 rounded-[100%] blur-[120px] pointer-events-none"></div>
         
@@ -754,14 +758,14 @@ export default function ActiveWorkout() {
 
           {/* Stats Cards - Story Style */}
           <div className="grid grid-cols-3 gap-4 w-full mb-8">
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col items-center gap-3">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col items-center gap-3">
               <Timer className="w-6 h-6 text-blue-400" />
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-black text-white">{durationMin}</span>
                 <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1">min</span>
               </div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col items-center gap-3 relative overflow-hidden">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col items-center gap-3 relative overflow-hidden">
               <div className="absolute inset-0 bg-primary/10 blur-xl"></div>
               <Zap className="w-6 h-6 text-primary relative z-10" />
               <div className="flex flex-col items-center relative z-10">
@@ -769,7 +773,7 @@ export default function ActiveWorkout() {
                 <span className="text-[10px] text-primary/70 uppercase tracking-widest font-bold mt-1">kg vol</span>
               </div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col items-center gap-3">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col items-center gap-3">
               <Flame className="w-6 h-6 text-orange-400" />
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-black text-white">{completedSetsCount}</span>
@@ -780,7 +784,7 @@ export default function ActiveWorkout() {
 
           {/* PR destaque */}
           {recentPRs.length > 0 && (
-            <div className="w-full mb-8 p-5 bg-gradient-to-br from-[var(--color-gold)]/15 to-[var(--color-gold)]/5 border border-[var(--color-gold)]/40 rounded-3xl text-left relative overflow-hidden">
+            <div className="w-full mb-8 p-5 bg-gradient-to-br from-[var(--color-gold)]/15 to-[var(--color-gold)]/5 border border-[var(--color-gold)]/40 rounded-xl text-left relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-gold)]/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
               <p className="text-xs text-[var(--color-gold)] uppercase tracking-widest font-black mb-3 flex items-center gap-2 relative z-10">
                 <Trophy className="w-4 h-4" /> Novos Recordes!
@@ -804,11 +808,11 @@ export default function ActiveWorkout() {
 
           {/* Botões de ação */}
           <div className="flex flex-col gap-3 w-full mt-4">
-            <Button onClick={handleShare} size="lg" className="h-16 text-lg rounded-2xl bg-white text-black hover:bg-gray-200 shadow-xl font-bold">
+            <Button onClick={handleShare} size="lg" className="h-16 text-lg rounded-xl bg-white text-black hover:bg-gray-200 shadow-xl font-bold">
               <Share2 className="w-5 h-5 mr-2" />
               Compartilhar Resumo
             </Button>
-            <Button onClick={() => router.push('/')} variant="outline" size="lg" className="h-16 text-lg rounded-2xl border-white/20 text-white hover:bg-white/10">
+            <Button onClick={() => router.push('/')} variant="outline" size="lg" className="h-16 text-lg rounded-xl border-white/20 text-white hover:bg-white/10">
               Voltar ao Início
             </Button>
           </div>
@@ -822,7 +826,7 @@ export default function ActiveWorkout() {
 
         {showToast && (
           <div role="status" aria-live="polite" className="fixed bottom-6 left-6 right-6 md:left-auto md:right-10 md:bottom-10 flex flex-col gap-3 z-50">
-            <div className="bg-background/90 border border-primary/30 text-primary p-4 rounded-xl backdrop-blur-xl animate-fade-in shadow-[0_0_30px_rgb(var(--color-primary-rgb)/0.15)] flex items-center gap-4">
+            <div className="bg-background/90 border border-primary/30 text-primary p-5 rounded-xl backdrop-blur-xl animate-fade-in shadow-[0_0_30px_rgb(var(--color-primary-rgb)/0.15)] flex items-center gap-4">
               <div className="bg-primary/20 p-3 rounded-lg">
                 <Zap className="w-6 h-6 text-primary" />
               </div>
@@ -848,22 +852,58 @@ export default function ActiveWorkout() {
   const progressPercent = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
   return (
-    <div className="p-5 md:p-8 max-w-3xl mx-auto animate-fade-in pb-28 md:pb-12">
-      <header className="mb-8 sticky top-0 bg-background/80 backdrop-blur-xl z-40 py-4 border-b border-white/[0.08]">
+    <div className={`${PADDING_TELA} ${LARGURA_FOCO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
+      {/* A barra de progresso sangra de ponta a ponta, por baixo do cabeçalho.
+          As margens negativas desfazem o padding da tela (p-5 md:p-8) e o padding interno o
+          devolve ao conteúdo — assim a linha toca as duas bordas enquanto o texto continua
+          alinhado com o resto da página. Barra que encosta na borda lê como instrumento;
+          barra com margem lê como enfeite. */}
+      <header className="mb-8 sticky top-0 bg-background-deep/90 backdrop-blur-xl z-40 pt-4 border-b border-white/[0.06] -mx-5 md:-mx-8 px-5 md:px-8">
         {/* FEATURE: Cronômetro ao vivo + nome da sessão */}
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-outfit font-bold text-accent">{currentSession.name}</h1>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl">
-            <Clock className="w-4 h-4 text-primary" />
-            <span className="font-mono text-primary font-bold text-base">{formatTime(elapsedSeconds)}</span>
+        {/* Deixa quebrar em vez de espremer o cronômetro.
+            O nome da sessão carrega a musculatura do dia ("Treino C - Glúteos, Posterior e
+            Abdômen") e num celular já passava da linha. Com a Outfit aplicada ele ficou mais
+            largo ainda. Cortar com reticências esconderia justamente a parte informativa, e
+            sem `min-w-0` um item flex não encolhe abaixo do próprio conteúdo — o cronômetro é
+            que seria amassado. Então: o título ocupa a linha e o cronômetro desce. */}
+        {/* O CRONÔMETRO É O INSTRUMENTO DA TELA, e estava do tamanho de um rótulo.
+            Ele corre o treino inteiro, é consultado entre séries, e era lido num chip de
+            16px ao lado do título. Agora tem corpo de instrumento: 36px, monoespaçado e
+            tabular, para o número não dançar a cada segundo que passa.
+
+            O nome da sessão desceu para 18px porque é CONTEXTO, não dado — quem está na tela
+            já sabe que treino escolheu. */}
+        {/* EMPILHA NO CELULAR, LADO A LADO NO DESKTOP.
+            Com os dois na mesma linha num aparelho de 360px, sobravam ~200px para o título e
+            "Treino C - Glúteos, Posterior e Abdômen" virava "Treino C - G…" — cortado
+            justamente na parte que diz o que se vai treinar. Empilhado, o nome usa a largura
+            inteira e pode ocupar duas linhas; o cronômetro e a contagem dividem a linha de
+            baixo, que é curta e cabe folgada. */}
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 md:gap-4 mb-3">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted mb-1">
+              Em treino
+            </p>
+            <h1 className="text-lg md:text-xl font-outfit font-bold leading-tight md:truncate">
+              {currentSession.name}
+            </h1>
+          </div>
+
+          <div className="flex items-end justify-between gap-4 md:block md:text-right shrink-0">
+            <p className="font-mono text-3xl md:text-4xl font-bold text-primary leading-none tabular-nums">
+              {formatTime(elapsedSeconds)}
+            </p>
+            <p className="text-[10px] uppercase tracking-wider text-foreground-muted tabular-nums md:mt-1.5">
+              {completedSets}/{totalSets} séries · {Math.round(progressPercent)}%
+            </p>
           </div>
         </div>
-        <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-          <div className="bg-primary h-full transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
-        </div>
-        <div className="flex justify-between text-[10px] text-foreground-muted mt-1.5 font-semibold uppercase tracking-wider">
-          <span>{completedSets}/{totalSets} séries</span>
-          <span>{Math.round(progressPercent)}% concluído</span>
+
+        <div className="h-[3px] -mx-5 md:-mx-8 bg-white/[0.06]">
+          <div
+            className="h-full bg-gradient-to-r from-secondary to-primary transition-all duration-500 shadow-[0_0_12px_rgb(var(--color-primary-rgb)/0.5)]"
+            style={{ width: `${progressPercent}%` }}
+          />
         </div>
       </header>
 
@@ -877,7 +917,7 @@ export default function ActiveWorkout() {
           depois de concluir uma série parece bug, o aluno fica esperando. Esta faixa diz o
           que fazer agora. Ela se limpa sozinha na próxima série concluída. */}
       {dicaDoMetodo && (
-        <div className="mb-4 flex items-center gap-3 p-3.5 rounded-xl border border-accent/40 bg-accent/10 animate-fade-in">
+        <div className="mb-4 flex items-center gap-3 p-3 rounded-xl border border-accent/40 bg-accent/10 animate-fade-in">
           <Zap className="w-5 h-5 text-accent flex-none" />
           <p className="text-sm font-semibold leading-snug">{dicaDoMetodo}</p>
         </div>
@@ -934,7 +974,7 @@ export default function ActiveWorkout() {
                     ) : (
                       <img src={customMediaUrl} alt={ex.name} className="w-full h-full object-contain" />
                     )}
-                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded-md backdrop-blur-md flex items-center gap-1.5 border border-white/10">
+                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded-lg backdrop-blur-md flex items-center gap-1.5 border border-white/10">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
                       <span className="text-[10px] text-primary font-bold uppercase tracking-wider">Verificado</span>
                     </div>
@@ -943,7 +983,7 @@ export default function ActiveWorkout() {
               ) : (
                 /* Mesma altura aproximada da caixa com mídia (17rem + o py-3), para o card não
                    pular de tamanho entre um exercício que tem vídeo e outro que não tem. */
-                <div className="w-full bg-surface-light border-b border-border/50 h-[18.5rem] sm:h-[21.5rem] flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-full bg-surface-light border-b border-border/50 h-[18.5rem] sm:h-[21.5rem] flex flex-col items-center justify-center p-5 text-center">
                   <div className="w-16 h-16 rounded-full bg-black/30 flex items-center justify-center mb-4 border border-white/5">
                     <ImageOff className="w-8 h-8 text-foreground-muted/50" />
                   </div>
@@ -955,21 +995,37 @@ export default function ActiveWorkout() {
               )}
             </div>
 
-            <div className="p-6 md:p-8">
+            <div className="p-5 md:p-8">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <div>
+                {/* min-w-0: a partir de sm isto vira linha, e sem ele um nome longo
+                    ("Puxada Alta com Triângulo") empurra o que está ao lado em vez de quebrar. */}
+                <div className="min-w-0">
+                  {/* A ORDEM É PRESCRIÇÃO, e a tela não dizia qual era.
+                      Composto antes de isolado não é arrumação: é o protocolo. Rolando a tela
+                      no meio do treino, sem numeração, não dá para saber se falta muito nem em
+                      que ponto da sessão se está. O número é fino e apagado de propósito —
+                      informa a posição sem disputar com o nome do exercício. */}
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted mb-1.5 tabular-nums">
+                    <span className="text-primary font-bold">
+                      {String(exIndex + 1).padStart(2, '0')}
+                    </span>
+                    <span className="mx-1.5 opacity-40">/</span>
+                    {String(activeExercises.length).padStart(2, '0')}
+                  </p>
                   <h2 className="text-2xl font-outfit font-bold text-white mb-2">{ex.name}</h2>
                   {trainingMethod === 'superset' && (() => {
                     const { pairIndex } = getGroupInfo(exIndex);
                     return pairIndex !== null ? (
                       <p className="text-xs font-bold text-accent flex items-center gap-1.5 mb-2 uppercase tracking-wide">
-                        ⚡ Superset com {activeExercises[pairIndex]?.name} — sem descanso entre os dois
+                        <Zap className="w-3.5 h-3.5 shrink-0" />
+                        Superset com {activeExercises[pairIndex]?.name} — sem descanso entre os dois
                       </p>
                     ) : null;
                   })()}
                   {trainingMethod === 'circuito' && (
                     <p className="text-xs font-bold text-accent flex items-center gap-1.5 mb-2 uppercase tracking-wide">
-                      🔄 Circuito — etapa {exIndex + 1} de {activeExercises.length} (descanso só no fim da volta)
+                      <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+                      Circuito — etapa {exIndex + 1} de {activeExercises.length} (descanso só no fim da volta)
                     </p>
                   )}
                   <p className="text-sm text-primary flex items-center gap-2 mb-2">
@@ -1002,7 +1058,7 @@ export default function ActiveWorkout() {
                       return (
                         <div className="bg-[var(--color-background-deep)] border border-blue-500/30 p-3 rounded-xl mt-2">
                           <p className="text-[11px] text-blue-400 font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                            <span>📅</span> Periodização (4 Semanas)
+                            <CalendarDays className="w-3.5 h-3.5 shrink-0" /> Periodização (4 Semanas)
                           </p>
                           <p className="text-sm text-gray-300 leading-relaxed">{methodText}</p>
                         </div>
@@ -1016,7 +1072,7 @@ export default function ActiveWorkout() {
                       <div className="mt-2 p-3 bg-white/[0.03] border border-white/8 rounded-xl">
                         {/* Barra de progresso fina */}
                         <div className="flex items-center gap-1.5 mb-2.5">
-                          <span className="text-[10px] text-gray-500 font-semibold shrink-0">📅 S{currentWeek}/4</span>
+                          <span className="text-[10px] text-gray-500 font-semibold shrink-0 tabular-nums">S{currentWeek}/4</span>
                           <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-blue-500 rounded-full transition-all"
@@ -1036,7 +1092,8 @@ export default function ActiveWorkout() {
                         {/* Teaser das próximas semanas */}
                         {futureCount > 0 && (
                           <p className="text-[10px] text-gray-600 mt-1.5 flex items-center gap-1">
-                            🔒 <span>{futureCount} {futureCount === 1 ? 'semana bloqueada' : 'semanas bloqueadas'} — continue treinando para desbloquear</span>
+                            <Lock className="w-3 h-3 shrink-0" />
+                            <span>{futureCount} {futureCount === 1 ? 'semana bloqueada' : 'semanas bloqueadas'} — continue treinando para desbloquear</span>
                           </p>
                         )}
                       </div>
@@ -1082,7 +1139,7 @@ export default function ActiveWorkout() {
                     </button>
                   </div>
 
-                  <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
+                  <div className="bg-white/5 px-4 py-2 rounded-xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
                      <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Séries</span>
                      <input
                        type="number"
@@ -1093,7 +1150,7 @@ export default function ActiveWorkout() {
                        className="w-12 text-center bg-transparent text-xl font-mono font-bold text-white outline-none"
                      />
                   </div>
-                  <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
+                  <div className="bg-white/5 px-4 py-2 rounded-xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
                      <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Volume Atual</span>
                      <div className="text-xl font-mono font-bold text-white flex items-baseline gap-1">
                         {ex.sets.filter(s => s.completed).reduce((acc, s) => acc + (s.reps * s.weight), 0)} <span className="text-sm text-gray-500 font-medium">kg</span>
@@ -1106,20 +1163,31 @@ export default function ActiveWorkout() {
                 <div className="col-span-1 text-center">#</div>
                 <div className="col-span-3 text-center">Carga</div>
                 <div className="col-span-3 text-center">Reps</div>
-                <div className="col-span-3 text-center" title="Repetições na Reserva">RIR</div>
-                <div className="col-span-2 text-center"></div>
+                <div className="col-span-2 text-center" title="Repetições na Reserva">RIR</div>
+                <div className="col-span-3 text-center"></div>
               </div>
               
               {ex.sets.map((set, setIndex) => (
                 <div key={setIndex}>
                 {/* A linha de técnica especial se destaca em roxo: com três linhas iguais o
                     aluno tratava o drop como série normal. */}
-                <div className={`grid grid-cols-12 gap-2 items-center p-2 md:p-3 rounded-2xl border transition-all duration-300 relative group ${
+                {/* A SÉRIE DA VEZ GANHA UMA BORDA ACESA À ESQUERDA.
+                    Com todas as linhas iguais, quem volta ao celular depois de uma série
+                    precisa procurar onde parou. A próxima série não concluída é a única que
+                    importa naquele instante, e agora ela se anuncia.
+
+                    É só estilo: `findIndex` aqui não muda nada, só descobre qual linha
+                    desenhar diferente. */}
+                <div className={`grid grid-cols-12 gap-2 items-center p-3 md:p-3 rounded-xl border transition-all duration-300 relative group ${
                   set.completed
-                    ? 'bg-gradient-to-r from-primary/10 to-transparent border-primary/30 shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.15)]'
+                    ? 'bg-gradient-to-r from-primary/10 to-transparent border-primary/30 opacity-75'
                     : ehSerieEspecial(set.label)
                       ? 'bg-accent/[0.07] border-accent/30 hover:bg-accent/[0.11]'
                       : 'bg-surface border-border hover:bg-white/[0.06]'
+                } ${
+                  !set.completed && ex.sets.findIndex(s => !s.completed) === setIndex
+                    ? 'border-l-[3px] border-l-primary shadow-[0_0_24px_rgb(var(--color-primary-rgb)/0.12)]'
+                    : ''
                 }`}>
                   {/* Mostra o RÓTULO da série, não o índice. Antes aparecia "1 2 3" mesmo num
                       drop set: o aluno não tinha como saber que a terceira era o drop, registrava
@@ -1144,7 +1212,7 @@ export default function ActiveWorkout() {
                         value={set.weight || ''}
                         onChange={e => handleSetUpdate(exIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)}
                         placeholder="0"
-                        className={`w-full bg-transparent py-2 md:py-3 text-center font-mono text-lg md:text-xl outline-none transition-all ${
+                        className={`w-full bg-transparent py-2.5 md:py-3 text-center font-mono text-xl md:text-2xl font-bold outline-none transition-all ${
                           set.completed ? 'text-primary font-bold' : 'text-white placeholder:text-white/20'
                         }`}
                         disabled={set.completed}
@@ -1154,14 +1222,14 @@ export default function ActiveWorkout() {
                   
                   <div className="col-span-3">
                     <div className={`relative flex items-center bg-black/40 rounded-xl overflow-hidden border transition-all duration-300 ${
-                      set.completed ? 'border-primary/30' : 'border-border focus-within:border-accent/50 focus-within:bg-black/60'
+                      set.completed ? 'border-primary/30' : 'border-border focus-within:border-primary/50 focus-within:bg-black/60'
                     }`}>
                       <input 
                         type="number" 
                         value={set.reps || ''}
                         onChange={e => handleSetUpdate(exIndex, setIndex, 'reps', parseInt(e.target.value) || 0)}
                         placeholder="0"
-                        className={`w-full bg-transparent py-2 md:py-3 text-center font-mono text-lg md:text-xl outline-none transition-all ${
+                        className={`w-full bg-transparent py-2.5 md:py-3 text-center font-mono text-xl md:text-2xl font-bold outline-none transition-all ${
                           set.completed ? 'text-primary font-bold' : 'text-white placeholder:text-white/20'
                         }`}
                         disabled={set.completed}
@@ -1169,7 +1237,7 @@ export default function ActiveWorkout() {
                     </div>
                   </div>
 
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <div className={`relative flex items-center bg-black/40 rounded-xl overflow-hidden border transition-all duration-300 ${
                       set.completed ? 'border-primary/30' : 'border-border focus-within:border-blue-500/50 focus-within:bg-black/60'
                     }`}>
@@ -1180,7 +1248,11 @@ export default function ActiveWorkout() {
                         placeholder="RIR"
                         min="0"
                         max="5"
-                        className={`w-full bg-transparent py-2 md:py-3 text-center font-mono text-lg md:text-xl outline-none transition-all ${
+                        /* text-lg, MENOR que carga e repetição, de propósito: carga e repetição
+                           são registradas em toda série, o RIR é opcional e muita gente deixa
+                           em branco. Com os três do mesmo tamanho, o campo que menos importa
+                           disputava atenção com os dois que mais importam. */
+                        className={`w-full bg-transparent py-2.5 md:py-3 text-center font-mono text-lg outline-none transition-all ${
                           set.completed ? (set.rir !== undefined && set.rir <= 3 ? 'text-blue-400 font-bold' : 'text-gray-400') : 'text-white placeholder:text-white/20'
                         }`}
                         disabled={set.completed}
@@ -1188,12 +1260,12 @@ export default function ActiveWorkout() {
                     </div>
                   </div>
                   
-                  <div className="col-span-2 flex justify-center relative">
+                  <div className="col-span-3 flex justify-center relative">
                     <button 
                       onClick={() => toggleSetComplete(exIndex, setIndex)}
                       aria-pressed={set.completed}
                       aria-label={`${set.completed ? 'Desmarcar' : 'Marcar'} série ${setIndex + 1} de ${ex.name} como concluída`}
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                         set.completed 
                           ? 'bg-primary text-[var(--color-background-deep)] shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.5)]' 
                           : 'bg-white/5 text-gray-500 hover:bg-primary/20 hover:text-primary hover:scale-110'
@@ -1226,7 +1298,8 @@ export default function ActiveWorkout() {
                         onClick={() => setMiniPause({ exIndex, setIndex, endTime: Date.now() + 15000 })}
                         className="text-[11px] font-semibold text-foreground-muted hover:text-accent border border-white/10 hover:border-accent/40 rounded-lg px-3 py-1 transition-colors"
                       >
-                        ⏸️ Mini-pausa (15s) entre clusters
+                        <Pause className="w-3.5 h-3.5 shrink-0" />
+                        Mini-pausa (15s) entre clusters
                       </button>
                     )}
                   </div>
@@ -1279,13 +1352,20 @@ export default function ActiveWorkout() {
           é livre para todo mundo. */}
       <BlocoAlongamento itens={currentSession?.alongamento} biblioteca={libraryExercises} />
 
+      {/* O BOTÃO DIZ O QUE FALTA.
+          "Finalizar Treino" sozinho não informa se a pessoa está no fim ou largando no meio —
+          e largar no meio acontece. Com a contagem ao lado, encerrar vira decisão informada:
+          dá para ver que faltam três séries antes de tocar. */}
       <Button
         onClick={finishWorkout}
         fullWidth
         size="lg"
-        className="mt-10 font-bold text-xl shadow-[0_0_30px_rgb(var(--color-primary-rgb)/0.3)] h-16"
+        className="mt-10 h-16 flex-col gap-0.5 shadow-[0_0_30px_rgb(var(--color-primary-rgb)/0.3)]"
       >
-        Finalizar Treino
+        <span className="font-bold text-xl leading-none">Finalizar treino</span>
+        <span className="text-[11px] font-medium opacity-70 tabular-nums">
+          {completedSets} de {totalSets} séries concluídas
+        </span>
       </Button>
     </div>
   );

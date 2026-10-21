@@ -8,6 +8,8 @@ import { UserProfile } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
 import { FilaPersonalizado } from '@/components/FilaPersonalizado';
+import { traduzirErro } from '@/utils/mensagensDeErro';
+import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
 
 export default function AdminDashboard() {
   const { profile, userId } = useAppContext();
@@ -69,7 +71,7 @@ export default function AdminDashboard() {
       setUsers(anteriores => anteriores.map(u => (u.id === alvo ? { ...u, ...data.perfil } : u)));
       toast.sucesso(`${data.perfil?.name || 'Aluno'} agora é ${rotulo}.`);
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui alterar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui alterar.'));
     } finally {
       setMudando(null);
     }
@@ -102,7 +104,7 @@ export default function AdminDashboard() {
       if (!isNaN(parsed) && parsed > 0) {
         const { error } = await supabase.from('profiles').update({ max_clients: parsed }).eq('id', userId);
         if (error) {
-          toast.erro('Erro ao atualizar limite: ' + error.message);
+          toast.erro(traduzirErro(error, 'Não consegui atualizar o limite deste aluno.'));
         } else {
           setUsers(prev => prev.map(u => u.id === userId ? { ...u, max_clients: parsed } : u));
           toast.sucesso('Limite atualizado com sucesso!');
@@ -125,22 +127,22 @@ export default function AdminDashboard() {
   const clients = users.filter(u => u.role === 'client' || !u.role);
 
   return (
-    <div className="p-5 md:p-8 max-w-5xl mx-auto space-y-8">
+    <div className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto space-y-8 ${RODAPE_SEGURO}`}>
       <div>
         <h1 className="text-3xl font-outfit font-bold text-white mb-2">Painel Master</h1>
         <p className="text-gray-400">Visão geral da plataforma VegaFit.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6 bg-surface border-white/5">
+        <Card className="p-5 bg-surface border-white/5">
           <h3 className="text-gray-400 font-medium mb-1">Total de Usuários</h3>
           <p className="text-4xl font-bold text-white">{users.length}</p>
         </Card>
-        <Card className="p-6 bg-surface border-white/5">
+        <Card className="p-5 bg-surface border-white/5">
           <h3 className="text-gray-400 font-medium mb-1">Personal Trainers</h3>
           <p className="text-4xl font-bold text-primary">{trainers.length}</p>
         </Card>
-        <Card className="p-6 bg-surface border-white/5">
+        <Card className="p-5 bg-surface border-white/5">
           <h3 className="text-gray-400 font-medium mb-1">Alunos Ativos</h3>
           <p className="text-4xl font-bold text-blue-400">{clients.length}</p>
         </Card>

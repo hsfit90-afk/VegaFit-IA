@@ -60,7 +60,7 @@ export function ListaComCronometro({
 
   if (itens.length === 0) {
     return (
-      <Card><CardContent className="p-6 text-center text-sm text-foreground-muted">{vazio}</CardContent></Card>
+      <Card><CardContent className="p-5 text-center text-sm text-foreground-muted">{vazio}</CardContent></Card>
     );
   }
 
@@ -99,7 +99,7 @@ export function ListaComCronometro({
                     ) : (
                       <img src={item.mediaUrl} alt="" className="w-full h-full object-contain opacity-90" />
                     )}
-                    <span className="absolute bottom-1 right-1 w-6 h-6 rounded-md bg-black/60 grid place-items-center">
+                    <span className="absolute bottom-1 right-1 w-6 h-6 rounded-lg bg-black/60 grid place-items-center">
                       <Maximize2 className="w-3 h-3 text-white/80" />
                     </span>
                   </>
