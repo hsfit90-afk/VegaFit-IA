@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Loader2, Search, Pencil, Eye, AlertTriangle, Plus } from 'lucide-react';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 /**
  * Os treinos dos alunos, numa lista só.
@@ -69,7 +70,7 @@ export default function TreinosDosAlunos() {
         setAlunos((await r.json()).alunos ?? []);
       } catch (e) {
         setAlunos([]);
-        toast.erro(e instanceof Error ? e.message : 'Não consegui carregar os alunos.');
+        toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui carregar os alunos.'));
       }
     })();
     // toast muda a cada render e refaria a busca em loop; isto roda uma vez.

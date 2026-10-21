@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
 import { UserCheck, Loader2, ExternalLink } from 'lucide-react';
 import { descreverStatus, vagasDoLote } from '@/lib/treinoPersonalizado';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 /**
  * Fila de Treino Personalizado no painel master.
@@ -75,7 +76,7 @@ export function FilaPersonalizado() {
       setPedidos(p => (p ?? []).map(x => (x.id === id ? { ...x, ...data.pedido } : x)));
       toast.sucesso(rotulo);
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui alterar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui alterar.'));
     } finally {
       setMexendo(null);
     }

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Dumbbell, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Field } from '@/components/ui/Field';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function Login() {
@@ -39,7 +40,7 @@ export default function Login() {
     });
 
     if (error) {
-      setError(error.message);
+      setError(traduzirErro(error));
       setLoading(false);
     } else {
       // Check if user already has a profile

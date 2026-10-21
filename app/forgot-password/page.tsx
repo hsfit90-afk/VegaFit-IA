@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Dumbbell, ArrowLeft, Loader2, MailCheck } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Field } from '@/components/ui/Field';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -26,7 +27,7 @@ export default function ForgotPassword() {
     setLoading(false);
 
     if (error) {
-      setError(error.message);
+      setError(traduzirErro(error));
     } else {
       setSent(true);
     }

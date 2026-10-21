@@ -25,6 +25,7 @@ import { descansoAposSerie, avisoDoProximoPasso, fatorDeCarga, rotuloCurto, ehSe
 import { BlocoAquecimento } from '@/components/workout/BlocoAquecimento';
 import { BlocoAbdominal } from '@/components/workout/BlocoAbdominal';
 import { BlocoAlongamento } from '@/components/workout/BlocoAlongamento';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
@@ -305,8 +306,10 @@ export default function ActiveWorkout() {
       } else {
          setRestEndTime(0);
       }
-    } catch (e: any) {
-      toast.erro("Erro ao ticar: " + e.message);
+    } catch (e: unknown) {
+      // "Erro ao ticar" era jargão de quem escreveu, não de quem treina — e vinha colado à
+      // mensagem técnica do navegador. Só o texto mudou; o fluxo do catch é o mesmo.
+      toast.erro(traduzirErro(e, 'Não consegui marcar essa série. Tente tocar de novo.'));
     }
   };
 

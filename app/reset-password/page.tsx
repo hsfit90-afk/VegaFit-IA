@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Dumbbell, Loader2, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Field } from '@/components/ui/Field';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -41,7 +42,7 @@ export default function ResetPassword() {
     setLoading(false);
 
     if (error) {
-      setError(error.message);
+      setError(traduzirErro(error));
     } else {
       setSuccess(true);
       setTimeout(() => router.push('/login'), 2500);

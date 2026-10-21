@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { LIMITE_PREFERENCIAS } from '@/lib/aiHealthContext';
 import { faltamEssenciais, ROTULO_ESSENCIAL } from '@/lib/anamneseEssencial';
 import { createClient } from '@/utils/supabase/client';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 export default function Generator() {
   const { addWorkoutPlan, profile, history } = useAppContext();
@@ -290,8 +291,11 @@ export default function Generator() {
       // Salva e vai direto para treinar — sem prévia desnecessária
       addWorkoutPlan(plan);
       router.push('/active');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      // A rota de geração já responde em português; o padrão preserva essa mensagem. O
+      // tradutor entra para o que ela não cobre — perder o sinal no meio de uma geração de
+      // 40 segundos é o caso mais provável aqui.
+      setError(traduzirErro(err, err instanceof Error ? err.message : undefined));
       setLoading(false);
     }
   };

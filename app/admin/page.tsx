@@ -8,6 +8,7 @@ import { UserProfile } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
 import { FilaPersonalizado } from '@/components/FilaPersonalizado';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 export default function AdminDashboard() {
   const { profile, userId } = useAppContext();
@@ -69,7 +70,7 @@ export default function AdminDashboard() {
       setUsers(anteriores => anteriores.map(u => (u.id === alvo ? { ...u, ...data.perfil } : u)));
       toast.sucesso(`${data.perfil?.name || 'Aluno'} agora é ${rotulo}.`);
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui alterar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui alterar.'));
     } finally {
       setMudando(null);
     }
@@ -102,7 +103,7 @@ export default function AdminDashboard() {
       if (!isNaN(parsed) && parsed > 0) {
         const { error } = await supabase.from('profiles').update({ max_clients: parsed }).eq('id', userId);
         if (error) {
-          toast.erro('Erro ao atualizar limite: ' + error.message);
+          toast.erro(traduzirErro(error, 'Não consegui atualizar o limite deste aluno.'));
         } else {
           setUsers(prev => prev.map(u => u.id === userId ? { ...u, max_clients: parsed } : u));
           toast.sucesso('Limite atualizado com sucesso!');

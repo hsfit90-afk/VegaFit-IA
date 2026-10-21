@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Check, ShieldCheck, Loader2, Dumbbell, History, BarChart3 } from 'lucide-react';
 import { estadoDeAcesso, type EstadoDeAcesso } from '@/lib/subscription';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 /**
  * Tela de assinatura. Chega aqui quem recebeu 402 de uma rota de IA, ou quem clica em
@@ -83,7 +84,7 @@ export default function Assinar() {
       if (!res.ok || !data.url) throw new Error(data.error || 'Não consegui abrir o pagamento.');
       window.location.href = data.url;
     } catch (e) {
-      setErro(e instanceof Error ? e.message : 'Não consegui abrir o pagamento. Tente de novo.');
+      setErro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui abrir o pagamento. Tente de novo.'));
       setIndoParaCheckout(null);
     }
   }

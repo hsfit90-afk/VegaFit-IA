@@ -12,6 +12,7 @@ import { Loader2, ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriang
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 import { escolherSessao, minutosDaSessao } from '@/lib/proximoTreino';
 import { temAbdominalNoDia } from '@/lib/protocolo';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 /**
  * O treino do aluno, como ele vai ver.
@@ -181,7 +182,7 @@ export default function PreviaDoAluno() {
       setVendo(planoId);
       toast.sucesso('Este passou a ser o treino que o aluno abre.');
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Nao consegui ativar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Nao consegui ativar.'));
     } finally {
       setMexendo(false);
     }

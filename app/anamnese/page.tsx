@@ -9,6 +9,7 @@ import { Check } from 'lucide-react';
 import { anamneseSteps as steps, type AnamneseStep, type AnamneseField } from '@/lib/anamneseSteps';
 import { EQUIPAMENTOS_CASA } from '@/lib/equipamentoCasa';
 import { passosEssenciais } from '@/lib/anamneseEssencial';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 export default function AnamnesePage() {
   const router = useRouter();
@@ -229,8 +230,10 @@ export default function AnamnesePage() {
       showToast("Respostas salvas e copiadas!");
       setTimeout(() => router.push('/'), 2000);
       
-    } catch (err: any) {
-      showToast("Erro ao salvar: " + err.message);
+    } catch (err: unknown) {
+      // O erro aqui vem do banco ou da rede, e os dois falam inglês. O padrão cobre o caso
+      // desconhecido sem jogar jargão na tela de quem acabou de responder 30 perguntas.
+      showToast(traduzirErro(err, 'Não consegui salvar suas respostas. Tente de novo.'));
     } finally {
       setIsSaving(false);
     }

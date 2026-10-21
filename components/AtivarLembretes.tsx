@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Bell, BellOff, Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 /**
  * Pede permissão de notificação e inscreve o aluno nos lembretes de treino.
@@ -98,7 +99,7 @@ export function AtivarLembretes({ compacto = false }: { compacto?: boolean }) {
       toast.sucesso('Pronto. Vou te lembrar na hora do treino.');
     } catch (e) {
       setEstado('pode-pedir');
-      toast.erro(e instanceof Error ? e.message : 'Não consegui ativar os lembretes.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui ativar os lembretes.'));
     }
   };
 

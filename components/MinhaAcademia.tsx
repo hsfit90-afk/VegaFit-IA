@@ -9,6 +9,7 @@ import { Dumbbell, Loader2, Check } from 'lucide-react';
 import { EQUIPAMENTOS, resumirAusentes } from '@/lib/equipamentoAusente';
 import { EQUIPAMENTOS_CASA, resumirCasa } from '@/lib/equipamentoCasa';
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 /**
  * "O que a minha academia não tem" — opcional, no Perfil.
@@ -73,7 +74,7 @@ export function MinhaAcademia() {
       if (error) throw new Error(error.message);
       toast.sucesso('Pronto. Seus próximos treinos já respeitam isso.');
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui salvar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui salvar.'));
     } finally {
       setSalvando(false);
     }

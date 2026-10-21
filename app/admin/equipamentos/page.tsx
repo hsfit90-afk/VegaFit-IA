@@ -8,6 +8,7 @@ import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { EQUIPAMENTOS_CASA } from '@/lib/equipamentoCasa';
 import { Loader2, Check, ImageOff, Maximize2, AlertTriangle } from 'lucide-react';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 /**
  * Revisão do equipamento de cada exercício.
@@ -156,7 +157,7 @@ export default function RevisarEquipamentos() {
           : x));
       }
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui salvar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui salvar.'));
     } finally {
       setSalvando(null);
     }

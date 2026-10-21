@@ -9,6 +9,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/components/ui/Toast';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 const LOADING_PHRASES = [
   "Analisando seu biotipo...",
@@ -106,7 +107,7 @@ export default function Onboarding() {
 
     if (error) {
       console.error("Error saving profile details:", error);
-      toast.erro(`Erro ao salvar perfil: ${error.message || JSON.stringify(error)}`);
+      toast.erro(traduzirErro(error, 'Não consegui salvar seu perfil. Tente de novo.'));
       setLoading(false);
       return;
     }

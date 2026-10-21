@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import { UserCheck, Loader2, Check, Clock, CalendarDays, ExternalLink } from 'lucide-react';
 import { descreverStatus, prazoDeEntrega } from '@/lib/treinoPersonalizado';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 /**
  * Treino Personalizado: o treino montado à mão pelo profissional.
@@ -81,7 +82,7 @@ export default function TreinoPersonalizado() {
       setObjetivo(''); setObservacoes('');
       await carregar();
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui registrar o pedido.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui registrar o pedido.'));
     } finally {
       setEnviando(false);
     }

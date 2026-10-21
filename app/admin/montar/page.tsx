@@ -24,6 +24,7 @@ import { moverNaLista, ajustarCargas, aplicarCargaEmTodas } from '@/lib/edicaoDe
 
 import { prescrever, normalizarObjetivo } from '@/lib/protocolo';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 /**
  * Montador manual de treino, só para o master.
@@ -443,7 +444,7 @@ export default function MontarTreino() {
         if (!cancelado) {
           setResumo(null);
           setTemAnamnese(false);
-          toast.erro(e instanceof Error ? e.message : 'Não consegui carregar o aluno.');
+          toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui carregar o aluno.'));
         }
       } finally {
         if (!cancelado) {
@@ -659,7 +660,7 @@ export default function MontarTreino() {
       setModelos(m => [d.modelo, ...m]);
       toast.sucesso(`Modelo "${d.modelo.nome}" salvo em ${config.goal}.`);
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui salvar o modelo.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui salvar o modelo.'));
     } finally {
       setSalvandoModelo(null);
     }
@@ -786,7 +787,7 @@ export default function MontarTreino() {
       if (!nome) setNome(`Treino de ${alunoEscolhido?.name || 'aluno'}`);
       toast.sucesso('Plano gerado. Agora é só ajustar o que você mudaria.');
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui gerar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui gerar.'));
     } finally {
       setGerando(false);
     }
@@ -848,7 +849,7 @@ export default function MontarTreino() {
       // Conferir o que chegou do outro lado e parte da entrega, nao um extra.
       setSalvo(true);
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui salvar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui salvar.'));
     } finally {
       setSalvando(false);
     }

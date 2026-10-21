@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Dumbbell, Loader2, MailCheck } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Field } from '@/components/ui/Field';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -33,7 +34,7 @@ export default function Register() {
     });
 
     if (error) {
-      setError(error.message);
+      setError(traduzirErro(error));
       setLoading(false);
     } else if (data?.session) {
       window.location.href = `/onboarding${trainerId ? `?trainer=${trainerId}` : ''}`;

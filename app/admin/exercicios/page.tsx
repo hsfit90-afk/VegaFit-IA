@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Loader2, Search, Heart, Ban, Minus, ImageOff } from 'lucide-react';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
+import { traduzirErro } from '@/utils/mensagensDeErro';
 
 /**
  * Exercícios fixos e proibidos por aluno, na mão do profissional.
@@ -83,7 +84,7 @@ export default function ExerciciosPorAluno() {
         setFavoritos(d.favoritos ?? []);
         setBanidos(d.banidos ?? []);
       } catch (e) {
-        toast.erro(e instanceof Error ? e.message : 'Não consegui carregar.');
+        toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui carregar.'));
         setFavoritos([]); setBanidos([]);
       } finally {
         setCarregandoAluno(false);
@@ -117,7 +118,7 @@ export default function ExerciciosPorAluno() {
         : `${ex.name}: sem marca.`
       );
     } catch (e) {
-      toast.erro(e instanceof Error ? e.message : 'Não consegui alterar.');
+      toast.erro(traduzirErro(e, e instanceof Error ? e.message : 'Não consegui alterar.'));
     } finally {
       setSalvando(null);
     }
