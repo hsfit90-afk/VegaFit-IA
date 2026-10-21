@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
 import { CardPersonalizado } from '@/components/CardPersonalizado';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
+import { createClient } from '@/utils/supabase/client';
 
 export default function Dashboard() {
   // setActivePlan NÃO entra aqui: o dashboard mostra só o plano ativo, sem seletor. Estava
@@ -195,6 +196,63 @@ export default function Dashboard() {
 
 
 
+  /** Data por extenso no cabeçalho: dá contexto sem gastar uma faixa da tela. */
+  const hoje = () =>
+    new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  /**
+   * A meta da semana, para a barra de progresso.
+   *
+   * Sai do número de dias do plano, que é o que o próprio treino prescreve. Não inventa uma
+   * meta nem pergunta de novo o que a anamnese já respondeu.
+   */
+  const metaSemanal = activePlan?.sessions.length ?? 0;
+
+  /**
+   * O GIF do primeiro exercício do treino de hoje, para o cartão principal.
+   *
+   * UMA consulta, de UMA linha, só do exercício que vai aparecer. O catálogo inteiro são 882
+   * itens e esta é a tela que mais abre no app — buscar tudo para mostrar um seria pagar
+   * caro por nada.
+   *
+   * Falhar aqui não quebra nada: sem mídia, o cartão fica só com o gradiente.
+   */
+  const [midiaDoPrimeiro, setMidiaDoPrimeiro] = useState<string | null>(null);
+  const idDoPrimeiro = suggestedSession?.exercises?.[0]?.exerciseId;
+
+  useEffect(() => {
+    if (!idDoPrimeiro) { setMidiaDoPrimeiro(null); return; }
+    let cancelado = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('exercises')
+          .select('media_url')
+          .eq('id', idDoPrimeiro)
+          .maybeSingle();
+        if (!cancelado) setMidiaDoPrimeiro(data?.media_url ?? null);
+      } catch {
+        if (!cancelado) setMidiaDoPrimeiro(null);
+      }
+    })();
+    return () => { cancelado = true; };
+  }, [idDoPrimeiro]);
+
+  /** Apagar o plano, com a mesma confirmação e as mesmas perdas listadas de antes. */
+  const apagarPlano = async (plano: WorkoutPlan) => {
+    const ok = await confirmar({
+      titulo: 'Excluir este plano?',
+      mensagem: `O plano "${plano.name}" será apagado da sua conta.`,
+      perdas: [
+        `As ${plano.sessions.length} sessões montadas neste plano`,
+        'A periodização em andamento (semana e ciclo atuais)',
+      ],
+      textoConfirmar: 'Excluir plano',
+    });
+    if (ok) deleteWorkoutPlan(plano.id);
+  };
+
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -206,396 +264,374 @@ export default function Dashboard() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto min-h-screen ${RODAPE_SEGURO}`}
       variants={containerVariants}
       initial="hidden"
       animate="show"
     >
-      {/* Saudacao em uma linha: o titulo grande mais subtitulo gastavam uma faixa
-          inteira da tela para dizer "bom dia", empurrando o treino para baixo da dobra. */}
-      <motion.header variants={itemVariants} className="mb-5 mt-1">
-        <h1 className="text-2xl md:text-3xl font-outfit font-bold tracking-tight">
-          {greeting()}, <span className="text-primary">{profile?.name || 'Atleta'}</span>
-        </h1>
+      {/* CABEÇALHO EM UMA LINHA.
+          Data à esquerda, constância à direita. A saudação não ganha faixa própria: ela não é
+          motivo de ninguém abrir o app, e cada linha gasta aqui empurra o treino para baixo
+          da dobra no celular. */}
+      <motion.header variants={itemVariants} className="flex items-end justify-between gap-4 mb-6 mt-1">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted mb-1">
+            {hoje()}
+          </p>
+          <h1 className="text-2xl md:text-3xl font-outfit font-bold tracking-tight truncate">
+            {greeting()}, <span className="text-primary">{profile?.name || 'Atleta'}</span>
+          </h1>
+        </div>
+
+        {streak > 0 && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-surface border border-border shrink-0">
+            <Flame className="w-4 h-4 text-orange-400" />
+            <span className="text-sm font-bold tabular-nums">{streak}</span>
+            <span className="text-xs text-foreground-muted">{streak === 1 ? 'dia' : 'dias'}</span>
+          </div>
+        )}
       </motion.header>
 
+      {/* O TREINO DE HOJE, EM TELA CHEIA.
+          O dashboard antigo dividia a atenção entre quinze cards de mesmo peso. Aqui existe
+          um protagonista: o aluno abre o app para saber o que treinar hoje, e é isso que
+          ocupa a primeira dobra.
 
+          O GIF do primeiro exercício entra como fundo. São 882 exercícios com vídeo no
+          catálogo — o ativo mais forte do produto — e nenhum aparecia na tela inicial. */}
+      <motion.section variants={itemVariants} className="mb-5">
+        {activePlan ? (
+          <div className="relative overflow-hidden rounded-xl border border-primary/25 bg-gradient-to-b from-surface to-background-deep">
+            {/* Brilho de marca, só aqui. Usado em tudo vira ruído; usado uma vez vira foco. */}
+            <div className="pointer-events-none absolute -top-24 -right-16 w-72 h-72 rounded-full bg-primary/15 blur-[90px]" />
 
-
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-8">
-        
-        {/* CTA Treino de Hoje */}
-        <motion.div variants={itemVariants} className="space-y-6">
-          
-          {/* Box de Treino */}
-          <div className="bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 rounded-xl p-5 relative overflow-hidden shadow-[0_0_40px_rgb(var(--color-primary-rgb)/0.1)]">
-            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
-            
-            <div className="relative z-10 mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgb(var(--color-primary-rgb)/1)]" />
-                <h4 className="text-lg font-bold text-white m-0">Plano Ativo</h4>
+            {midiaDoPrimeiro && (
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-[0.18] md:opacity-25">
+                {midiaDoPrimeiro.endsWith('.mp4') ? (
+                  <video
+                    src={midiaDoPrimeiro}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <img src={midiaDoPrimeiro} alt="" className="w-full h-full object-cover" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-background-deep via-background-deep/70 to-transparent" />
               </div>
-              
-              {activePlan ? (
-                <>
-                  <p className="text-xl font-bold text-primary mb-1">{activePlan.name}</p>
-                  
-                  {wasRedirectedDueToFatigue && (
-                    <div className="flex items-start gap-2 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 mb-3">
-                      <span className="text-lg">⚠️</span>
-                      <div>
-                        <p className="text-orange-400 font-bold text-xs uppercase tracking-wider">Fadiga Detectada</p>
-                        <p className="text-orange-300/80 text-xs mt-0.5">
-                          {originalSession?.name} usa músculos em recuperação. Sugerindo sessão alternativa!
-                        </p>
-                      </div>
-                    </div>
-                  )}
+            )}
 
-                  <div className="mb-4">
-                    <p className="text-xs text-foreground-muted mb-1 uppercase tracking-wider font-semibold">
-                      {wasRedirectedDueToFatigue ? '💪 Treino Alternativo' : 'Próximo Treino'}
-                    </p>
-                    <p className="text-lg font-bold text-white mb-3">
-                      {suggestedSession?.name}
-                    </p>
-                    <div className="flex gap-3">
-                      <div className="flex items-center gap-1.5 text-xs text-foreground-muted bg-surface/60 px-3 py-1.5 rounded-lg border border-white/5">
-                        <span className="text-primary">⚡</span> {suggestedSession?.exercises?.length || 0} exercícios
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-foreground-muted bg-surface/60 px-3 py-1.5 rounded-lg border border-white/5">
-                        <span className="text-primary">⏱️</span> ~{minutosDaSessao(suggestedSession)} min
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-foreground/70 mb-5 mt-2">Você ainda não tem um treino programado para hoje.</p>
+            <div className="relative z-10 p-5 md:p-8">
+              {wasRedirectedDueToFatigue && (
+                <div className="flex items-start gap-2 mb-4 text-orange-300/90">
+                  <Flame className="w-4 h-4 shrink-0 mt-0.5 text-orange-400" />
+                  <p className="text-xs leading-relaxed">
+                    <span className="font-bold text-orange-400">Treino trocado.</span>{' '}
+                    {originalSession?.name} usa músculo que ainda está se recuperando.
+                  </p>
+                </div>
               )}
-            </div>
 
-            <div className="relative z-10">
-              {activePlan ? (
-                <div className="flex flex-col gap-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-primary font-semibold mb-2">
+                {wasRedirectedDueToFatigue ? 'Sugestão de hoje' : 'Seu treino de hoje'}
+              </p>
+
+              <h2 className="text-3xl md:text-5xl font-outfit font-bold leading-[1.05] tracking-tight mb-4 max-w-[18ch]">
+                {suggestedSession?.name}
+              </h2>
+
+              {/* Os dois números que decidem se a pessoa treina agora: quanto tem para fazer e
+                  quanto tempo leva. Grandes, tabulares, sem moldura em volta. */}
+              <div className="flex items-end gap-8 mb-7">
+                <div>
+                  <p className="text-2xl md:text-3xl font-bold tabular-nums leading-none">
+                    {suggestedSession?.exercises?.length || 0}
+                  </p>
+                  <p className="text-[11px] uppercase tracking-wider text-foreground-muted mt-1.5">
+                    exercícios
+                  </p>
+                </div>
+                <div>
+                  <p className="text-2xl md:text-3xl font-bold tabular-nums leading-none">
+                    {minutosDaSessao(suggestedSession)}
+                    <span className="text-base font-medium text-foreground-muted ml-1">min</span>
+                  </p>
+                  <p className="text-[11px] uppercase tracking-wider text-foreground-muted mt-1.5">
+                    estimados
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  size="lg"
+                  onClick={() => router.push(`/active?sessionIndex=${displaySessionIndex}`)}
+                  className="group shadow-[0_8px_30px_rgb(var(--color-primary-rgb)/0.25)]"
+                >
+                  <PlayCircle className="w-5 h-5 mr-2" />
+                  COMEÇAR TREINO
+                  <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                </Button>
+
+                {activePlan.sessions.length > 1 && (
                   <button
-                    onClick={() => router.push(`/active?sessionIndex=${displaySessionIndex}`)}
-                    className="block w-full"
+                    onClick={cycleNextSession}
+                    className="text-sm text-foreground-muted hover:text-primary transition-colors underline-offset-4 hover:underline"
                   >
-                    <Button size="lg" className="w-full text-sm md:text-base shadow-[0_4px_20px_rgb(var(--color-primary-rgb)/0.3)] group">
-                      INICIAR TREINO
-                      <ChevronRight className="w-4 h-4 md:w-5 md:h-5 ml-1 md:ml-2 group-hover:translate-x-1 transition-transform" />
-                    </Button>
+                    Ver outro treino
                   </button>
-                  {activePlan.sessions.length > 1 && (
-                    <button
-                      onClick={cycleNextSession}
-                      className="block w-full"
-                      title="Ver outro treino"
-                    >
-                      <Button size="sm" variant="outline" className="w-full text-xs md:text-sm border-white/20 text-gray-400 hover:border-primary/40 hover:text-primary h-auto py-2">
-                        <span className="truncate">Ver Próximo Treino</span>
-                        <ChevronRight className="w-3 h-3 md:w-4 md:h-4 ml-1 flex-shrink-0" />
-                      </Button>
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  <Link href="/generator" className="block">
-                    <Button size="lg" fullWidth className="group text-base shadow-[0_4px_20px_rgb(var(--color-primary-rgb)/0.3)]">
-                      GERAR TREINO COM IA
-                      <Zap className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
-                    </Button>
-                  </Link>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-border p-8 text-center">
+            <Zap className="w-10 h-10 text-primary/40 mx-auto mb-4" />
+            <h2 className="text-xl font-outfit font-bold mb-2">Você ainda não tem um treino</h2>
+            <p className="text-sm text-foreground-muted mb-5 max-w-sm mx-auto">
+              A IA monta um plano a partir da sua anamnese: seu objetivo, seu nível e o que
+              você tem disponível para treinar.
+            </p>
+            <Link href="/generator">
+              <Button size="lg">
+                GERAR MEU TREINO
+                <Zap className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        )}
+      </motion.section>
 
-          {/* Aeróbico — avulso de propósito: fica FORA do rodízio A/B/C, como um card separado,
-              para o aluno fazer em dia livre ou depois do treino. Ver database/28_cardio_session.sql. */}
-          {activePlan?.cardioSession && (
-            <button
-              onClick={() => router.push('/cardio')}
-              className="block w-full text-left mt-4"
-            >
-              <Card variant="neon-hover" className="p-5 flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                  <Timer className="w-5 h-5 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-primary uppercase tracking-wider font-semibold">
-                    Depois do treino
-                  </p>
-                  <p className="font-bold text-white truncate">{activePlan.cardioSession.name}</p>
-                  <p className="text-xs text-foreground-muted truncate">
-                    {activePlan.cardioSession.durationMinutes} min ·{' '}
-                    {activePlan.cardioSession.options?.slice(0, 2).join(', ') || 'escolha o aparelho'}
-                  </p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-foreground-muted shrink-0" />
-              </Card>
-            </button>
-          )}
+      {/* OS COMPLEMENTOS, EM UMA LINHA.
+          Eram quatro cards empilhados, cada um com moldura, ícone e três linhas de texto —
+          mais espaço que o treino em si. Viraram uma faixa rolável: o nome basta, porque quem
+          procura mobilidade já sabe o que é mobilidade. */}
+      <motion.nav variants={itemVariants} className="flex gap-2 overflow-x-auto barra-fina pb-2 mb-8 -mx-1 px-1">
+        {activePlan?.cardioSession && (
+          <AtalhoDaSessao
+            href="/cardio"
+            icone={<Timer className="w-4 h-4" />}
+            quando="Depois"
+            nome={activePlan.cardioSession.name}
+          />
+        )}
+        <AtalhoDaSessao href="/mobilidade" icone={<Waves className="w-4 h-4" />} quando="Antes" nome="Mobilidade" />
+        <AtalhoDaSessao href="/abdominal" icone={<Flame className="w-4 h-4" />} quando="No fim" nome="Abdominal" />
+        <AtalhoDaSessao href="/alongamento" icone={<StretchHorizontal className="w-4 h-4" />} quando="Quando quiser" nome="Alongamento" />
+      </motion.nav>
 
-          {/* As outras avulsas, no mesmo padrão do aeróbico. Não dependem de plano ativo —
-              dá para alongar num dia de descanso, que é justamente o ponto delas.
+      {/* A SEMANA, EM NÚMEROS GRANDES.
+          Eram quatro cards de métrica com ícone colorido, moldura e valor em 20px. O ícone
+          não informava nada que o rótulo já não dissesse, e a moldura competia com o treino.
+          Agora o número é o elemento, e a barra mostra a semana sem precisar de outro card. */}
+      <motion.section variants={itemVariants} className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted font-semibold">
+            Esta semana
+          </h3>
+          <Link href="/progress" className="text-xs text-foreground-muted hover:text-primary transition-colors">
+            ver progresso
+          </Link>
+        </div>
 
-              Abdominal saiu da sessão de força (ver route.ts): aparecia 1 vez em 18
-              exercícios, sempre por acaso. Aqui é uma sessão de verdade. */}
-          {/* O rótulo de cima diz QUANDO, não "sessão avulsa".
-              Todas eram "Sessão avulsa", o que respondia o que a coisa é e não o que o aluno
-              precisa saber na hora de escolher. A prescrição tem uma ordem — mobilidade e
-              alongamento antes, aeróbico e abdominal depois — e o card é onde ela aparece. */}
-          {[
-            { href: '/mobilidade',  icone: Waves,             quando: 'Antes do treino',        titulo: 'Mobilidade',  sub: 'Prepara as articulações do dia' },
-            { href: '/alongamento', icone: StretchHorizontal, quando: 'Quando quiser',    titulo: 'Alongamento', sub: 'Escolha a região que está travada' },
-            { href: '/abdominal',   icone: Flame,             quando: 'Depois do treino',        titulo: 'Abdominal',   sub: '3 exercícios de core' },
-          ].map(({ href, icone: Icone, quando, titulo, sub }) => (
-            <button key={href} onClick={() => router.push(href)} className="block w-full text-left mt-3">
-              <Card variant="neon-hover" className="p-5 flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center justify-center shrink-0">
-                  <Icone className="w-5 h-5 text-secondary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-secondary uppercase tracking-wider font-semibold">
-                    {quando}
-                  </p>
-                  <p className="font-bold text-white truncate">{titulo}</p>
-                  <p className="text-xs text-foreground-muted truncate">{sub}</p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-foreground-muted shrink-0" />
-              </Card>
-            </button>
-          ))}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-6">
+          <Numero valor={currentWeekWorkouts.length.toString()} rotulo="treinos" />
+          <Numero valor={totalVolume.toLocaleString('pt-BR')} unidade="kg" rotulo="levantados" />
+          <Numero valor={streak.toString()} rotulo={streak === 1 ? 'dia seguido' : 'dias seguidos'} />
+          <Numero valor={history.length.toString()} rotulo="no total" />
+        </div>
 
-          {/* Box de Conquistas (Gamification) */}
-        </motion.div>
-        
-        {/* Conquistas (Gamification) */}
-        <motion.div variants={itemVariants} className="space-y-6">
-          <Card className="h-full">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Star className="w-4 h-4 text-yellow-400" /> Suas Conquistas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {achievements.length > 0 ? (
-                <div className="space-y-3">
-                  {achievements.map((ach, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-border">
-                      <div className="bg-background rounded-lg p-3 shrink-0 border border-border">{ach.icon}</div>
-                      <div>
-                        <p className="font-bold text-sm text-white">{ach.title}</p>
-                        <p className="text-[11px] text-foreground-muted">{ach.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-sm text-foreground-muted py-6">
-                  Treine para desbloquear conquistas!
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Métricas Principais */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-8">
-        <DashboardCard 
-          title="Treinos (Semana)" 
-          value={currentWeekWorkouts.length.toString()} 
-          icon={Calendar} 
-          color="text-blue-400" 
-          bg="bg-blue-400/10"
-        />
-        <DashboardCard 
-          title="Volume Semanal" 
-          value={`${totalVolume.toLocaleString()}kg`} 
-          icon={Dumbbell} 
-          color="text-primary" 
-          bg="bg-primary/10"
-        />
-        <DashboardCard 
-          title="Streak Atual" 
-          value={`${streak} ${streak === 1 ? 'dia' : 'dias'}`} 
-          icon={Flame} 
-          color="text-orange-400" 
-          bg="bg-orange-400/10"
-        />
-        <DashboardCard 
-          title="Total Treinos" 
-          value={history.length.toString()} 
-          icon={Trophy} 
-          color="text-secondary" 
-          bg="bg-secondary/10"
-        />
-      </motion.div>
+        {/* A barra existe porque "2 treinos" sozinho não diz se é pouco ou muito. Contra a
+            meta, diz. */}
+        {metaSemanal > 0 && (
+          <div className="mt-6">
+            <div className="flex justify-between text-[11px] text-foreground-muted mb-2">
+              <span>{currentWeekWorkouts.length} de {metaSemanal} na semana</span>
+              <span className="tabular-nums">
+                {Math.min(100, Math.round((currentWeekWorkouts.length / metaSemanal) * 100))}%
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-surface overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-secondary to-primary transition-all duration-700"
+                style={{ width: `${Math.min(100, (currentWeekWorkouts.length / metaSemanal) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </motion.section>
 
       {/* Avisa quantos dias faltam do teste. Não aparece para cortesia nem para assinatura
-          em dia — ver o comentário do componente sobre por que o aviso precisa vir ANTES
-          do bloqueio. */}
+          ativa — `empty:hidden` tira o espaço quando o componente não renderiza nada. */}
       <motion.div variants={itemVariants} className="mb-6 empty:hidden">
         <AvisoDeAssinatura somenteUrgente />
       </motion.div>
 
-      {/* Dica do Dia */}
-      <motion.div variants={itemVariants} className="mb-8">
-        <Card variant="glass" className="bg-primary/5 border-primary/20">
-          <CardContent className="p-5 md:p-5 flex items-start gap-4">
-            <div className="bg-primary/20 p-3 rounded-xl flex-shrink-0">
-              <Lightbulb className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h4 className="text-primary font-semibold text-sm mb-1 uppercase tracking-wider">Dica do Dia</h4>
-              <p className="text-foreground/90 text-sm md:text-base leading-relaxed">{dailyTip}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
       {/* No celular a barra inferior nao tem esta tela; sem o card o produto de maior
-          margem ficaria invisivel para a maior parte do publico. */}
-      <motion.div variants={itemVariants} className="mb-6 empty:hidden">
+          valor ficaria sem porta de entrada. */}
+      <motion.div variants={itemVariants} className="mb-8 empty:hidden">
         <CardPersonalizado />
       </motion.div>
 
-      {/* Meus Planos de Treino */}
-      <motion.div variants={itemVariants} className="mb-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 px-1 gap-3">
-          <h4 className="text-lg font-bold flex items-center gap-2">
-            <LayoutList className="w-5 h-5 text-primary" /> Meus Planos de Treino
-          </h4>
-          <div className="flex gap-2">
-            <Link href="/generator">
-              <Button size="sm" className="text-xs shadow-[0_2px_10px_rgb(var(--color-primary-rgb)/0.2)]">
-                <Zap className="w-3.5 h-3.5 mr-1.5" /> Gerar com IA
-              </Button>
-            </Link>
-          </div>
-        </div>
-        
-        {workoutPlans.length > 0 ? (
-          <div className="w-full">
-            {(() => {
-              // Puxar o plano ativo, se não achar puxar o primeiro (mais recente)
-              const activePlan = workoutPlans.find(p => p.id === activePlanId) || workoutPlans[0];
-              return (
-              <Card key={activePlan.id} className="border-primary shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.15)] bg-surface-light relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-                
-                <CardContent className="p-5 md:p-8 relative z-10">
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <span className="bg-primary/20 text-primary text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full inline-block mb-3">
-                        🏋️ TREINO ATUAL
-                      </span>
-                      <h4 className="font-outfit font-extrabold text-3xl text-white mb-1">{activePlan.name}</h4>
-                      <p className="text-sm text-gray-400 font-medium">{activePlan.split} • {activePlan.sessions.length} sessões</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col md:flex-row items-center gap-3 mt-6">
-                    <button 
-                      onClick={async () => {
-                        const ok = await confirmar({
-                          titulo: 'Excluir este plano?',
-                          mensagem: `O plano "${activePlan.name}" será apagado da sua conta.`,
-                          perdas: [
-                            `As ${activePlan.sessions.length} sessões montadas neste plano`,
-                            'A periodização em andamento (semana e ciclo atuais)',
-                          ],
-                          textoConfirmar: 'Excluir plano',
-                        });
-                        if (ok) deleteWorkoutPlan(activePlan.id);
-                      }}
-                      className="w-full md:w-auto h-12 px-6 rounded-xl bg-surface border border-white/5 text-gray-400 hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 flex items-center justify-center gap-2 transition-all font-semibold"
-                    >
-                      <Trash2 className="w-4 h-4" /> Excluir Plano Atual
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-              );
-            })()}
-          </div>
-        ) : (
-          <EmptyState
-            icone={<LayoutList className="w-10 h-10" />}
-            titulo="Nenhum plano salvo"
-            descricao="Gere seu primeiro treino com IA."
-            acao={<Link href="/generator"><Button size="sm">Gerar com IA</Button></Link>}
-          />
-        )}
-      </motion.div>
-
-      {/* Recuperação Muscular */}
-      <motion.div variants={itemVariants} className="mt-8">
-        <h4 className="text-lg font-bold mb-4 px-1">Recuperação Muscular</h4>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      {/* RECUPERAÇÃO MUSCULAR, em faixa.
+          Eram seis cards quadrados numa grade. A informação é um estado por músculo — um
+          ponto colorido e um nome bastam, e numa linha dá para ler os seis de uma vez. */}
+      <motion.section variants={itemVariants} className="mb-8">
+        <h3 className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted font-semibold mb-4">
+          Recuperação muscular
+        </h3>
+        <div className="flex gap-2 overflow-x-auto barra-fina pb-2 -mx-1 px-1">
           {['Peito', 'Costas', 'Ombro', 'Bíceps', 'Tríceps', 'Pernas (quadríceps)'].map((muscle) => {
-            const latestWorkout = [...history].sort((a,b) => b.date - a.date).find(h => 
+            const latestWorkout = [...history].sort((a, b) => b.date - a.date).find(h =>
               h.exercises.some(ex => ex.muscleGroup === muscle)
             );
+
             let statusColor = 'bg-success';
-            let glowColor = 'shadow-success/40';
             let label = 'Recuperado';
-            
+
             if (latestWorkout) {
               const diffHours = (now - latestWorkout.date) / (1000 * 60 * 60);
               if (diffHours < 24) {
                 statusColor = 'bg-destructive';
-                glowColor = 'shadow-destructive/40';
-                label = 'Em Fadiga';
+                label = 'Em fadiga';
               } else if (diffHours < 48) {
                 statusColor = 'bg-warning';
-                glowColor = 'shadow-warning/40';
                 label = 'Recuperando';
               }
             }
 
-            const displayMuscle = muscle.replace(' (quadríceps)', '');
-
             return (
-              <Card key={muscle} variant="neon-hover" className="bg-surface/50 cursor-pointer">
-                <CardContent className="p-5 flex flex-col items-center justify-center text-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-surface-light flex items-center justify-center">
-                    <div className={`w-3.5 h-3.5 rounded-full ${statusColor} shadow-[0_0_12px] ${glowColor}`}></div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground/90">{displayMuscle}</p>
-                    <p className="text-[11px] text-foreground-muted font-medium mt-0.5 uppercase tracking-wider">{label}</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <div
+                key={muscle}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-full bg-surface border border-border shrink-0"
+              >
+                <span className={`w-2 h-2 rounded-full ${statusColor}`} aria-hidden="true" />
+                <span className="text-sm whitespace-nowrap">
+                  {muscle === 'Pernas (quadríceps)' ? 'Pernas' : muscle}
+                </span>
+                <span className="text-[11px] text-foreground-muted whitespace-nowrap">{label}</span>
+              </div>
             );
           })}
         </div>
-      </motion.div>
+      </motion.section>
+
+      {/* CONQUISTAS E DICA, abaixo da dobra.
+          Estavam no topo, dividindo a primeira tela com o treino. Nenhum dos dois é motivo
+          de alguém abrir o app — são recompensa e leitura, e ficam onde se lê depois. */}
+      <motion.section variants={itemVariants} className="grid md:grid-cols-2 gap-5 mb-8">
+        <div>
+          <h3 className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted font-semibold mb-4">
+            Suas conquistas
+          </h3>
+          {achievements.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {achievements.map((ach, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-border">
+                  <span className="shrink-0">{ach.icon}</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">{ach.title}</p>
+                    <p className="text-xs text-foreground-muted truncate">{ach.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-foreground-muted">
+              Conclua o primeiro treino para desbloquear.
+            </p>
+          )}
+        </div>
+
+        <div>
+          <h3 className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted font-semibold mb-4">
+            Dica do dia
+          </h3>
+          <div className="flex items-start gap-3 p-5 rounded-xl bg-primary/5 border border-primary/15">
+            <Lightbulb className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            <p className="text-sm leading-relaxed text-foreground/90">{dailyTip}</p>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* O PLANO NA CONTA.
+          Um só, de propósito: o aluno enxerga o ativo e nada mais. Quem troca é o
+          profissional, pelo /admin/preview. */}
+      {activePlan && (
+        <motion.section variants={itemVariants}>
+          <h3 className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted font-semibold mb-4">
+            Seu plano
+          </h3>
+          <div className="flex flex-wrap items-center gap-4 p-5 rounded-xl bg-surface border border-border">
+            <div className="min-w-0 flex-1">
+              <p className="font-outfit font-bold truncate">{activePlan.name}</p>
+              <p className="text-xs text-foreground-muted mt-0.5">
+                {activePlan.split || `${activePlan.sessions.length} dias`} ·{' '}
+                {activePlan.sessions.length} {activePlan.sessions.length === 1 ? 'treino' : 'treinos'}
+              </p>
+            </div>
+            <button
+              onClick={() => apagarPlano(activePlan)}
+              className="p-3 rounded-lg text-foreground-muted hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+              aria-label={`Apagar ${activePlan.name}`}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </motion.section>
+      )}
     </motion.div>
   );
 }
 
-function DashboardCard({ title, value, icon: Icon, color, bg }: { title: string, value: string, icon: any, color: string, bg: string }) {
+/** Um complemento do treino, na faixa de atalhos. */
+function AtalhoDaSessao({
+  href,
+  icone,
+  quando,
+  nome,
+}: {
+  href: string;
+  icone: React.ReactNode;
+  quando: string;
+  nome: string;
+}) {
   return (
-    <Card variant="neon-hover" className="group cursor-pointer">
-      <CardContent className="p-5 md:p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className={`p-3 rounded-xl ${bg}`}>
-            <Icon className={`w-4 h-4 md:w-5 md:h-5 ${color}`} />
-          </div>
-        </div>
-        <div>
-          <p className="text-[11px] font-semibold text-foreground-muted uppercase tracking-wider mb-1">{title}</p>
-          <h3 className="text-xl md:text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{value}</h3>
-        </div>
-      </CardContent>
-    </Card>
+    <Link
+      href={href}
+      className="group flex items-center gap-3 px-4 py-3 rounded-xl bg-surface border border-border hover:border-primary/40 transition-colors shrink-0"
+    >
+      <span className="text-primary">{icone}</span>
+      <span className="min-w-0">
+        <span className="block text-[10px] uppercase tracking-wider text-foreground-muted leading-none mb-1">
+          {quando}
+        </span>
+        <span className="block text-sm font-medium whitespace-nowrap group-hover:text-primary transition-colors">
+          {nome}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+/**
+ * Um número da semana.
+ *
+ * Sem ícone e sem moldura, de propósito: o ícone colorido que havia antes não dizia nada que
+ * o rótulo já não dissesse, e seis molduras numa faixa cancelam uma à outra. O que informa é
+ * o número, então é ele que fica grande.
+ */
+function Numero({ valor, unidade, rotulo }: { valor: string; unidade?: string; rotulo: string }) {
+  return (
+    <div>
+      <p className="text-2xl md:text-3xl font-outfit font-bold tabular-nums leading-none">
+        {valor}
+        {unidade && <span className="text-base font-medium text-foreground-muted ml-1">{unidade}</span>}
+      </p>
+      <p className="text-[11px] uppercase tracking-wider text-foreground-muted mt-1.5">{rotulo}</p>
+    </div>
   );
 }
