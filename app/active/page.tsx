@@ -5,7 +5,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { AtivarLembretes } from '@/components/AtivarLembretes';
 import { computePeriodization } from '@/lib/periodization';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart } from 'lucide-react';
+import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart, CalendarDays, Lock, Pause } from 'lucide-react';
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -975,13 +975,15 @@ export default function ActiveWorkout() {
                     const { pairIndex } = getGroupInfo(exIndex);
                     return pairIndex !== null ? (
                       <p className="text-xs font-bold text-accent flex items-center gap-1.5 mb-2 uppercase tracking-wide">
-                        ⚡ Superset com {activeExercises[pairIndex]?.name} — sem descanso entre os dois
+                        <Zap className="w-3.5 h-3.5 shrink-0" />
+                        Superset com {activeExercises[pairIndex]?.name} — sem descanso entre os dois
                       </p>
                     ) : null;
                   })()}
                   {trainingMethod === 'circuito' && (
                     <p className="text-xs font-bold text-accent flex items-center gap-1.5 mb-2 uppercase tracking-wide">
-                      🔄 Circuito — etapa {exIndex + 1} de {activeExercises.length} (descanso só no fim da volta)
+                      <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+                      Circuito — etapa {exIndex + 1} de {activeExercises.length} (descanso só no fim da volta)
                     </p>
                   )}
                   <p className="text-sm text-primary flex items-center gap-2 mb-2">
@@ -1014,7 +1016,7 @@ export default function ActiveWorkout() {
                       return (
                         <div className="bg-[var(--color-background-deep)] border border-blue-500/30 p-3 rounded-xl mt-2">
                           <p className="text-[11px] text-blue-400 font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                            <span>📅</span> Periodização (4 Semanas)
+                            <CalendarDays className="w-3.5 h-3.5 shrink-0" /> Periodização (4 Semanas)
                           </p>
                           <p className="text-sm text-gray-300 leading-relaxed">{methodText}</p>
                         </div>
@@ -1028,7 +1030,7 @@ export default function ActiveWorkout() {
                       <div className="mt-2 p-3 bg-white/[0.03] border border-white/8 rounded-xl">
                         {/* Barra de progresso fina */}
                         <div className="flex items-center gap-1.5 mb-2.5">
-                          <span className="text-[10px] text-gray-500 font-semibold shrink-0">📅 S{currentWeek}/4</span>
+                          <span className="text-[10px] text-gray-500 font-semibold shrink-0 tabular-nums">S{currentWeek}/4</span>
                           <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-blue-500 rounded-full transition-all"
@@ -1048,7 +1050,8 @@ export default function ActiveWorkout() {
                         {/* Teaser das próximas semanas */}
                         {futureCount > 0 && (
                           <p className="text-[10px] text-gray-600 mt-1.5 flex items-center gap-1">
-                            🔒 <span>{futureCount} {futureCount === 1 ? 'semana bloqueada' : 'semanas bloqueadas'} — continue treinando para desbloquear</span>
+                            <Lock className="w-3 h-3 shrink-0" />
+                            <span>{futureCount} {futureCount === 1 ? 'semana bloqueada' : 'semanas bloqueadas'} — continue treinando para desbloquear</span>
                           </p>
                         )}
                       </div>
@@ -1156,7 +1159,7 @@ export default function ActiveWorkout() {
                         value={set.weight || ''}
                         onChange={e => handleSetUpdate(exIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)}
                         placeholder="0"
-                        className={`w-full bg-transparent py-2 md:py-3 text-center font-mono text-lg md:text-xl outline-none transition-all ${
+                        className={`w-full bg-transparent py-2.5 md:py-3 text-center font-mono text-xl md:text-2xl font-bold outline-none transition-all ${
                           set.completed ? 'text-primary font-bold' : 'text-white placeholder:text-white/20'
                         }`}
                         disabled={set.completed}
@@ -1173,7 +1176,7 @@ export default function ActiveWorkout() {
                         value={set.reps || ''}
                         onChange={e => handleSetUpdate(exIndex, setIndex, 'reps', parseInt(e.target.value) || 0)}
                         placeholder="0"
-                        className={`w-full bg-transparent py-2 md:py-3 text-center font-mono text-lg md:text-xl outline-none transition-all ${
+                        className={`w-full bg-transparent py-2.5 md:py-3 text-center font-mono text-xl md:text-2xl font-bold outline-none transition-all ${
                           set.completed ? 'text-primary font-bold' : 'text-white placeholder:text-white/20'
                         }`}
                         disabled={set.completed}
@@ -1192,7 +1195,11 @@ export default function ActiveWorkout() {
                         placeholder="RIR"
                         min="0"
                         max="5"
-                        className={`w-full bg-transparent py-2 md:py-3 text-center font-mono text-lg md:text-xl outline-none transition-all ${
+                        /* text-lg, MENOR que carga e repetição, de propósito: carga e repetição
+                           são registradas em toda série, o RIR é opcional e muita gente deixa
+                           em branco. Com os três do mesmo tamanho, o campo que menos importa
+                           disputava atenção com os dois que mais importam. */
+                        className={`w-full bg-transparent py-2.5 md:py-3 text-center font-mono text-lg outline-none transition-all ${
                           set.completed ? (set.rir !== undefined && set.rir <= 3 ? 'text-blue-400 font-bold' : 'text-gray-400') : 'text-white placeholder:text-white/20'
                         }`}
                         disabled={set.completed}
@@ -1205,7 +1212,7 @@ export default function ActiveWorkout() {
                       onClick={() => toggleSetComplete(exIndex, setIndex)}
                       aria-pressed={set.completed}
                       aria-label={`${set.completed ? 'Desmarcar' : 'Marcar'} série ${setIndex + 1} de ${ex.name} como concluída`}
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                         set.completed 
                           ? 'bg-primary text-[var(--color-background-deep)] shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.5)]' 
                           : 'bg-white/5 text-gray-500 hover:bg-primary/20 hover:text-primary hover:scale-110'
@@ -1238,7 +1245,8 @@ export default function ActiveWorkout() {
                         onClick={() => setMiniPause({ exIndex, setIndex, endTime: Date.now() + 15000 })}
                         className="text-[11px] font-semibold text-foreground-muted hover:text-accent border border-white/10 hover:border-accent/40 rounded-lg px-3 py-1 transition-colors"
                       >
-                        ⏸️ Mini-pausa (15s) entre clusters
+                        <Pause className="w-3.5 h-3.5 shrink-0" />
+                        Mini-pausa (15s) entre clusters
                       </button>
                     )}
                   </div>
