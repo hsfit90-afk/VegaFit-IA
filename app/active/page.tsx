@@ -5,7 +5,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { AtivarLembretes } from '@/components/AtivarLembretes';
 import { computePeriodization } from '@/lib/periodization';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Clock, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart, CalendarDays, Lock, Pause } from 'lucide-react';
+import { Check, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart, CalendarDays, Lock, Pause } from 'lucide-react';
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -853,7 +853,12 @@ export default function ActiveWorkout() {
 
   return (
     <div className={`${PADDING_TELA} ${LARGURA_FOCO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
-      <header className="mb-8 sticky top-0 bg-background/80 backdrop-blur-xl z-40 py-4 border-b border-white/[0.08]">
+      {/* A barra de progresso sangra de ponta a ponta, por baixo do cabeçalho.
+          As margens negativas desfazem o padding da tela (p-5 md:p-8) e o padding interno o
+          devolve ao conteúdo — assim a linha toca as duas bordas enquanto o texto continua
+          alinhado com o resto da página. Barra que encosta na borda lê como instrumento;
+          barra com margem lê como enfeite. */}
+      <header className="mb-8 sticky top-0 bg-background-deep/90 backdrop-blur-xl z-40 pt-4 border-b border-white/[0.06] -mx-5 md:-mx-8 px-5 md:px-8">
         {/* FEATURE: Cronômetro ao vivo + nome da sessão */}
         {/* Deixa quebrar em vez de espremer o cronômetro.
             O nome da sessão carrega a musculatura do dia ("Treino C - Glúteos, Posterior e
@@ -861,19 +866,36 @@ export default function ActiveWorkout() {
             largo ainda. Cortar com reticências esconderia justamente a parte informativa, e
             sem `min-w-0` um item flex não encolhe abaixo do próprio conteúdo — o cronômetro é
             que seria amassado. Então: o título ocupa a linha e o cronômetro desce. */}
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-2">
-          <h1 className="text-2xl font-outfit font-bold text-accent min-w-0">{currentSession.name}</h1>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl shrink-0">
-            <Clock className="w-4 h-4 text-primary" />
-            <span className="font-mono text-primary font-bold text-base">{formatTime(elapsedSeconds)}</span>
+        {/* O CRONÔMETRO É O INSTRUMENTO DA TELA, e estava do tamanho de um rótulo.
+            Ele corre o treino inteiro, é consultado entre séries, e era lido num chip de
+            16px ao lado do título. Agora tem corpo de instrumento: 36px, monoespaçado e
+            tabular, para o número não dançar a cada segundo que passa.
+
+            O nome da sessão desceu para 18px porque é CONTEXTO, não dado — quem está na tela
+            já sabe que treino escolheu. */}
+        <div className="flex items-end justify-between gap-4 mb-3">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted mb-1">
+              Em treino
+            </p>
+            <h1 className="text-lg md:text-xl font-outfit font-bold truncate">{currentSession.name}</h1>
+          </div>
+
+          <div className="text-right shrink-0">
+            <p className="font-mono text-3xl md:text-4xl font-bold text-primary leading-none tabular-nums">
+              {formatTime(elapsedSeconds)}
+            </p>
+            <p className="text-[10px] uppercase tracking-wider text-foreground-muted mt-1.5 tabular-nums">
+              {completedSets}/{totalSets} séries · {Math.round(progressPercent)}%
+            </p>
           </div>
         </div>
-        <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-          <div className="bg-primary h-full transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
-        </div>
-        <div className="flex justify-between text-[10px] text-foreground-muted mt-1.5 font-semibold uppercase tracking-wider">
-          <span>{completedSets}/{totalSets} séries</span>
-          <span>{Math.round(progressPercent)}% concluído</span>
+
+        <div className="h-[3px] -mx-5 md:-mx-8 bg-white/[0.06]">
+          <div
+            className="h-full bg-gradient-to-r from-secondary to-primary transition-all duration-500 shadow-[0_0_12px_rgb(var(--color-primary-rgb)/0.5)]"
+            style={{ width: `${progressPercent}%` }}
+          />
         </div>
       </header>
 
@@ -970,6 +992,18 @@ export default function ActiveWorkout() {
                 {/* min-w-0: a partir de sm isto vira linha, e sem ele um nome longo
                     ("Puxada Alta com Triângulo") empurra o que está ao lado em vez de quebrar. */}
                 <div className="min-w-0">
+                  {/* A ORDEM É PRESCRIÇÃO, e a tela não dizia qual era.
+                      Composto antes de isolado não é arrumação: é o protocolo. Rolando a tela
+                      no meio do treino, sem numeração, não dá para saber se falta muito nem em
+                      que ponto da sessão se está. O número é fino e apagado de propósito —
+                      informa a posição sem disputar com o nome do exercício. */}
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted mb-1.5 tabular-nums">
+                    <span className="text-primary font-bold">
+                      {String(exIndex + 1).padStart(2, '0')}
+                    </span>
+                    <span className="mx-1.5 opacity-40">/</span>
+                    {String(activeExercises.length).padStart(2, '0')}
+                  </p>
                   <h2 className="text-2xl font-outfit font-bold text-white mb-2">{ex.name}</h2>
                   {trainingMethod === 'superset' && (() => {
                     const { pairIndex } = getGroupInfo(exIndex);
@@ -1129,12 +1163,23 @@ export default function ActiveWorkout() {
                 <div key={setIndex}>
                 {/* A linha de técnica especial se destaca em roxo: com três linhas iguais o
                     aluno tratava o drop como série normal. */}
+                {/* A SÉRIE DA VEZ GANHA UMA BORDA ACESA À ESQUERDA.
+                    Com todas as linhas iguais, quem volta ao celular depois de uma série
+                    precisa procurar onde parou. A próxima série não concluída é a única que
+                    importa naquele instante, e agora ela se anuncia.
+
+                    É só estilo: `findIndex` aqui não muda nada, só descobre qual linha
+                    desenhar diferente. */}
                 <div className={`grid grid-cols-12 gap-2 items-center p-3 md:p-3 rounded-xl border transition-all duration-300 relative group ${
                   set.completed
-                    ? 'bg-gradient-to-r from-primary/10 to-transparent border-primary/30 shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.15)]'
+                    ? 'bg-gradient-to-r from-primary/10 to-transparent border-primary/30 opacity-75'
                     : ehSerieEspecial(set.label)
                       ? 'bg-accent/[0.07] border-accent/30 hover:bg-accent/[0.11]'
                       : 'bg-surface border-border hover:bg-white/[0.06]'
+                } ${
+                  !set.completed && ex.sets.findIndex(s => !s.completed) === setIndex
+                    ? 'border-l-[3px] border-l-primary shadow-[0_0_24px_rgb(var(--color-primary-rgb)/0.12)]'
+                    : ''
                 }`}>
                   {/* Mostra o RÓTULO da série, não o índice. Antes aparecia "1 2 3" mesmo num
                       drop set: o aluno não tinha como saber que a terceira era o drop, registrava
@@ -1299,13 +1344,20 @@ export default function ActiveWorkout() {
           é livre para todo mundo. */}
       <BlocoAlongamento itens={currentSession?.alongamento} biblioteca={libraryExercises} />
 
+      {/* O BOTÃO DIZ O QUE FALTA.
+          "Finalizar Treino" sozinho não informa se a pessoa está no fim ou largando no meio —
+          e largar no meio acontece. Com a contagem ao lado, encerrar vira decisão informada:
+          dá para ver que faltam três séries antes de tocar. */}
       <Button
         onClick={finishWorkout}
         fullWidth
         size="lg"
-        className="mt-10 font-bold text-xl shadow-[0_0_30px_rgb(var(--color-primary-rgb)/0.3)] h-16"
+        className="mt-10 h-16 flex-col gap-0.5 shadow-[0_0_30px_rgb(var(--color-primary-rgb)/0.3)]"
       >
-        Finalizar Treino
+        <span className="font-bold text-xl leading-none">Finalizar treino</span>
+        <span className="text-[11px] font-medium opacity-70 tabular-nums">
+          {completedSets} de {totalSets} séries concluídas
+        </span>
       </Button>
     </div>
   );
