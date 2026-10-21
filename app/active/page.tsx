@@ -851,9 +851,15 @@ export default function ActiveWorkout() {
     <div className="p-5 md:p-8 max-w-3xl mx-auto animate-fade-in pb-28 md:pb-12">
       <header className="mb-8 sticky top-0 bg-background/80 backdrop-blur-xl z-40 py-4 border-b border-white/[0.08]">
         {/* FEATURE: Cronômetro ao vivo + nome da sessão */}
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-outfit font-bold text-accent">{currentSession.name}</h1>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl">
+        {/* Deixa quebrar em vez de espremer o cronômetro.
+            O nome da sessão carrega a musculatura do dia ("Treino C - Glúteos, Posterior e
+            Abdômen") e num celular já passava da linha. Com a Outfit aplicada ele ficou mais
+            largo ainda. Cortar com reticências esconderia justamente a parte informativa, e
+            sem `min-w-0` um item flex não encolhe abaixo do próprio conteúdo — o cronômetro é
+            que seria amassado. Então: o título ocupa a linha e o cronômetro desce. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-2">
+          <h1 className="text-2xl font-outfit font-bold text-accent min-w-0">{currentSession.name}</h1>
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl shrink-0">
             <Clock className="w-4 h-4 text-primary" />
             <span className="font-mono text-primary font-bold text-base">{formatTime(elapsedSeconds)}</span>
           </div>
@@ -957,7 +963,9 @@ export default function ActiveWorkout() {
 
             <div className="p-6 md:p-8">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <div>
+                {/* min-w-0: a partir de sm isto vira linha, e sem ele um nome longo
+                    ("Puxada Alta com Triângulo") empurra o que está ao lado em vez de quebrar. */}
+                <div className="min-w-0">
                   <h2 className="text-2xl font-outfit font-bold text-white mb-2">{ex.name}</h2>
                   {trainingMethod === 'superset' && (() => {
                     const { pairIndex } = getGroupInfo(exIndex);

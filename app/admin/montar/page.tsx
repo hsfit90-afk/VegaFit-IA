@@ -944,10 +944,12 @@ export default function MontarTreino() {
       {alunoId && !carregandoAluno && resumo && (
         <Card className="mb-5">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <p className="font-outfit font-bold">O que {alunoEscolhido?.name || 'o aluno'} respondeu</p>
+            {/* Nome de aluno é texto de tamanho imprevisível ("Sandro Camilo da Silva"), e a
+                tarja ao lado não pode encolher — `shrink-0` nela, `min-w-0` no título. */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <p className="font-outfit font-bold min-w-0">O que {alunoEscolhido?.name || 'o aluno'} respondeu</p>
               {!temAnamnese && (
-                <span className="text-xs px-2.5 py-1 rounded-full bg-warning/15 text-warning font-semibold">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-warning/15 text-warning font-semibold shrink-0">
                   Sem anamnese
                 </span>
               )}
