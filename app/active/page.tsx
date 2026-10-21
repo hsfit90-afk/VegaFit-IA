@@ -1166,7 +1166,7 @@ export default function ActiveWorkout() {
                   
                   <div className="col-span-3">
                     <div className={`relative flex items-center bg-black/40 rounded-xl overflow-hidden border transition-all duration-300 ${
-                      set.completed ? 'border-primary/30' : 'border-border focus-within:border-accent/50 focus-within:bg-black/60'
+                      set.completed ? 'border-primary/30' : 'border-border focus-within:border-primary/50 focus-within:bg-black/60'
                     }`}>
                       <input 
                         type="number" 

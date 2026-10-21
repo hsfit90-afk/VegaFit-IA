@@ -167,7 +167,7 @@ export default function Coach() {
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSend(input)}
             placeholder="Pergunte ao seu Coach..." 
-            className="w-full bg-surface border border-border rounded-xl py-4 pl-4 pr-12 text-white focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all"
+            className="w-full bg-surface border border-border rounded-xl py-4 pl-4 pr-12 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
             disabled={isLoading}
           />
           <button 
