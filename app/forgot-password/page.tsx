@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Link from 'next/link';
-import { Dumbbell, ArrowLeft, Loader2, MailCheck } from 'lucide-react';
+import { Dumbbell, ArrowLeft, MailCheck } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Field } from '@/components/ui/Field';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -69,7 +70,7 @@ export default function ForgotPassword() {
               disabled={loading}
               className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Enviar link de recuperação'}
+              {loading ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Enviando…" /> : 'Enviar link de recuperação'}
             </button>
           </form>
         )}

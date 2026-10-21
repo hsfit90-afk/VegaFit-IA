@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { computeUnlock, textoBloqueio, type MethodId } from '@/lib/trainingUnlock';
-import { Zap, Loader2 } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { Exercise as DbExercise } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { getExercises } from '@/lib/db/exercises';
@@ -17,6 +17,7 @@ import { LIMITE_PREFERENCIAS } from '@/lib/aiHealthContext';
 import { faltamEssenciais, ROTULO_ESSENCIAL } from '@/lib/anamneseEssencial';
 import { createClient } from '@/utils/supabase/client';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function Generator() {
   const { addWorkoutPlan, profile, history } = useAppContext();
@@ -579,7 +580,7 @@ export default function Generator() {
               className="text-lg font-bold shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.2)]"
             >
               {loading
-                ? <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                ? <LoadingSpinner cor="herdada" rotulo="Gerando o treino…" className="mr-2" />
                 : <Zap className="w-6 h-6 mr-2" />
               }
               {loading ? 'Gerando e salvando treino...' : 'Gerar Treino com IA'}

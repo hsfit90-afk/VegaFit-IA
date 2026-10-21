@@ -6,9 +6,10 @@ import { useSomenteMaster } from '@/components/useSomenteMaster';
 import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { Loader2, Search, Heart, Ban, Minus, ImageOff } from 'lucide-react';
+import { Search, Heart, Ban, Minus, ImageOff } from 'lucide-react';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Exercícios fixos e proibidos por aluno, na mão do profissional.
@@ -142,7 +143,7 @@ export default function ExerciciosPorAluno() {
   }, [catalogo, busca]);
 
   if (!ehMaster || carregando) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return <LoadingSpinner tela tamanho="lg" />;
   }
 
   const linha = (ex: Exercicio) => {
@@ -205,7 +206,7 @@ export default function ExerciciosPorAluno() {
             title="Tirar a marca"
             className="p-2 rounded-xl border bg-surface-light border-white/5 text-foreground-muted hover:text-foreground disabled:opacity-30 transition-colors"
           >
-            {ocupado ? <Loader2 className="w-4 h-4 animate-spin" /> : <Minus className="w-4 h-4" />}
+            {ocupado ? <LoadingSpinner tamanho="sm" cor="herdada" /> : <Minus className="w-4 h-4" />}
           </button>
         </div>
       </div>
@@ -240,7 +241,7 @@ export default function ExerciciosPorAluno() {
 
       {alunoId && carregandoAluno && (
         <div className="flex items-center gap-2 text-sm text-foreground-muted">
-          <Loader2 className="w-4 h-4 animate-spin" /> Carregando as marcas deste aluno...
+          <LoadingSpinner tamanho="sm" rotulo="Carregando as marcas deste aluno…" mostrarRotulo />
         </div>
       )}
 

@@ -6,9 +6,10 @@ import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { EQUIPAMENTOS_CASA } from '@/lib/equipamentoCasa';
-import { Loader2, Check, ImageOff, Maximize2, AlertTriangle } from 'lucide-react';
+import { Check, ImageOff, Maximize2, AlertTriangle } from 'lucide-react';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Revisão do equipamento de cada exercício.
@@ -164,7 +165,7 @@ export default function RevisarEquipamentos() {
   };
 
   if (!ehMaster) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return <LoadingSpinner tela tamanho="lg" />;
   }
 
   return (
@@ -227,7 +228,7 @@ export default function RevisarEquipamentos() {
       </div>
 
       {lista === null ? (
-        <div className="min-h-[30vh] flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+        <div className="min-h-[30vh] flex items-center justify-center"><LoadingSpinner /></div>
       ) : lista.length === 0 ? (
         // A fila vazia é o resultado do trabalho, e vale dizer o que ela significa — cada aba
         // esvazia por um motivo diferente.
@@ -276,7 +277,7 @@ export default function RevisarEquipamentos() {
                     <div className="flex items-start gap-2">
                       <p className="text-sm font-medium leading-tight flex-1">{ex.name}</p>
                       {confirmado && <Check className="w-4 h-4 text-primary shrink-0" />}
-                      {salvando === ex.id && <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />}
+                      {salvando === ex.id && <LoadingSpinner tamanho="sm" rotulo="Salvando…" className="shrink-0" />}
                     </div>
                     <p className="text-[11px] text-foreground-muted mt-0.5">{ex.muscle_group || '—'}</p>
 

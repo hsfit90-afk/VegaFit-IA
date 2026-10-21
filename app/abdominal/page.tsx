@@ -6,7 +6,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Loader2, Shuffle, Check, ImageOff, Flame, Maximize2 } from 'lucide-react';
+import { Shuffle, Check, ImageOff, Flame, Maximize2 } from 'lucide-react';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 import { PREFIXO_AVULSO } from '@/lib/trainingUnlock';
@@ -14,6 +14,7 @@ import { prescrever, normalizarObjetivo, descreverSemana } from '@/lib/protocolo
 import { computePeriodization } from '@/lib/periodization';
 import { filtrarParaCasa } from '@/lib/equipamentoCasa';
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Abdominal como sessão avulsa.
@@ -155,7 +156,7 @@ export default function Abdominal() {
   };
 
   if (!catalogo) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return <LoadingSpinner tela tamanho="lg" />;
   }
 
   return (
@@ -257,7 +258,7 @@ export default function Abdominal() {
         </Button>
         <div className="flex-1" />
         <Button onClick={concluir} disabled={salvando || feitos.size === 0} className="sm:w-auto">
-          {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : `Concluir (${feitos.size}/${sessao.length})`}
+          {salvando ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Salvando…" /> : `Concluir (${feitos.size}/${sessao.length})`}
         </Button>
       </div>
     </div>

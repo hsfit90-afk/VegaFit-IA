@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Dumbbell, Loader2, MailCheck } from 'lucide-react';
+import { Dumbbell, MailCheck } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Field } from '@/components/ui/Field';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -82,7 +83,7 @@ export default function Register() {
               disabled={loading}
               className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-black font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Criar Conta'}
+              {loading ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Criando a conta…" /> : 'Criar Conta'}
             </button>
 
             {/* Dizer o preço ANTES do cadastro. Quem descobre a cobrança só no oitavo dia se

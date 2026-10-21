@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Waves } from 'lucide-react';
+import { Waves } from 'lucide-react';
 import { ListaComCronometro, type ItemDaLista } from '@/components/workout/ListaComCronometro';
 import { classificarTipo, selecionarMobilidade, articulacoesDosGrupos } from '@/lib/preparoFinalizacao';
 import { useSessaoDoDia } from '@/components/useSessaoDoDia';
@@ -10,6 +10,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { filtrarParaCasa } from '@/lib/equipamentoCasa';
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Mobilidade como sessão avulsa.
@@ -87,7 +88,7 @@ export default function Mobilidade() {
   const lista = grupo === 'Todos' ? todos : todos.filter(e => (e.muscle_group || 'Outros') === grupo);
 
   if (!catalogo) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return <LoadingSpinner tela tamanho="lg" />;
   }
 
   return (

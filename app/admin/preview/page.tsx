@@ -8,11 +8,12 @@ import { useSomenteMaster } from '@/components/useSomenteMaster';
 import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
-import { Loader2, ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriangle, Check, Trash2, StretchHorizontal, Flame, Pencil } from 'lucide-react';
+import { ArrowLeft, Eye, ImageOff, Maximize2, Waves, Timer, AlertTriangle, Check, Trash2, StretchHorizontal, Flame, Pencil } from 'lucide-react';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 import { escolherSessao, minutosDaSessao } from '@/lib/proximoTreino';
 import { temAbdominalNoDia } from '@/lib/protocolo';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * O treino do aluno, como ele vai ver.
@@ -207,7 +208,7 @@ export default function PreviaDoAluno() {
   };
 
   if (!ehMaster) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return <LoadingSpinner tela tamanho="lg" />;
   }
 
   if (!alunoId) {
@@ -221,7 +222,7 @@ export default function PreviaDoAluno() {
   }
 
   if (planos === null) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return <LoadingSpinner tela tamanho="lg" />;
   }
 
   return (

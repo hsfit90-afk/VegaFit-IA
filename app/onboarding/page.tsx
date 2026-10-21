@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Minus, Plus, Target, Zap, Clock, ChevronRight, Sparkles, Dumbbell } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, Target, Zap, Clock, ChevronRight, Sparkles, Dumbbell } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
 import { useAppContext } from '@/app/context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';

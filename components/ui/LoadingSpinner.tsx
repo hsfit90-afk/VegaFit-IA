@@ -15,6 +15,15 @@ export interface LoadingSpinnerProps {
   mostrarRotulo?: boolean;
   /** Centraliza ocupando a área toda, para tela em carregamento inicial. */
   tela?: boolean;
+  /**
+   * `herdada` faz o ícone usar a cor do texto em volta, em vez do verde da marca.
+   *
+   * Existe por causa de um jeito concreto de sumir: dentro de um botão `bg-primary`, um
+   * spinner `text-primary` é verde sobre verde — o botão parece travado, sem nada girando.
+   * Nos sete botões de ação do app (Salvar, Assinar, Concluir, Ativar lembretes) o que vale
+   * é a cor do próprio botão, que já contrasta com o fundo dele.
+   */
+  cor?: 'primary' | 'herdada';
   className?: string;
 }
 
@@ -25,11 +34,15 @@ export function LoadingSpinner({
   rotulo = 'Carregando…',
   mostrarRotulo,
   tela,
+  cor = 'primary',
   className,
 }: LoadingSpinnerProps) {
   const spinner = (
     <span role="status" className={cn('inline-flex items-center gap-3', className)}>
-      <Loader2 className={cn('animate-spin text-primary', TAMANHOS[tamanho])} aria-hidden="true" />
+      <Loader2
+        className={cn('animate-spin', cor === 'herdada' ? 'text-current' : 'text-primary', TAMANHOS[tamanho])}
+        aria-hidden="true"
+      />
       <span className={mostrarRotulo ? 'text-sm text-foreground-muted' : 'sr-only'}>{rotulo}</span>
     </span>
   );

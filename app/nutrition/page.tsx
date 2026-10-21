@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/app/context/AppContext';
-import { Apple, Loader2, Target, Flame, Activity, Info } from 'lucide-react';
+import { Apple, Target, Flame, Activity, Info } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 import { useSomenteMaster } from "@/components/useSomenteMaster";
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 interface NutritionData {
   tmb: number;
@@ -105,7 +106,7 @@ export default function NutritionPage() {
       {loading && (
         <Card className="text-center py-16 border-dashed border-2">
           <CardContent className="flex flex-col items-center">
-            <Loader2 className="w-12 h-12 text-orange-500 animate-spin mb-4" />
+            <LoadingSpinner tamanho="lg" cor="herdada" className="text-orange-500 mb-4" />
             <p className="font-bold text-lg animate-pulse font-outfit">A IA está processando seu metabolismo...</p>
           </CardContent>
         </Card>

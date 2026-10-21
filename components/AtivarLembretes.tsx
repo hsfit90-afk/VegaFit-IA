@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Bell, BellOff, Loader2, Check } from 'lucide-react';
+import { Bell, BellOff, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Pede permissão de notificação e inscreve o aluno nos lembretes de treino.
@@ -163,7 +164,7 @@ export function AtivarLembretes({ compacto = false }: { compacto?: boolean }) {
         Um aviso no celular nos dias de treino. Dá para desligar quando quiser.
       </p>
       <Button onClick={ativar} disabled={estado === 'pedindo'} size="sm">
-        {estado === 'pedindo' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ativar lembretes'}
+        {estado === 'pedindo' ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Ativando…" /> : 'Ativar lembretes'}
       </Button>
     </div>
   );

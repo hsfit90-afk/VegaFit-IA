@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
-import { UserCheck, Loader2, ExternalLink } from 'lucide-react';
+import { UserCheck, ExternalLink } from 'lucide-react';
 import { descreverStatus, vagasDoLote } from '@/lib/treinoPersonalizado';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Fila de Treino Personalizado no painel master.
@@ -83,7 +84,7 @@ export function FilaPersonalizado() {
   };
 
   if (pedidos === null) {
-    return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+    return <div className="flex justify-center py-8"><LoadingSpinner /></div>;
   }
 
   // O limite vem do servidor junto com a lista; aqui so contamos o que ja foi usado.

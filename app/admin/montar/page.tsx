@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Loader2, Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark, Eye, Pencil, ChevronUp, ChevronDown, Home } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Save, GripVertical, Search, AlertTriangle, Maximize2, ImageOff, BookmarkPlus, Bookmark, Eye, Pencil, ChevronUp, ChevronDown, Home } from 'lucide-react';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { EditorDePreparo, type ItemDePreparo } from '@/components/admin/EditorDePreparo';
 import {
@@ -25,6 +25,7 @@ import { moverNaLista, ajustarCargas, aplicarCargaEmTodas } from '@/lib/edicaoDe
 import { prescrever, normalizarObjetivo } from '@/lib/protocolo';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Montador manual de treino, só para o master.
@@ -883,7 +884,7 @@ export default function MontarTreino() {
   }, [ultimoTreino, JANELA_DO_CACHE_MS]);
 
   if (!ehMaster || carregando) {
-    return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+    return <LoadingSpinner tela tamanho="lg" />;
   }
 
   return (
@@ -937,7 +938,7 @@ export default function MontarTreino() {
       {alunoId && carregandoAluno && (
         <Card className="mb-5">
           <CardContent className="p-5 flex items-center gap-2 text-sm text-foreground-muted">
-            <Loader2 className="w-4 h-4 animate-spin" /> Buscando a anamnese do aluno…
+            <LoadingSpinner tamanho="sm" rotulo="Buscando a anamnese do aluno…" mostrarRotulo />
           </CardContent>
         </Card>
       )}
@@ -1089,7 +1090,7 @@ export default function MontarTreino() {
                 className="flex-1"
               >
                 {gerando
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Gerando o treino…" />
                   : <><Sparkles className="w-4 h-4" /> {sessoes.length === 0 ? 'Gerar com IA e ajustar' : 'Gerar de novo'}</>}
               </Button>
               {/* Só enquanto não há plano: depois de gerar, o rodapé já tem "Adicionar dia",
@@ -1189,7 +1190,7 @@ export default function MontarTreino() {
         <div className="mb-4 rounded-xl border border-border bg-surface/60 p-4 flex flex-wrap items-center gap-x-4 gap-y-2">
           {carregandoCatalogo ? (
             <p className="text-sm text-foreground-muted flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" /> Conferindo o que cabe no que este aluno tem…
+              <LoadingSpinner tamanho="sm" rotulo="Conferindo o que cabe no que este aluno tem…" mostrarRotulo />
             </p>
           ) : (
             <>
@@ -1249,7 +1250,7 @@ export default function MontarTreino() {
                   className="p-2 text-foreground-muted hover:text-primary transition-colors flex-none disabled:opacity-40"
                 >
                   {salvandoModelo === sessao.id
-                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    ? <LoadingSpinner tamanho="sm" rotulo="Salvando o modelo…" />
                     : <BookmarkPlus className="w-4 h-4" />}
                 </button>
                 <button
@@ -1549,7 +1550,7 @@ export default function MontarTreino() {
           </Button>
           <div className="flex-1" />
           <Button onClick={salvar} disabled={salvando} className="sm:w-auto">
-            {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4" /> Salvar na conta do aluno</>}
+            {salvando ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Salvando…" /> : <><Save className="w-4 h-4" /> Salvar na conta do aluno</>}
           </Button>
         </div>
       )}

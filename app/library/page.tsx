@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, Info, Play, Plus, Trash2, Loader2, Upload, Link as LinkIcon, Image as ImageIcon, Check, Heart } from 'lucide-react';
+import { Search, Info, Play, Plus, Trash2, Upload, Link as LinkIcon, Image as ImageIcon, Check, Heart } from 'lucide-react';
 import { Exercise } from '@/lib/types';
 import { getExercises, addExercise, deleteExercise, updateExerciseMuscleGroup } from '@/lib/db/exercises';
 import { useAppContext } from '@/app/context/AppContext';
@@ -11,6 +11,8 @@ import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useSomenteMaster } from "@/components/useSomenteMaster";
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 const MUSCLE_GROUP_OPTIONS = [
   'Peito', 'Costas', 'Ombro', 'Bíceps', 'Tríceps', 'Antebraço', 'Pernas (quadríceps)',
@@ -240,10 +242,28 @@ export default function Library() {
   // pra não obrigar redigitar o mesmo nome toda vez que for editar outro exercício.
   const allMuscleGroupOptions = Array.from(new Set([...MUSCLE_GROUP_OPTIONS, ...muscleGroups])).sort();
 
+  /**
+   * Esqueleto na forma da grade de exercícios — mesmas colunas, mesma altura de card.
+   *
+   * O catálogo tem 882 itens e a consulta não é instantânea. Com spinner, a tela ficava vazia
+   * e depois despencava uma grade inteira; com o esqueleto, a grade já está lá e só troca de
+   * conteúdo.
+   */
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      <div className="p-5 md:p-8 max-w-7xl mx-auto" role="status">
+        <span className="sr-only">Carregando o catálogo de exercícios…</span>
+        <Skeleton className="h-10 w-64 mb-6" />
+        <div className="flex gap-2 mb-6 overflow-hidden">
+          {Array.from({ length: 5 }, (_, i) => (
+            <Skeleton key={i} className="h-9 w-28 rounded-xl flex-none" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton key={i} className="h-44 rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -400,7 +420,7 @@ export default function Library() {
   
               {bulkStatus === 'uploading' && (
                 <div className="text-center py-6">
-                  <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+                  <LoadingSpinner tamanho="lg" className="mx-auto mb-4" />
                   <p className="text-white font-medium text-lg mb-2">Enviando arquivos...</p>
                   <p className="text-foreground-muted mb-4">{bulkProgress.current} de {bulkProgress.total} concluídos</p>
                   <div className="w-full bg-surface rounded-full h-3 overflow-hidden border border-border">
@@ -537,7 +557,7 @@ export default function Library() {
                   fullWidth
                   className="mt-6"
                 >
-                  {isAdding ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                  {isAdding ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Salvando…" className="mr-2" /> : null}
                   {isAdding ? 'Salvando...' : 'Salvar Exercício'}
                 </Button>
               </form>

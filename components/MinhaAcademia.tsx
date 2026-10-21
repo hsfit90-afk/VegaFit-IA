@@ -5,11 +5,12 @@ import { createClient } from '@/utils/supabase/client';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { Dumbbell, Loader2, Check } from 'lucide-react';
+import { Dumbbell, Check } from 'lucide-react';
 import { EQUIPAMENTOS, resumirAusentes } from '@/lib/equipamentoAusente';
 import { EQUIPAMENTOS_CASA, resumirCasa } from '@/lib/equipamentoCasa';
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * "O que a minha academia não tem" — opcional, no Perfil.
@@ -153,7 +154,7 @@ export function MinhaAcademia() {
             <p className="text-xs text-foreground-muted">{emCasa ? resumirCasa(ausentes) : resumirAusentes(ausentes)}</p>
 
             <Button onClick={salvar} disabled={salvando} className="w-full sm:w-auto sm:self-start">
-              {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar'}
+              {salvando ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Salvando…" /> : 'Salvar'}
             </Button>
           </div>
         )}

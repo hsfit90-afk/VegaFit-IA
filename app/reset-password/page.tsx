@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Dumbbell, Loader2, CheckCircle2 } from 'lucide-react';
+import { Dumbbell, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Field } from '@/components/ui/Field';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -88,7 +89,7 @@ export default function ResetPassword() {
               disabled={loading || hasSession === null}
               className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar nova senha'}
+              {loading ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Salvando…" /> : 'Salvar nova senha'}
             </button>
           </form>
         )}

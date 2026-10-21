@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Bot, User } from 'lucide-react';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 import { useSomenteMaster } from "@/components/useSomenteMaster";
 

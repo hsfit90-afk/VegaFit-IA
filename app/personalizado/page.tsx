@@ -5,10 +5,11 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
-import { UserCheck, Loader2, Check, Clock, CalendarDays, ExternalLink } from 'lucide-react';
+import { UserCheck, Check, Clock, CalendarDays, ExternalLink } from 'lucide-react';
 import { descreverStatus, prazoDeEntrega } from '@/lib/treinoPersonalizado';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Treino Personalizado: o treino montado à mão pelo profissional.
@@ -90,9 +91,7 @@ export default function TreinoPersonalizado() {
 
   if (!estado) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="w-7 h-7 animate-spin text-primary" />
-      </div>
+      <LoadingSpinner tela tamanho="lg" />
     );
   }
 
@@ -281,7 +280,7 @@ export default function TreinoPersonalizado() {
                 </div>
 
                 <Button onClick={pedir} disabled={enviando} className="w-full">
-                  {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : `Reservar minha vaga e falar no WhatsApp`}
+                  {enviando ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Enviando…" /> : `Reservar minha vaga e falar no WhatsApp`}
                 </Button>
                 <p className="text-xs text-foreground-muted text-center">
                   Ao reservar, você fala comigo no WhatsApp para acertar o pagamento. A vaga fica sua enquanto a gente conversa.

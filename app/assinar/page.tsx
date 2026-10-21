@@ -5,10 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
-import { Check, ShieldCheck, Loader2, Dumbbell, History, BarChart3 } from 'lucide-react';
+import { Check, ShieldCheck, Dumbbell, History, BarChart3 } from 'lucide-react';
 import { estadoDeAcesso, type EstadoDeAcesso } from '@/lib/subscription';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
  * Tela de assinatura. Chega aqui quem recebeu 402 de uma rota de IA, ou quem clica em
@@ -91,9 +92,7 @@ export default function Assinar() {
 
   if (carregando) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="w-7 h-7 animate-spin text-primary" />
-      </div>
+      <LoadingSpinner tela tamanho="lg" />
     );
   }
 
@@ -162,7 +161,7 @@ export default function Assinar() {
               disabled={indoParaCheckout !== null}
               onClick={() => assinar('mensal')}
             >
-              {indoParaCheckout === 'mensal' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Assinar o mensal'}
+              {indoParaCheckout === 'mensal' ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Abrindo o pagamento…" /> : 'Assinar o mensal'}
             </Button>
           </CardContent>
         </Card>
@@ -197,7 +196,7 @@ export default function Assinar() {
               disabled={indoParaCheckout !== null}
               onClick={() => assinar('anual')}
             >
-              {indoParaCheckout === 'anual' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Assinar o anual'}
+              {indoParaCheckout === 'anual' ? <LoadingSpinner tamanho="sm" cor="herdada" rotulo="Abrindo o pagamento…" /> : 'Assinar o anual'}
             </Button>
           </CardContent>
         </Card>
