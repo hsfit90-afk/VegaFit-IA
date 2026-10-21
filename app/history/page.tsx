@@ -89,15 +89,16 @@ export default function History() {
   return (
     <div className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
       <PageHeader
-        titulo="Histórico de Treinos"
-        subtitulo="Acompanhe sua evolução ao longo do tempo"
+        etiqueta="O que você já fez"
+        titulo="Histórico"
+        subtitulo="Cada treino concluído, com duração, volume e as cargas que você usou."
       />
 
       {history.length > 0 ? (
         <>
           <Card className="mb-10">
             <CardHeader className="flex flex-row justify-between items-center pb-2">
-               <CardTitle className="text-primary m-0">Progressão de Volume (kg)</CardTitle>
+               <CardTitle className="text-[10px] uppercase tracking-[0.18em] text-foreground-muted font-semibold m-0">Progressão de volume · kg</CardTitle>
                {(leftBounds !== null || rightBounds !== null) && (
                  <Button 
                    onClick={zoomOut}

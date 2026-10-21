@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { TrendingUp, Scale, Trophy, Activity, Plus, BarChart2, ChevronDown, History } from 'lucide-react';
+import { TrendingUp, TrendingDown, Scale, Trophy, Plus, ChevronDown, History } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ChartSkeleton } from '@/components/charts/ChartSkeleton';
@@ -172,14 +172,18 @@ export default function ProgressPage() {
 
   return (
     <div className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
+      {/* O ÍCONE NUMA CAIXA COM GRADIENTE SAIU.
+          Era decoração: não dizia nada que o título não dissesse, e um quadrado colorido de
+          56px ao lado do texto empurrava o conteúdo para baixo em toda visita. O padrão do
+          app agora é etiqueta miúda e título limpo — o mesmo da tela inicial e da de treino. */}
       <header className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-outfit font-bold flex items-center gap-3">
-          <div className="p-3 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl backdrop-blur-md border border-border">
-            <TrendingUp className="w-8 h-8 text-blue-400" />
-          </div>
-          Meu Progresso
+        <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted mb-2">
+          Sua evolução
+        </p>
+        <h1 className="text-3xl md:text-4xl font-outfit font-bold tracking-tight">
+          Progresso
         </h1>
-        <p className="text-foreground-muted mt-2">Acompanhe sua evolução física e performance nos treinos.</p>
+        <p className="text-foreground-muted text-sm mt-2">Medidas, volume e recordes ao longo do tempo.</p>
 
         {/* A porta do Histórico no celular.
             `/history` só tinha link na barra lateral do desktop (`hidden md:flex`), então no
@@ -203,9 +207,7 @@ export default function ProgressPage() {
           {/* Card de Peso Corporal */}
           <Card>
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Scale className="w-5 h-5 text-blue-400" /> Peso Corporal
-              </CardTitle>
+              <CardTitle className="text-[10px] uppercase tracking-[0.18em] text-foreground-muted font-semibold">Peso corporal</CardTitle>
               <Button size="sm" variant="outline" onClick={() => setIsAddingWeight(!isAddingWeight)}>
                 <Plus className="w-4 h-4 mr-1" /> Registrar
               </Button>
@@ -225,19 +227,30 @@ export default function ProgressPage() {
                 </form>
               )}
 
-              <div className="flex items-end gap-4 mb-6">
+              {/* O PESO É O NÚMERO DESTA TELA, e estava do tamanho de um subtítulo.
+                  Quem abre Progresso quer saber um valor antes de qualquer outro. Foi para
+                  60px, tabular — tabular porque o número muda de casa decimal e sem isso ele
+                  dança na horizontal a cada registro. */}
+              <div className="flex flex-wrap items-end gap-x-4 gap-y-2 mb-6">
                 <div>
-                  <span className="text-sm text-foreground-muted font-semibold uppercase tracking-wider">Atual</span>
-                  <p className="text-4xl font-mono font-bold text-white">{currentWeight.toFixed(1)} <span className="text-lg text-foreground-muted font-sans">kg</span></p>
+                  <p className="text-[10px] text-foreground-muted uppercase tracking-[0.18em] mb-1.5">
+                    Peso atual
+                  </p>
+                  <p className="text-5xl md:text-6xl font-outfit font-bold tabular-nums leading-none">
+                    {currentWeight.toFixed(1)}
+                    <span className="text-xl text-foreground-muted font-medium ml-2">kg</span>
+                  </p>
                 </div>
                 {weightDiff !== 0 && (
-                  <div className={`px-2 py-1 rounded-lg text-sm font-bold flex items-center gap-1 mb-1 ${weightDiff > 0 ? 'bg-red-500/20 text-red-400' : 'bg-primary/20 text-primary'}`}>
-                    {weightDiff > 0 ? '↗' : '↘'} {Math.abs(weightDiff).toFixed(1)} kg desde o início
+                  <div className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 mb-1.5 ${weightDiff > 0 ? 'bg-destructive/15 text-destructive' : 'bg-primary/15 text-primary'}`}>
+                    {weightDiff > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                    <span className="tabular-nums">{Math.abs(weightDiff).toFixed(1)} kg</span>
+                    <span className="font-medium opacity-70">desde o início</span>
                   </div>
                 )}
               </div>
 
-              <div className="h-[200px] w-full">
+              <div className="h-[240px] w-full">
                 {weightData.length > 1 ? (
                   <WeightChart data={weightData} />
                 ) : (
@@ -254,13 +267,11 @@ export default function ProgressPage() {
           {/* Card de Volume por Músculo */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Activity className="w-5 h-5 text-accent" /> Volume Semanal (Últimos 7 dias)
-              </CardTitle>
+              <CardTitle className="text-[10px] uppercase tracking-[0.18em] text-foreground-muted font-semibold">Volume por músculo · últimos 7 dias</CardTitle>
             </CardHeader>
             <CardContent>
               {muscleVolume.length > 0 ? (
-                <div className="h-[200px] w-full mt-4">
+                <div className="h-[240px] w-full mt-4">
                   <MuscleVolumeChart data={muscleVolume} />
                 </div>
               ) : (
@@ -274,9 +285,7 @@ export default function ProgressPage() {
           {/* FEATURE: Gráfico de Evolução por Exercício */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <BarChart2 className="w-5 h-5 text-secondary" /> Evolução por Exercício
-              </CardTitle>
+              <CardTitle className="text-[10px] uppercase tracking-[0.18em] text-foreground-muted font-semibold">Evolução por exercício</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-foreground-muted mb-4">Selecione um exercício para ver a evolução da sua carga máxima ao longo do tempo.</p>
@@ -322,7 +331,7 @@ export default function ProgressPage() {
                       </div>
 
                       {/* Gráfico de linha */}
-                      <div className="h-[220px] w-full">
+                      <div className="h-[260px] w-full">
                         <ExerciseEvolutionChart data={exerciseEvolutionData} />
                       </div>
                     </>
@@ -346,9 +355,7 @@ export default function ProgressPage() {
         <div className="space-y-6">
           <Card className="h-full">
             <CardHeader className="pb-4 border-b border-border">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-yellow-400" /> Recordes Pessoais
-              </CardTitle>
+              <CardTitle className="text-[10px] uppercase tracking-[0.18em] text-foreground-muted font-semibold">Recordes pessoais</CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               {prs.length > 0 ? (
