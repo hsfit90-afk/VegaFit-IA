@@ -27,6 +27,14 @@ export interface WorkoutExercise {
   restSeconds: number;
   tips: string;
   method?: string;
+  /**
+   * Bloco a que este exercício pertence: quem divide o mesmo número executa junto, dividindo
+   * um descanso só. Par de superset/bi-set, ou a sessão inteira num circuito.
+   *
+   * Ausente = exercício solto, com o descanso dele. É o caso de todo plano salvo antes de
+   * 22/10/2026, e por isso nenhuma migração foi necessária (ver lib/blocosDeTreino.ts).
+   */
+  bloco?: number;
   youtubeSearchTerm: string;
   targetWeights?: number[]; // Cargas alvo por série
   targetReps?: number[];    // Repetições alvo por série
