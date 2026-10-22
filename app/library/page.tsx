@@ -640,7 +640,7 @@ export default function Library() {
                   <div className="w-full aspect-video">
                     <iframe
                       width="100%" height="100%"
-                      src={`https://www.youtube.com/embed/${selectedExercise.youtubeId}?autoplay=1&mute=1`}
+                      src={`https://www.youtube-nocookie.com/embed/${selectedExercise.youtubeId}?autoplay=1&mute=1`}
                       title={selectedExercise.name}
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
