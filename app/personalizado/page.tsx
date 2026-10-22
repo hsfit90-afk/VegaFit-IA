@@ -272,7 +272,7 @@ export default function TreinoPersonalizado() {
                     maxLength={1000}
                     rows={4}
                     placeholder="Horário que você treina, aparelhos que sua academia não tem, dores, o que você odeia fazer…"
-                    className="w-full bg-surface border border-border rounded-xl p-3 text-sm resize-none focus:outline-none focus:border-primary/50 transition-colors"
+                    className="w-full bg-surface border border-border rounded-xl p-3 text-sm resize-none focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors"
                   />
                   <span className="text-xs text-foreground-muted self-end tabular-nums">
                     {observacoes.length}/1000

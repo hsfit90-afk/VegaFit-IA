@@ -912,7 +912,7 @@ export default function MontarTreino() {
               id="aluno"
               value={alunoId}
               onChange={e => setAlunoId(e.target.value)}
-              className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50"
+              className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <option value="">Escolha o aluno…</option>
               {alunos.map(a => (
@@ -1041,7 +1041,7 @@ export default function MontarTreino() {
                 <label htmlFor="g-local" className="text-xs font-semibold text-foreground-muted">Onde vai treinar</label>
                 <select id="g-local" value={config.equipment}
                   onChange={e => setConfig({ ...config, equipment: e.target.value })}
-                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50">
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40">
                   <option>Academia completa</option>
                   <option>Em casa</option>
                 </select>
@@ -1050,7 +1050,7 @@ export default function MontarTreino() {
                 <label htmlFor="g-objetivo" className="text-xs font-semibold text-foreground-muted">Objetivo</label>
                 <select id="g-objetivo" value={config.goal}
                   onChange={e => setConfig({ ...config, goal: e.target.value })}
-                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50">
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40">
                   <option>Hipertrofia</option>
                   <option>Emagrecimento</option>
                   <option>Performance</option>
@@ -1062,7 +1062,7 @@ export default function MontarTreino() {
                 <label htmlFor="g-nivel" className="text-xs font-semibold text-foreground-muted">Nível</label>
                 <select id="g-nivel" value={config.level}
                   onChange={e => setConfig({ ...config, level: e.target.value })}
-                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50">
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40">
                   <option>Iniciante</option>
                   <option>Intermediário</option>
                   <option>Avançado</option>
@@ -1072,7 +1072,7 @@ export default function MontarTreino() {
                 <label htmlFor="g-dias" className="text-xs font-semibold text-foreground-muted">Dias por semana</label>
                 <select id="g-dias" value={config.daysPerWeek}
                   onChange={e => setConfig({ ...config, daysPerWeek: Number(e.target.value) })}
-                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50">
+                  className="w-full bg-surface border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40">
                   {[2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
@@ -1315,7 +1315,7 @@ export default function MontarTreino() {
                           value={ex.name}
                           onChange={e => escolheExercicio(sessao.id, ex.id, e.target.value)}
                           placeholder="Digite para buscar no catálogo…"
-                          className="w-full bg-black/30 border border-border rounded-lg py-2 pl-9 pr-3 text-sm focus:outline-none focus:border-primary/50"
+                          className="w-full bg-black/30 border border-border rounded-lg py-2 pl-9 pr-3 text-sm focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40"
                         />
                       </div>
                       {ex.muscleGroup && (
@@ -1370,21 +1370,21 @@ export default function MontarTreino() {
                       <label className="text-[10px] uppercase tracking-wider text-foreground-muted pl-1">Séries</label>
                       <input type="number" min={1} max={10} value={ex.sets}
                         onChange={e => mudaExercicio(sessao.id, ex.id, 'sets', Number(e.target.value))}
-                        className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center tabular-nums focus:outline-none focus:border-primary/50" />
+                        className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center tabular-nums focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40" />
                     </div>
 
                     <div className="col-span-4 md:col-span-2 flex flex-col gap-1">
                       <label className="text-[10px] uppercase tracking-wider text-foreground-muted pl-1">Reps</label>
                       <input value={ex.reps} maxLength={20}
                         onChange={e => mudaExercicio(sessao.id, ex.id, 'reps', e.target.value)}
-                        className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center focus:outline-none focus:border-primary/50" />
+                        className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40" />
                     </div>
 
                     <div className="col-span-4 md:col-span-2 flex flex-col gap-1">
                       <label className="text-[10px] uppercase tracking-wider text-foreground-muted pl-1">Desc. (s)</label>
                       <input type="number" min={0} max={600} step={15} value={ex.restSeconds}
                         onChange={e => mudaExercicio(sessao.id, ex.id, 'restSeconds', Number(e.target.value))}
-                        className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center tabular-nums focus:outline-none focus:border-primary/50" />
+                        className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center tabular-nums focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40" />
                     </div>
 
                     {/* REORDENAR, que o ícone de alça prometia sem cumprir.
@@ -1440,7 +1440,7 @@ export default function MontarTreino() {
                               onChange={e => mudaCarga(sessao.id, ex.id, i, Number(e.target.value))}
                               placeholder={`S${i + 1}`}
                               aria-label={`Carga da série ${i + 1} de ${ex.name}`}
-                              className="w-14 bg-black/30 border border-border rounded-lg py-1 px-1.5 text-xs text-center tabular-nums focus:outline-none focus:border-primary/50"
+                              className="w-14 bg-black/30 border border-border rounded-lg py-1 px-1.5 text-xs text-center tabular-nums focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40"
                             />
                           ))}
                         </div>
@@ -1466,7 +1466,13 @@ export default function MontarTreino() {
                         onChange={e => mudaExercicio(sessao.id, ex.id, 'tips', e.target.value)}
                         placeholder="Observação para o aluno (opcional) — ex: controle a descida em 3 segundos"
                         maxLength={500}
-                        className="w-full bg-transparent border-0 border-t border-border/60 rounded-none pt-2 px-1 text-xs text-foreground-muted focus:outline-none focus:text-foreground"
+                        /* FOCO VISÍVEL. Este campo não tem borda — só um filete em cima —, e a
+                           única pista de foco era o texto clarear de `foreground-muted` para
+                           `foreground`. Quem navega por teclado não tinha como saber onde
+                           estava, porque `focus:outline-none` ainda matava o anel do navegador.
+                           O anel é o mesmo de components/ui/Input.tsx, para o app ter uma só
+                           indicação de foco. */
+                        className="w-full bg-transparent border-0 border-t border-border/60 rounded-none pt-2 px-1 text-xs text-foreground-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:rounded-lg focus:text-foreground"
                       />
                     </div>
                   </div>
