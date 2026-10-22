@@ -5,6 +5,96 @@ do commit — elas foram escritas para serem lidas.
 
 ---
 
+## 22/10/2026 — Os métodos de treino, medidos contra a evidência
+
+O profissional levantou uma revisão de literatura dos seis métodos e trouxe para o app. O
+achado que atravessa tudo: **com volume equivalente, nenhum dos seis supera o tradicional**
+para hipertrofia ou força. Eles se justificam por tempo, fadiga e objetivo — nunca por prometer
+mais músculo. Os seis cartões do seletor foram conferidos: todos são descrição factual, nenhum
+promete ganho. Não havia nada a desmentir.
+
+### Superset e Circuito eram só rótulo
+
+Pirâmide, Rest-Pause e Drop Set ganharam estrutura no dado em 27/09/2026. Estes dois ficaram de
+fora porque **não havia onde gravar o par**. O prompt pedia "certifique-se de parear exercícios
+coerentes", e o par existia só na cabeça do modelo: sumia no salvamento. Quem esperou três meses
+pelo Superset recebia uma lista igual à do tradicional.
+
+Era a quarta vez no projeto que uma regra pedida só no prompt não chegou ao aluno.
+
+Agora a IA **ordena** a sessão — isso é prescrição — e o código **monta** o bloco a partir dessa
+ordem, garantindo a estrutura. Se a IA ordenar mal, sai um par do mesmo músculo, que não é erro:
+é um bi-set, e a tela avisa que a carga tende a cair. A falha é suave de propósito.
+
+Reordenar por conta própria foi descartado: moveria um composto pesado para o fim da sessão,
+trocando um problema pequeno por um grande.
+
+### O teto que faltava desde 28/09
+
+Medido em 27/09/2026: a IA aplicou drop set em **21 de 21 exercícios**. Ficou como suspeita a
+confirmar, e a decisão de fixar os protocolos em código nunca saiu do papel porque os números
+não existiam. A revisão responde: drop set e rest-pause elevam esforço percebido, lactato e
+fadiga, e devem ficar em poucos exercícios por sessão.
+
+O teto ficou em **um exercício intensificado por grupo muscular do dia**, decisão do
+profissional. Por grupo, não por sessão, porque escala com o tamanho do treino.
+
+Ele escolhe entre os exercícios que **já têm** a técnica, não o último do grupo em absoluto: se
+a IA marcou só o primeiro, mirar no último deixaria a sessão sem técnica nenhuma — o aluno que
+pediu Drop Set receberia treino tradicional, que é o defeito que a regra existe para evitar.
+
+### Três números já estavam certos
+
+| | Código | Evidência |
+|---|---|---|
+| Queda do drop | 20% | 20 a 25% |
+| Descanso antes do drop | 0 s | sem descanso |
+| Microdescanso do rest-pause | 15 s | 10 a 20 s |
+
+Não foram mexidos. O código não estava errado — estava incompleto.
+
+### O rest-pause inflava o volume semanal
+
+O gráfico contava toda série concluída, então "S1 · RP1 · RP2" entrava como 3 séries. As
+retomadas são continuação da mesma: o aluno não largou o peso. Drop set continua contando tudo,
+de propósito — cada queda é série de trabalho com carga menor.
+
+Repetição e tonelagem não mudaram, que é o que a revisão pede. São duas perguntas diferentes
+sobre o mesmo treino: quantas séries, e quanto trabalho.
+
+### O local que o app descartava em silêncio
+
+O seletor do gerador deixava escolher "Academia completa" e o servidor descartava sem avisar,
+porque a anamnese dizia "Em casa" — e o perfil ganha do corpo da requisição, para que ninguém na
+sala receba Leg Press. O profissional testou, recebeu peso livre e concluiu que o app tinha
+ignorado o que ele preencheu.
+
+A trava não foi afrouxada. A escolha agora chega à **fonte da verdade**: trocar o local pergunta
+se é para atualizar o perfil, e aí não sobra contradição para o servidor resolver. Escreve só a
+coluna `training_location`, como `banExerciseForUser` — o upsert grande já apagou listas uma vez.
+
+### Nenhum número novo foi inventado
+
+As estações do circuito são os exercícios do dia, cuja quantidade já saía do nível e da duração
+(3 a 8). As voltas são as séries do protocolo: 3 na semana 1, +1 por semana. O circuito herdou a
+periodização que o resto do app já tinha, em vez de criar um segundo lugar para envelhecer.
+
+Ombro ficou sem antagonista, com teste: a oposição do deltoide é entre porções do próprio
+músculo, não entre grupos do catálogo. Inventar um par seria dizer da evidência o que ela não
+diz.
+
+### Dois erros meus, registrados
+
+Eu disse que o cronômetro do bloco precisaria ser construído. **Já funcionava** desde que
+superset e circuito ganharam mecânica. E eu criei duas regras para a mesma coisa — a tela
+pareando por paridade, o servidor gravando o campo. Concordavam, e era esse o risco. Agora é
+uma só.
+
+Percebi o segundo escrevendo um comentário que prometia o que o código não fazia.
+
+---
+
+
 ## 22/10/2026 — O service worker nunca instalou
 
 Publicado em `5a0be34`. Achado por acidente, ao conferir se o som novo tinha subido.
