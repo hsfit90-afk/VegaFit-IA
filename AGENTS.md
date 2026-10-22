@@ -19,8 +19,8 @@ Não há separação front/back: as telas e as rotas de servidor vivem juntas em
 | Telas | 31 |
 | Rotas de API | 23 |
 | Componentes | 29 |
-| Módulos de regra em `lib/` | 28 |
-| Testes | **528**, em 25 arquivos |
+| Módulos de regra em `lib/` | 29 |
+| Testes | **551**, em 26 arquivos |
 | Migrações | 41 (a próxima é a **42**) |
 | Linhas de TypeScript | ~24.200 |
 
@@ -28,9 +28,9 @@ Não há separação front/back: as telas e as rotas de servidor vivem juntas em
 
 ## O que não se toca sem o profissional aprovar
 
-**`lib/`** — 28 módulos de regra pura, sem banco e sem rede. Protocolo de séries, periodização
+**`lib/`** — 29 módulos de regra pura, sem banco e sem rede. Protocolo de séries, periodização
 de 4 semanas, progressão de nível, desbloqueio de métodos, filtro de equipamento, escolha de
-mobilidade por articulação, estado de assinatura. Os 528 testes cobrem exatamente isso. Mudar
+mobilidade por articulação, estado de assinatura. Os 551 testes cobrem exatamente isso. Mudar
 visual nunca precisa entrar aqui.
 
 **`app/api/`** — as 23 rotas decidem prescrição e dinheiro.
@@ -144,7 +144,7 @@ ou prescrição. Leia do banco com `service_role`, usando o id do aluno.
 ```
 npx tsc --noEmit      # 0 erros
 npm run lint          # 0 erros
-npm test              # 528 passando
+npm test              # 551 passando
 npm run build         # compila
 ```
 
@@ -178,7 +178,7 @@ components/workout/ blocos do treino (têm regra dentro)
 hooks/              cronômetro, descanso, persistência do treino
 utils/              supabase, rate-limit, push, cache, mensagens de erro
 database/           41 migrações numeradas, rodadas à mão no Supabase
-tests/              528 testes sobre lib/ e utils/
+tests/              551 testes sobre lib/ e utils/
 ```
 
 O tema vive em `@theme`, dentro de `app/globals.css`. Não há `tailwind.config` — é Tailwind v4.

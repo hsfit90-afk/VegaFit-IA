@@ -7,6 +7,7 @@ import { classifyEquipmentTier, EQUIPMENT_ALLOWED_TIERS } from "@/lib/equipmentT
 import { isMobilityOnly } from "@/lib/exerciseType";
 import { classifyExerciseLevel, normalizarNivel, NIVEIS_PERMITIDOS, GRUPOS_SEM_FILTRO_DE_NIVEL } from "@/lib/exerciseLevel";
 import { limparAlvosPorSerie } from "@/lib/metodoTreino";
+import { aplicarTetoDeIntensificacao, ehMetodoIntensificado } from "@/lib/protocoloDeMetodo";
 import { filtrarPorEquipamentoAusente } from "@/lib/equipamentoAusente";
 import { filtrarParaCasa, dicasDeImproviso } from "@/lib/equipamentoCasa";
 import { selecionarMobilidade } from "@/lib/preparoFinalizacao";
@@ -399,11 +400,18 @@ export async function POST(req: NextRequest) {
         'ESTRUTURA OBRIGATÓRIA DO REST-PAUSE: em "targetLabels", a primeira série é a série de trabalho e as ' +
         'seguintes são retomadas. Use exatamente ["S1", "RP1", "RP2"] para 3 séries, ou ["S1", "RP1"] para 2. ' +
         'Os rótulos "RP" são lidos pelo aplicativo para encurtar o descanso para 15 segundos — sem eles o ' +
-        'aluno descansa o tempo normal e a técnica deixa de ser rest-pause.',
+        'aluno descansa o tempo normal e a técnica deixa de ser rest-pause. ' +
+        'TETO: aplique a técnica em NO MÁXIMO UM exercício por grupo muscular da sessão, e que seja o ÚLTIMO ' +
+        'exercício daquele grupo. Em todos os outros use ["S1", "S2", "S3"]. O rest-pause eleva muito o esforço ' +
+        'percebido; espalhá-lo pela sessão inteira é prescrição ruim, não método.',
       drop_set:
         'ESTRUTURA OBRIGATÓRIA DO DROP SET: a ÚLTIMA série de "targetLabels" deve se chamar "Drop Set" ' +
         '(ex: ["S1", "S2", "Drop Set"]). Se prescrever mais de um drop, use ["S1", "S2", "Drop 1", "Drop 2"]. ' +
-        'O aplicativo lê esse rótulo para não disparar descanso antes do drop.',
+        'Nunca mais de dois drops. O aplicativo lê esse rótulo para não disparar descanso antes do drop. ' +
+        'TETO: aplique a técnica em NO MÁXIMO UM exercício por grupo muscular da sessão, e que seja o ÚLTIMO ' +
+        'exercício daquele grupo. Em todos os outros use ["S1", "S2", "S3"]. O drop set eleva esforço percebido, ' +
+        'lactato e fadiga; espalhá-lo pela sessão inteira é prescrição ruim, não método. ' +
+        'Para receber o drop, prefira máquina ou exercício de isolamento, onde trocar a carga é rápido e seguro.',
     };
     const instrucaoDoMetodo = instrucoesPorMetodo[methodLabel] ?? '';
 
@@ -756,6 +764,27 @@ ${instrucaoDoMetodo}`;
     // do aluno receberia a palavra e a conta de volume iria junto.
     for (const session of json.sessions || []) {
       session.exercises = (session.exercises || []).map((ex: any) => limparAlvosPorSerie(ex));
+    }
+
+    // Teto de intensificacao: no maximo UM exercicio por grupo muscular leva drop set ou
+    // rest-pause (lib/protocoloDeMetodo.ts).
+    //
+    // Decidido AQUI, depois da geracao, e nao pedido no prompt. Medido em 27/09/2026: a IA
+    // aplicou drop set em 21 de 21 exercicios. A revisao de evidencia de 22/10/2026 pede o
+    // contrario -- esses metodos elevam esforco percebido, lactato e fadiga neuromuscular, e
+    // devem ficar em poucos exercicios por sessao. Pedir no prompt ja falhou quatro vezes
+    // neste projeto, pelo motivo de sempre: prompt nao e enforcement.
+    if (ehMetodoIntensificado(methodLabel)) {
+      let neutralizados = 0;
+      for (const session of json.sessions || []) {
+        const antes = session.exercises || [];
+        const depois = aplicarTetoDeIntensificacao(antes, methodLabel);
+        neutralizados += depois.filter((ex: any, i: number) => ex !== antes[i]).length;
+        session.exercises = depois;
+      }
+      if (neutralizados > 0) {
+        console.log(`[treino] teto de intensificacao: ${neutralizados} exercicio(s) voltaram a serie comum (metodo ${methodLabel})`);
+      }
     }
 
     // Sanitiza o aeróbico. Ao contrário das sessões de força, um cardio inválido NÃO derruba a
