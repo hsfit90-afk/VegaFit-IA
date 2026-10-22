@@ -206,7 +206,7 @@ export function EditorDePreparo({
                 list={listaId}
                 placeholder="Acrescentar do catálogo…"
                 onChange={e => { acrescentar(e.target.value); e.target.value = ''; }}
-                className="w-full bg-black/30 border border-border rounded-lg py-1.5 pl-7 pr-2 text-xs focus:outline-none focus:border-primary/50"
+                className="w-full bg-black/30 border border-border rounded-lg py-1.5 pl-7 pr-2 text-xs focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40"
               />
             </div>
           )}

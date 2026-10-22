@@ -377,7 +377,12 @@ export default function Settings() {
               disabled={deleting}
               autoComplete="off"
               placeholder="EXCLUIR"
-              className="w-full bg-background border border-border rounded-xl px-4 py-3 text-white font-mono tracking-wider focus:border-destructive focus:outline-none disabled:opacity-50"
+              /* FOCO VISÍVEL no campo de maior consequência do app.
+                 A borda já ficava vermelha ao focar, mas indicação só por COR é frágil para
+                 quem tem baixa visão — e aqui a pessoa está digitando EXCLUIR para apagar a
+                 própria conta. O anel é vermelho, não verde, porque a cor deve acompanhar o
+                 que a ação significa. */
+              className="w-full bg-background border border-border rounded-xl px-4 py-3 text-white font-mono tracking-wider focus:border-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 disabled:opacity-50"
             />
 
             {deleteError && (
