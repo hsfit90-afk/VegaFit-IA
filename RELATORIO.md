@@ -1,13 +1,13 @@
 # VegaFit — Relatório Técnico
 
-Levantado do código em 21/10/2026, a partir do commit `d5e0b82`.
+Levantado do código em 22/10/2026, a partir do commit `b59bf53`.
 Nenhum arquivo do projeto foi alterado para produzir este documento.
 
 **Para quem é:** quem vai mexer no visual do app sem conhecer o código. As seções 9 e 10 são
 as que mais importam para esse trabalho; as anteriores existem para dar o contexto.
 
 **Números do projeto:** 31 telas, 23 rotas de API, 29 componentes, 28 módulos de regra,
-24 arquivos de teste (498 testes), 41 migrações de banco, ~23.800 linhas de TypeScript.
+25 arquivos de teste (528 testes), 41 migrações de banco, ~24.200 linhas de TypeScript.
 
 ---
 
@@ -116,7 +116,7 @@ utils/
   supabase/          clientes (browser, server, middleware) e guardas de acesso
   (raiz)             rate-limit da IA, push, cache do treino, cálculo de carga
 database/            41 migrações SQL numeradas, rodadas à mão no Supabase
-tests/               24 arquivos, 498 testes — cobrem lib/ e utils/
+tests/               25 arquivos, 528 testes — cobrem lib/ e utils/
 scripts/             classificarEquipamento.mjs (classificação offline do catálogo)
 worker/              index.js — handler de push do service worker
 public/              manifest.json, sw.js, ícones, imagens de medidas
@@ -293,7 +293,7 @@ Em paralelo, fora do rodízio: aeróbico, abdominal (dias alternados), mobilidad
 **`lib/` inteiro.** São 28 módulos de regra pura — protocolo de séries e repetições,
 periodização de 4 semanas, progressão de nível, desbloqueio de métodos, filtro de equipamento,
 escolha de mobilidade por articulação, estado de assinatura. Mudar visual nunca precisa entrar
-aqui. Os 498 testes cobrem exatamente isso.
+aqui. Os 528 testes cobrem exatamente isso.
 
 **`app/api/**`.** As 23 rotas decidem prescrição e dinheiro. Em especial:
 - `/api/treino` e `/api/swap` filtram o catálogo **em código** antes do prompt. Essa ordem é a
@@ -320,9 +320,10 @@ com o próximo número.
 
 1. **Classe Tailwind montada por concatenação não funciona.** `border-${cor}/25` não gera CSS —
    o Tailwind lê o código como texto. Passe a classe inteira como propriedade.
-2. **Token que não existe no `@theme` não vira classe.** Já aconteceu com `accent`, usado em 27
-   lugares antes de o token existir. Os elementos ficavam sem cor, herdando a do pai, e
-   ninguém percebia. **Está acontecendo de novo com a tipografia — seção 10.**
+2. **Token que não existe no `@theme` não vira classe.** Já aconteceu duas vezes. Com `accent`,
+   usado em 27 lugares antes de o token existir: os elementos ficavam sem cor, herdando a do
+   pai. E com a tipografia, em 105 lugares — corrigido em 21/10, ver `CHANGELOG.md`. Nos dois
+   casos nada quebrou e nada avisou, que é o que torna esta armadilha a mais perigosa da lista.
 3. **Fim de linha misto (CRLF e LF).** Edição por regex em arquivo inteiro corrompe. Use edição
    ancorada em linha.
 4. **Comentário JSX (`{/* */}`) quebra o build** dentro de um braço de ternário ou logo depois
@@ -331,90 +332,65 @@ com o próximo número.
 
 ---
 
-## 10. Diagnóstico visual
+## 10. Estado visual
 
-O app **não** parece mal cuidado por falta de critério — o tema tem 30 tokens bem escolhidos, a
-acessibilidade é razoável (49 `aria-label`, só 2 casos de foco removido sem substituto), e há um
-sistema de componentes próprio. O problema é **adoção**: o sistema existe e é contornado.
+**Esta seção foi reescrita em 22/10/2026.** A versão anterior diagnosticava o app antes do
+refino; as cinco melhorias que ela propunha foram aplicadas e estão em produção desde 21/10.
+O histórico está em `CHANGELOG.md`.
 
-### Achado principal: nenhuma das duas fontes está sendo aplicada
+### O que foi corrigido
 
-`app/layout.tsx` carrega **Inter** e **Outfit** pelo `next/font/google`. O `<body>` recebe as
-variáveis `--font-inter` e `--font-outfit`, e 43 arquivos usam a classe `font-outfit` — **105
-ocorrências**, em praticamente todo título do app.
+**As duas fontes passaram a ser aplicadas.** Era o achado principal do diagnóstico anterior:
+`font-outfit` aparecia 105 vezes em 43 arquivos e a classe nunca existiu, e `--font-sans`
+apontava para a pilha do sistema em vez da Inter. Nove arquivos `.woff2` eram baixados e nenhum
+usado. Hoje `.font-outfit` existe no CSS compilado e em produção.
 
-Conferi o CSS compilado:
+**As escalas fecharam.**
 
-```
-.font-outfit          NÃO EXISTE no CSS gerado
-.font-sans            → var(--font-sans)
---font-sans           → -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ...
-```
+| | Antes | Agora |
+|---|---|---|
+| Espaçamento | 7 valores | `p-5` (128) · `p-3` (69) · `p-8` (17) |
+| Raio | 6 valores | `rounded-xl` (207) · `rounded-full` (72) · `rounded-lg` (65) |
+| Largura | 19 telas à mão | 29 das 31 usam `lib/layout.ts` |
 
-Duas coisas, somadas:
+As larguras restantes são internas — modal, card e passo de onboarding — e devem continuar
+assim.
 
-1. `font-outfit` não gera nada, porque **não há `--font-outfit` no bloco `@theme`**. É
-   exatamente a armadilha nº 2 acima, repetida.
-2. O `<body>` usa `font-sans`, que no Tailwind v4 é a **pilha do sistema**, não Inter — porque
-   `--font-sans` também nunca foi redefinido para `var(--font-inter)`.
+**Carregamento, erro e vazio ganharam um padrão só.** Zero `Loader2` solto; zero mensagem de
+erro crua chegando ao usuário; `EmptyState` em 7 telas, cada uma com uma saída.
 
-**Resultado:** os 9 arquivos de fonte são baixados e nenhum é usado. O app inteiro renderiza na
-fonte padrão do sistema operacional — Segoe UI no Windows, San Francisco no iPhone, Roboto no
-Android. A hierarquia tipográfica que o código descreve não existe na tela, e o app muda de
-cara conforme o aparelho.
+**Três telas foram redesenhadas** — dashboard, treinar e progresso. Um protagonista por tela no
+lugar de cards de mesmo peso, número grande onde o número é o dado, e o GIF do catálogo
+finalmente visível na tela inicial.
 
-É o maior responsável pelo ar de "modo desenvolvedor", e o conserto são duas linhas.
+### O que continua em aberto
 
-### Os outros sintomas, medidos
+**109 `<button>` crus.** O diagnóstico anterior sugeria converter todos para `<Button>`. A
+medição estava certa e a conclusão não: a maioria é chip de filtro (`px-3.5 py-2`), botão de
+ícone (`p-1`, `w-9 h-9`) ou linha de lista clicável. O `<Button>` tem `h-12 px-6` e o
+`size="icon"` tem 48px — converter esses danificaria a interface. Foram convertidos os quatro
+submits de autenticação, que eram os únicos refazendo o estilo primário à mão.
 
-| Sintoma | Medição |
+**Dois casos de foco removido sem substituto**, em `app/admin/montar/page.tsx:1469` e
+`app/settings/page.tsx:380`. Quem navega por teclado perde o indicador nesses dois campos.
+
+**18 emoji restantes.** A maioria está na mensagem de WhatsApp que o aluno compartilha, onde
+emoji é a linguagem certa. Os que faziam papel de ícone de interface já saíram.
+
+### Onde o sistema está aplicado
+
+| Tela | Estado |
 |---|---|
-| **Botões fora do sistema** | 86 `<button>` cru nas telas contra 15 telas que importam `<Button>` |
-| **Carregamento sem padrão** | 19 telas com `Loader2` próprio; **1** usa o `LoadingSpinner` compartilhado. O mesmo bloco `min-h-[60vh] flex items-center justify-center` está copiado em 11 telas |
-| **Estado vazio quase ausente** | `EmptyState` existe e é usado em **3 telas de 31** |
-| **Esqueleto quase ausente** | `Skeleton` usado em 2 telas |
-| **Larguras à mão** | 11 telas usam `lib/layout.ts`; **19 definem `max-w-` direto**, em 6 valores diferentes (`md`, `3xl`, `5xl`, `sm`, `lg`, `2xl`) |
-| **Espaçamento sem escala** | `p-4` (52×), `p-3` (44×), `p-6` (26×), `p-2` (20×), `p-5` (19×), `p-8` (10×) — seis valores concorrentes |
-| **Raio de borda sem escala** | `rounded-xl` (157×), `rounded-full` (73×), `rounded-lg` (52×), `rounded-2xl` (43×), `rounded-md` (16×), `rounded-3xl` (12×) |
-| **Erro cru do backend na tela** | 17 lugares fazem `setError(error.message)`. Inclui as 4 telas de autenticação — é assim que um aluno lê **"Invalid login credentials"**, em inglês |
+| Dashboard, Treinar, Progresso | Redesenhadas |
+| Histórico | Cabeçalho e gráfico no padrão novo |
+| Demais 27 | Herdam fonte, escalas, carregamento, erros e estados vazios |
 
-### As 5 melhorias de maior impacto
+### O que faria diferença agora
 
-**1. Fazer as fontes funcionarem.** Acrescentar ao `@theme` de `app/globals.css`:
+Não é mais refino de consistência — isso está feito. O que resta é produto:
 
-```css
---font-sans: var(--font-inter);
---font-outfit: var(--font-outfit-raw);  /* ou expor a variável do next/font */
-```
-
-Duas linhas devolvem a tipografia que o projeto já paga para baixar. É a mudança com a maior
-diferença visual por linha escrita em todo o app, e some com a variação entre aparelhos.
-
-**2. Traduzir e humanizar as mensagens de erro.** Trocar os 17 `error.message` por um tradutor
-que mapeie os erros conhecidos do Supabase e do Mercado Pago para português, dizendo o que
-fazer. "Invalid login credentials" vira *"E-mail ou senha incorretos. Se não lembra a senha, use
-'Esqueceu sua senha?' logo abaixo."* Custo baixo, e é o ponto em que o app hoje parece quebrado
-para quem não é técnico.
-
-**3. Um só estado de carregamento.** Substituir os 19 `Loader2` soltos pelo `LoadingSpinner`, e
-nas telas de lista (histórico, progresso, biblioteca, treinos dos alunos) trocar o spinner por
-`Skeleton` com a forma do conteúdo. Spinner centralizado em tela cheia é a assinatura visual de
-protótipo; esqueleto com a silhueta certa é a de produto.
-
-**4. Fechar a escala de espaçamento e de raio.** Reduzir os seis paddings a três
-(`p-3` compacto, `p-5` padrão, `p-8` destaque) e os seis raios a três (`rounded-lg` controles,
-`rounded-xl` cartões, `rounded-full` pílulas). E adotar `lib/layout.ts` nas 19 telas que ainda
-escolhem a própria largura — o módulo já existe exatamente para isso, com a explicação de por
-que foi criado.
-
-**5. Estado vazio em toda lista.** `EmptyState` já existe e cobre 3 telas. Faltam histórico,
-progresso, anamneses anteriores, modelos do montador, pedidos do Personal. Hoje essas telas
-ficam simplesmente em branco quando não há dado — e tela em branco é indistinguível de tela
-quebrada para quem está usando.
-
-### Uma ressalva sobre ordem
-
-As cinco acima são seguras: nenhuma encosta em `lib/`, em `app/api/` ou no banco. Mas a
-primeira muda o tamanho aparente de **todo texto do app** de uma vez — a fonte do sistema e a
-Outfit têm métricas diferentes. Depois de aplicá-la, vale repassar as telas mais densas
-(`/active`, `/admin/montar`) antes de mexer em qualquer outra coisa.
+1. **`/generator` e `/settings`**, as duas telas de uso frequente que ainda não receberam o
+   tratamento de hierarquia.
+2. **Os dois focos de teclado**, que são acessibilidade e não estética.
+3. **A auditoria de LGPD**, pendente desde antes deste trabalho e agora mais urgente: o app tem
+   cobrança ligada e página de vendas.
