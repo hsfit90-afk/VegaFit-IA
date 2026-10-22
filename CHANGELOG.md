@@ -5,6 +5,64 @@ do commit — elas foram escritas para serem lidas.
 
 ---
 
+## 22/10/2026 — Auditoria de LGPD: dois vazamentos e um comprovante falho
+
+Auditoria em `AUDITORIA-LGPD.md`. Sete lacunas levantadas, três fechadas aqui — as outras
+quatro dependem de dado que o código não tem (razão social, e-mail de contato) ou de decisão
+do profissional (idade mínima, Termo de Uso).
+
+### Dois terceiros recebiam dado do aluno sem estar declarados
+
+Nenhum dos dois foi deduzido: apareceram ao listar os domínios externos que o código chama.
+
+**O player do YouTube rastreava antes do play.** Exercício sem mídia própria abre um `<iframe>`
+de `youtube.com/embed` — e nesse domínio o Google grava cookie de rastreio assim que o player
+carrega, dê a pessoa play ou não. Virou `youtube-nocookie.com/embed`: mesmo vídeo, cookie só se
+houver play.
+
+**O som do descanso vinha de um CDN alheio, a cada treino.** `assets.mixkit.co` recebia o IP do
+aluno toda vez que um treino começava. O arquivo passou para `public/sons/descanso.mp3`. Além
+da privacidade, tirou uma dependência boba: se o Mixkit saísse do ar, o aluno treinava sem
+aviso de descanso e ninguém descobriria o motivo.
+
+### O comprovante de exclusão conferia 9 tabelas de 11
+
+A rota de excluir conta não apaga tabela por tabela — quem apaga é o `ON DELETE CASCADE`. A
+lista de `app/api/account/delete/route.ts` serve a uma etapa que roda **depois** e conta se
+sobrou linha, para a exclusão ser verificável em vez de "melhor esforço".
+
+`treino_personalizado_pedidos` nunca esteve nessa lista, desde a migração 35. O dado **era**
+apagado — a cascata está lá. O que faltava era o alarme: com a cascata quebrada por uma
+migração futura, a verificação varreria as outras nove, não acharia nada e registraria
+"resíduo: nenhum". Um comprovante de exclusão afirmando que está tudo limpo.
+
+De quebra, o comentário do topo do arquivo dizia "9 tabelas" desde antes de existirem 11.
+
+### A política ganhou o que faltava
+
+Seção 5: Vercel, Mercado Pago, YouTube, Mixkit e o serviço de push do navegador. Está dito que
+dados de cartão nunca passam pelos servidores do VegaFit — o que o Mercado Pago recebe é o
+e-mail e um identificador interno.
+
+Seção 7: o Art. 20. Treino, carga e progressão são decisão automatizada, e o aluno tem direito
+a pedir revisão por uma pessoa. No VegaFit quem revisa é o profissional com CREF; a política
+não dizia.
+
+### O que não foi corrigido, e é o mais grave
+
+A política continua no ar com `[RAZÃO SOCIAL]` e `[E-MAIL DE CONTATO]` por preencher. O e-mail
+aparece justamente onde ela explica como exercer os direitos do titular — ou seja, hoje não há
+canal. São dados reais, que ninguém inventa pelo dono.
+
+### Um erro meu, registrado
+
+A primeira versão da auditoria listava **Cloudflare R2** como operador. Não existe: zero
+referências no código. A mídia está no Supabase Storage, que já era declarado. Afirmei sem
+medir — o que o `AGENTS.md` manda não fazer. Foi ao conferir que apareceram o YouTube e o
+Mixkit, que eram achados de verdade.
+
+---
+
 ## 21/10/2026 — Refino visual e redesenho de três telas
 
 Publicado em `1b25440`. 58 arquivos, 1.800 linhas a mais e 737 a menos.
