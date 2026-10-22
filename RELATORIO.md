@@ -371,8 +371,15 @@ medição estava certa e a conclusão não: a maioria é chip de filtro (`px-3.5
 `size="icon"` tem 48px — converter esses danificaria a interface. Foram convertidos os quatro
 submits de autenticação, que eram os únicos refazendo o estilo primário à mão.
 
-**Dois casos de foco removido sem substituto**, em `app/admin/montar/page.tsx:1469` e
-`app/settings/page.tsx:380`. Quem navega por teclado perde o indicador nesses dois campos.
+**Foco de teclado: resolvido em 22/10, e eram 14 campos, não 2.**
+
+A varredura que produziu o número 2 só pegava campos com indicação *nenhuma*, e ignorava os
+doze que trocavam apenas a cor da borda — 1px a 50% de opacidade sobre fundo escuro, que é
+indicação fraca demais para quem tem baixa visão. Todos os 14 ganharam o anel
+`focus-visible:ring-2` que `components/ui/Input.tsx` já usava.
+
+Fica como lembrete de método: **a varredura também precisa ser conferida.** Contar o que é
+fácil de contar não é o mesmo que medir o problema.
 
 **18 emoji restantes.** A maioria está na mensagem de WhatsApp que o aluno compartilha, onde
 emoji é a linguagem certa. Os que faziam papel de ícone de interface já saíram.
@@ -389,8 +396,11 @@ emoji é a linguagem certa. Os que faziam papel de ícone de interface já saír
 
 Não é mais refino de consistência — isso está feito. O que resta é produto:
 
-1. **`/generator` e `/settings`**, as duas telas de uso frequente que ainda não receberam o
+1. **A auditoria de LGPD**, pendente desde antes deste trabalho e agora a mais urgente da
+   lista: o app tem cobrança ligada e página de vendas. A política publicada ainda traz razão
+   social e e-mail como texto de exemplo, não há Encarregado nomeado, a idade mínima do código
+   (14) não bate com a da política (18), e Mercado Pago e Vercel não estão declarados como
+   operadores.
+2. **`/generator` e `/settings`**, as duas telas de uso frequente que ainda não receberam o
    tratamento de hierarquia.
-2. **Os dois focos de teclado**, que são acessibilidade e não estética.
-3. **A auditoria de LGPD**, pendente desde antes deste trabalho e agora mais urgente: o app tem
-   cobrança ligada e página de vendas.
+3. **Os 109 `<button>` crus**, caso a caso e não em bloco — ver a ressalva acima.
