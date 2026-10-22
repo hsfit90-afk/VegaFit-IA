@@ -3,7 +3,7 @@
 Vale para qualquer IA e para qualquer pessoa. Foi escrito depois de cair em cada uma das
 armadilhas listadas aqui — todas são reincidentes, nenhuma é teórica.
 
-Última verificação contra o código: **22/10/2026**, commit `b59bf53`.
+Última verificação contra o código: **22/10/2026**, commit `5a0be34`.
 
 ---
 
@@ -51,7 +51,7 @@ o próximo número. **Nunca executar SQL no banco: só propor o arquivo.**
 
 ---
 
-## As cinco armadilhas deste repositório
+## As seis armadilhas deste repositório
 
 Todas já morderam. Em ordem de frequência.
 
@@ -78,6 +78,25 @@ uma tag**. Para comentar uma propriedade, use `/* */` ou escreva acima do compon
 
 **5. `.github/workflows/` nunca entra em commit.**
 O token atual não tem permissão de `workflow` e o push inteiro é recusado por causa dele.
+
+**6. Arquivo novo em `public/` precisa da extensão dele no matcher do `middleware.ts`.**
+O matcher isenta estático por extensão (`svg png jpg jpeg gif webp mp3`) e por padrão de nome
+(`manifest.json`, `sw.js`, `workbox-*.js`, `worker-*.js`). O que não estiver ali responde
+**307 para `/login`**.
+
+Já mordeu três vezes. Em 08/10/2026, `manifest.json` e `sw.js` — o PWA não instalava. Em
+22/10/2026, descobriu-se que aquela correção era metade: o `sw.js` faz `importScripts` de
+`worker-<hash>.js`, que continuava em 307, e `importScripts` que falha derruba a instalação
+inteira. Na mesma tarefa, um `.mp3` novo caiu na mesma armadilha.
+
+**Por que escapa sempre:** o 307 não quebra nada na hora, não aparece em `tsc`, `lint`, teste
+nem build, e o usuário logado recebe 200 porque manda o cookie. O estrago aparece semanas
+depois, como "o app não instala". A única verificação que pega é pedir o arquivo em produção
+**sem estar logado**:
+
+```
+curl -sS -o /dev/null -w "%{http_code}\n" https://vega-fit-ia.vercel.app/seu-arquivo.ext
+```
 
 ### Fora do código, mas reincidente
 

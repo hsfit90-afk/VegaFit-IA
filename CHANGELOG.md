@@ -5,6 +5,45 @@ do commit — elas foram escritas para serem lidas.
 
 ---
 
+## 22/10/2026 — O service worker nunca instalou
+
+Publicado em `5a0be34`. Achado por acidente, ao conferir se o som novo tinha subido.
+
+O matcher do `middleware.ts` isenta estático por extensão e por nome. Em 08/10 `manifest.json`
+e `sw.js` entraram na lista, depois de os dois responderem 307 e o PWA não instalar. **Aquela
+correção era metade.**
+
+O `sw.js` faz `importScripts` de dois arquivos que o next-pwa gera ao lado dele, e nenhum dos
+dois estava isento. Medido em produção, antes:
+
+| | |
+|---|---|
+| `sw.js` | 200 |
+| `manifest.json` | 200 |
+| `workbox-4754cb34.js` | **307 → /login** |
+| `worker-WDW1zc-m-pa1ZsGf39oT8.js` | **307 → /login** |
+
+E o `sw.js` em produção continha, literalmente, `importScripts("worker-WDW1zc-m-pa1ZsGf39oT8.js")`.
+`importScripts` que falha derruba a instalação inteira do service worker — então o PWA seguiu
+sem instalar depois de 08/10, só que com o sintoma escondido: quem olhasse `sw.js` via 200.
+
+Os dois agora entram por padrão, não por nome, porque o hash muda a cada build. Depois da
+correção, os seis estáticos respondem 200 — inclusive o `worker-NoySyDbzGmLAifFNyos2s.js`, cujo
+hash mudou neste build, o que prova que o padrão pega hash novo. `/active`, `/progress`,
+`/admin/treinos` e `/api/admin/alunos` continuam em 307 para `/login`.
+
+**O `.mp3` entrou junto, e esse defeito foi meu.** O som do descanso tinha acabado de sair do
+CDN do Mixkit para `public/sons/descanso.mp3`, e `mp3` não estava na lista. Das 104 entradas do
+precache, 98 são `_next/` e as outras seis eram `.png` ou o manifest — todas isentas. A minha
+era a única entrada do precache que o middleware interceptava. Li o comentário de 08/10 nessa
+mesma tarefa e repeti o erro assim mesmo: pensei no som, não no service worker.
+
+Virou a sexta armadilha do `AGENTS.md`, com o comando que a detecta — pedir o arquivo em
+produção **sem estar logado**. É a única verificação que pega: o 307 não aparece em `tsc`,
+`lint`, teste nem build, e o usuário logado recebe 200 porque manda o cookie.
+
+---
+
 ## 22/10/2026 — Auditoria de LGPD: dois vazamentos e um comprovante falho
 
 Auditoria em `AUDITORIA-LGPD.md`. Nove lacunas levantadas, três fechadas aqui — as outras
