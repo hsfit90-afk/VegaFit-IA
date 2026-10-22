@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
           <ShieldCheck className="w-7 h-7 text-primary" />
           <h1 className="text-2xl md:text-3xl font-outfit font-bold text-white">Política de Privacidade</h1>
         </div>
-        <p className="text-xs text-foreground-muted mb-10">Última atualização: 20 de agosto de 2026 — versão 1.0</p>
+        <p className="text-xs text-foreground-muted mb-10">Última atualização: 22 de outubro de 2026 — versão 1.1</p>
 
         <div className="space-y-8 text-sm leading-relaxed text-foreground-muted">
 
@@ -72,6 +72,11 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc list-inside space-y-2">
               <li><strong className="text-foreground">Google</strong> (provedor de inteligência artificial, através da API Gemini): ao gerar um treino, ao usar o coach, ao trocar um exercício, ao montar o plano alimentar e ao calcular a progressão, enviamos ao Google as informações necessárias — incluindo objetivo, nível, equipamentos e, quando existentes, lesões, condições médicas, medicamentos contínuos e restrições alimentares relatados na Anamnese — para que a IA responda de forma segura e adequada ao seu caso. O Google processa essa informação apenas para retornar a resposta gerada; recomendamos consultar a <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline">política de privacidade do Google para a API Gemini</a> para mais detalhes.<br /><span className="text-foreground-muted">O processamento ocorre em servidores fora do Brasil, o que caracteriza transferência internacional de dados nos termos dos arts. 33 a 36 da LGPD.</span></li>
               <li><strong className="text-foreground">Supabase</strong> (infraestrutura de banco de dados e autenticação): hospeda o banco de dados onde suas informações ficam armazenadas, com controle de acesso restrito por usuário (Row Level Security).</li>
+              <li><strong className="text-foreground">Vercel</strong> (hospedagem do aplicativo): é o servidor que entrega o app ao seu aparelho e, por isso, processa os dados técnicos de cada acesso — endereço IP, tipo de dispositivo e navegador. O processamento ocorre em servidores fora do Brasil, o que caracteriza transferência internacional de dados nos termos dos arts. 33 a 36 da LGPD.</li>
+              <li><strong className="text-foreground">Mercado Pago</strong> (processamento de pagamento): ao assinar, enviamos o seu e-mail e um identificador interno da sua conta, apenas para vincular o pagamento ao seu acesso. <strong className="text-foreground">Os dados de cartão e de cobrança são informados por você diretamente ao Mercado Pago e nunca passam pelos servidores do VegaFit.</strong></li>
+              <li><strong className="text-foreground">YouTube</strong> (Google): alguns exercícios da Biblioteca não possuem vídeo próprio e são exibidos através de um player incorporado do YouTube. Ao abrir um desses exercícios, o YouTube recebe seu endereço IP e informações do seu navegador.</li>
+              <li><strong className="text-foreground">Mixkit</strong> (som do cronômetro): o aviso sonoro de fim do descanso é um arquivo de áudio buscado no servidor do Mixkit quando você inicia um treino, o que expõe seu endereço IP a esse serviço.</li>
+              <li><strong className="text-foreground">Serviço de notificação do seu navegador</strong> (Google, Mozilla ou Apple, conforme o navegador que você usa): se você ativar os lembretes de treino, a entrega da notificação passa obrigatoriamente pelo serviço de push do próprio navegador. O que enviamos é apenas o texto do lembrete.</li>
               <li>Se você é aluno de um personal trainer cadastrado na plataforma, seu treinador tem acesso aos seus dados de treino e à sua Anamnese para poder te acompanhar — essa é a finalidade central do vínculo aluno-treinador dentro do app.</li>
             </ul>
           </section>
@@ -94,6 +99,9 @@ export default function PrivacyPolicyPage() {
               <li>Solicitar a portabilidade dos seus dados a outro fornecedor de serviço;</li>
               <li>Se opor a tratamentos realizados em desacordo com a lei.</li>
             </ul>
+            <p className="mt-3">
+              <strong className="text-foreground">Revisão de decisões automatizadas (Art. 20 da LGPD):</strong> o seu plano de treino, a carga sugerida e a progressão de cada semana são definidos por critérios automatizados, com apoio de inteligência artificial. Você tem o direito de solicitar que essas decisões sejam revistas por uma pessoa. No VegaFit, essa revisão é feita pelo profissional de Educação Física registrado no CREF responsável pela plataforma — basta pedir pelo canal de contato indicado abaixo.
+            </p>
             <p className="mt-3">Para exercer qualquer um desses direitos, entre em contato em [E-MAIL DE CONTATO — completar antes de publicar].</p>
           </section>
 
