@@ -34,8 +34,16 @@ linha.
 
 ## Lacunas, por gravidade
 
-> Este é o levantamento como ele saiu, sem reescrever o passado. As lacunas **3, 4 e 6 já foram
-> corrigidas** em 22/10/2026 — o que foi feito está na seção "O que já foi corrigido", no fim.
+> Nove lacunas. As de número **3, 4 e 6 já foram corrigidas** em 22/10/2026 — o que foi feito
+> está na seção "O que já foi corrigido", no fim.
+>
+> As lacunas ficam como saíram do levantamento, sem reescrever o passado, **com duas exceções
+> assinaladas no próprio texto**: a 3, onde eu listei um operador que não existe, e a 5, onde
+> eu errei para menos e a correção mudou a gravidade de média para alta. Deixo os dois erros
+> à vista porque apagá-los esconderia como foram achados.
+>
+> As lacunas 7 e 8 vieram de uma auditoria anterior, de 09/10/2026, e esta tinha perdido as
+> duas. Reconferi no código antes de trazê-las de volta.
 
 ### ALTA — 1. A política está publicada com texto de preenchimento
 
@@ -117,21 +125,30 @@ Fica fora com razão.)
 **Correção:** acrescentar a tabela à lista. Uma linha. Eu faço — mas é `app/api/`, área
 protegida, e preciso da sua aprovação.
 
-### MÉDIA — 5. A regra de menores não é verificada em lugar nenhum
+### ALTA — 5. O app oferece 14 anos; a política promete 18
+
+**Esta lacuna subiu de média para alta depois que eu conferi direito.** A primeira versão deste
+relatório dizia que a idade não era validada em lugar nenhum. Está errado, e a verdade é pior.
 
 A política diz: *"O VegaFit não é direcionado a menores de 18 anos."*
 
-O campo de idade da anamnese (`lib/anamneseSteps.ts:40`) é um número sem mínimo, sem máximo e
-sem validação. Uma pessoa de 13 anos se cadastra, responde a anamnese, informa lesões e recebe
-prescrição de carga — e nada no app registra ou impede.
+Mas o onboarding tem um seletor de idade com botões de mais e menos, e o piso dele é **14**
+(`app/onboarding/page.tsx:318`). Não é ausência de regra: é uma regra escrita que **contradiz
+a política publicada**. O app não deixa o aluno descer abaixo de 14 — ou seja, alguém decidiu
+que 14 era aceitável.
 
-Não há nem sequer uma pergunta sobre idade no cadastro: ela só aparece na anamnese, depois de a
-conta existir.
+Já a anamnese, onde entra o dado de saúde, tem um campo de número livre, sem mínimo nem máximo
+(`lib/anamneseSteps.ts:40`). Aceita qualquer coisa.
+
+Os dois juntos: o app convida um garoto de 14, aceita que ele declare lesão, medicamento
+contínuo e condição médica, e prescreve carga — enquanto a política afirma que isso não
+acontece. Se um responsável reclamar, o documento publicado contradiz o próprio produto.
 
 **Isto é decisão sua antes de ser código.** Três caminhos:
-- manter 18 e **validar de fato** (bloquear o cadastro, ou a geração de treino)
-- baixar a idade declarada e exigir consentimento do responsável, como o Art. 14 pede
-- manter como está e aceitar a divergência
+- manter 18 e **validar de fato** nos dois lugares (trocar o piso para 18 e pôr limite na
+  anamnese)
+- assumir os 14 na política e exigir consentimento de responsável, como o Art. 14 pede
+- manter como está, sabendo que os dois se contradizem
 
 Prescrição de exercício para menor sem anuência de responsável é risco além da LGPD.
 
@@ -145,7 +162,31 @@ pode pedir o Treino do Personal montado à mão. Mas a política não informa es
 
 **Correção:** um parágrafo na seção 7. Eu faço.
 
-### BAIXA — 7. O prazo de retenção é indefinido
+### MÉDIA — 7. Não há Encarregado nomeado (Art. 41)
+
+A palavra "encarregado" não aparece em lugar nenhum do app — nem a ANPD. O Art. 41 manda o
+controlador indicar um encarregado e **divulgar publicamente** a identidade e o contato dele.
+
+Na prática, para uma operação do seu tamanho, o encarregado é você mesmo ou alguém que você
+indique: não precisa ser cargo, nem pessoa contratada. O que a lei pede é que esteja publicado.
+Resolve junto com a lacuna 1, no mesmo parágrafo, assim que você me passar o e-mail.
+
+Vale dizer que a Resolução CD/ANPD nº 2/2022 dispensa o agente de **pequeno porte** de nomear
+encarregado — mas o regime não vale para tratamento de alto risco, e dado de saúde pesa nessa
+avaliação. **Essa é pergunta de advogado**, não minha, e é a mesma que decide o tamanho de
+várias outras obrigações suas.
+
+### BAIXA — 8. A transferência internacional não diz sob qual hipótese ocorre
+
+A política cita "os arts. 33 a 36" duas vezes, para o Google e para a Vercel. Citar a faixa de
+artigos não é o mesmo que declarar a hipótese: o Art. 33 lista várias (cláusulas contratuais
+padrão, certificação, consentimento específico do titular, entre outras), e o titular tem
+direito de saber qual delas sustenta o envio dos dados dele para fora.
+
+É ajuste de texto, mas de texto que precisa estar certo — depende de quais cláusulas os
+contratos do Google e da Vercel efetivamente trazem. Vai junto com o Termo de Uso, no advogado.
+
+### BAIXA — 9. O prazo de retenção é indefinido
 
 A seção 6 diz "enquanto sua conta estiver ativa", sem prazo para conta abandonada. O histórico
 de anamnese é explicitamente **cumulativo e sem expurgo** — cada resposta cria um registro novo
@@ -194,8 +235,12 @@ exclusão dizendo "resíduo: nenhum" sem ter olhado lá.
 
 **Em aberto, de menor urgência:**
 
-4. O prazo de retenção para conta abandonada (o item 7 acima). O padrão já existe no projeto,
-   em `database/32_ai_usage_log_retencao.sql`.
+4. **Nomear o Encarregado e publicar o contato** (lacuna 7). Sai junto com o item 1 — é o mesmo
+   parágrafo da política. Só depende do e-mail.
+5. **A hipótese do Art. 33** para a transferência internacional (lacuna 8). Depende de ler os
+   contratos do Google e da Vercel; vai com o advogado.
+6. O prazo de retenção para conta abandonada (lacuna 9). O padrão já existe no projeto, em
+   `database/32_ai_usage_log_retencao.sql`.
 
 ---
 

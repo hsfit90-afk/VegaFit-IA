@@ -7,8 +7,8 @@ do commit — elas foram escritas para serem lidas.
 
 ## 22/10/2026 — Auditoria de LGPD: dois vazamentos e um comprovante falho
 
-Auditoria em `AUDITORIA-LGPD.md`. Sete lacunas levantadas, três fechadas aqui — as outras
-quatro dependem de dado que o código não tem (razão social, e-mail de contato) ou de decisão
+Auditoria em `AUDITORIA-LGPD.md`. Nove lacunas levantadas, três fechadas aqui — as outras
+seis dependem de dado que o código não tem (razão social, e-mail de contato) ou de decisão
 do profissional (idade mínima, Termo de Uso).
 
 ### Dois terceiros recebiam dado do aluno sem estar declarados
@@ -53,6 +53,11 @@ não dizia.
 A política continua no ar com `[RAZÃO SOCIAL]` e `[E-MAIL DE CONTATO]` por preencher. O e-mail
 aparece justamente onde ela explica como exercer os direitos do titular — ou seja, hoje não há
 canal. São dados reais, que ninguém inventa pelo dono.
+
+E a política promete 18 anos enquanto o seletor de idade do onboarding
+(`app/onboarding/page.tsx:318`) tem piso **14**. Não é ausência de regra: é uma regra escrita
+que contradiz o documento publicado. A anamnese, onde entra o dado de saúde, aceita qualquer
+número. Qual dos dois vale é decisão do profissional, não efeito colateral de uma auditoria.
 
 ### Um erro meu, registrado
 
