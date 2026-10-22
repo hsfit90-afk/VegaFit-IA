@@ -34,6 +34,9 @@ linha.
 
 ## Lacunas, por gravidade
 
+> Este é o levantamento como ele saiu, sem reescrever o passado. As lacunas **3, 4 e 6 já foram
+> corrigidas** em 22/10/2026 — o que foi feito está na seção "O que já foi corrigido", no fim.
+
 ### ALTA — 1. A política está publicada com texto de preenchimento
 
 `app/privacy/page.tsx`, linhas 32 e 97:
@@ -156,27 +159,43 @@ padrão existe no projeto.
 
 ---
 
-## O que eu proponho fazer
+## O que já foi corrigido
 
-Em ordem, e separando o que é meu do que é seu:
+Na branch `lgpd/politica`, em 22/10/2026. Nenhum deles fecha uma lacuna sozinho — fecham o que
+dependia só de código.
 
-**Você:**
-1. Os dados reais para a política — razão social (ou seu nome, se for pessoa física) e e-mail
-   de contato
-2. Decidir a regra de idade
-3. Procurar um advogado para o Termo de Uso
+| | O quê | Onde |
+|---|---|---|
+| ✅ | Vercel, Mercado Pago, YouTube, Mixkit e o push declarados | seção 5 da política |
+| ✅ | Art. 20 — direito a revisão humana da decisão automatizada | seção 7 da política |
+| ✅ | `youtube.com/embed` → `youtube-nocookie.com/embed` | `app/library/page.tsx:643` |
+| ✅ | Som do descanso servido pelo próprio app | `public/sons/descanso.mp3` |
+| ✅ | `treino_personalizado_pedidos` na verificação da exclusão | `app/api/account/delete/route.ts` |
 
-**Eu, com sua aprovação:**
-4. Acrescentar Vercel, Mercado Pago, YouTube e Mixkit à seção 5, e o push junto
-5. Acrescentar o Art. 20 à seção 7
-6. Trocar `youtube.com/embed` por `youtube-nocookie.com/embed`
-7. Guardar o som do descanso em `public/` em vez de buscar no Mixkit
-8. Acrescentar `treino_personalizado_pedidos` à verificação da exclusão
-9. Implementar a validação de idade, depois que você decidir qual
+Em todos: `tsc` 0 erros, `lint` 0 erros, 528 testes passando, build compila.
 
-Os itens 4 e 5 são texto e não têm risco. O 6 é uma palavra. O 7 e o 8 tocam áreas que você
-marcou como protegidas — `app/active/page.tsx` e `app/api/` —, então ficam parados até você
-mandar. O 9 depende da sua decisão sobre idade.
+Sobre o último: ele **não muda o que é apagado**. A cascata do banco já apagava, e a consulta
+acrescentada é um `count` que roda depois que a conta deixou de existir. O que faltava era o
+alarme — sem a tabela na lista, uma cascata quebrada no futuro produziria um comprovante de
+exclusão dizendo "resíduo: nenhum" sem ter olhado lá.
+
+---
+
+## O que ainda falta
+
+**Depende de você, e eu não consigo fazer:**
+
+1. **Os dados reais da política** — razão social (ou seu nome, se for pessoa física) e e-mail de
+   contato. É o item de maior gravidade da auditoria, e o único que deixa a política sem
+   serventia: hoje a seção que explica como exercer direitos aponta para um colchete.
+2. **A regra de idade** — manter 18 e validar de fato, baixar e exigir responsável, ou assumir
+   a divergência. Depois que você decidir, eu implemento.
+3. **O Termo de Uso** — advogado. Não é trabalho meu, e não é a política de privacidade.
+
+**Em aberto, de menor urgência:**
+
+4. O prazo de retenção para conta abandonada (o item 7 acima). O padrão já existe no projeto,
+   em `database/32_ai_usage_log_retencao.sql`.
 
 ---
 
