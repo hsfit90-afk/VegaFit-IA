@@ -29,6 +29,21 @@ function ehRestPause(rotulo: string): boolean {
   return /^rp\s*\d*$/i.test(rotulo.trim()) || /rest[\s-]?pause/i.test(rotulo);
 }
 
+/**
+ * Este rótulo é uma RETOMADA de rest-pause, e não uma série nova?
+ *
+ * Existe para o volume semanal. A revisão de evidência de 22/10/2026 pede que os mini-blocos
+ * do rest-pause contem como UMA série só, porque são continuação da mesma — o aluno não
+ * largou o peso. No drop set é o contrário: cada queda é uma série de trabalho com carga
+ * menor, e conta normalmente.
+ *
+ * Exportada em vez de duplicada: a regex acima distingue "RP1" de "S1" e não pode existir em
+ * dois lugares para divergir depois.
+ */
+export function ehRetomadaDeRestPause(rotulo: string | null | undefined): boolean {
+  return typeof rotulo === 'string' && ehRestPause(rotulo);
+}
+
 export interface EntradaDeDescanso {
   /** targetLabels do exercício, na ordem das séries. */
   rotulos?: string[] | null;

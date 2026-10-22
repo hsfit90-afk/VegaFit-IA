@@ -16,6 +16,7 @@ import { useWorkoutTimer } from '@/hooks/useWorkoutTimer';
 import { useRestTimer } from '@/hooks/useRestTimer';
 import { useMiniPause } from '@/hooks/useMiniPause';
 import { useWorkoutPersistence } from '@/hooks/useWorkoutPersistence';
+import { tipoDoBloco, AVISO_DO_BISET } from '@/lib/blocosDeTreino';
 import { RestTimerOverlay } from '@/components/workout/RestTimerOverlay';
 import { PeriodizationResetNotice } from '@/components/workout/PeriodizationResetNotice';
 import { useToast } from '@/components/ui/Toast';
@@ -221,18 +222,51 @@ export default function ActiveWorkout() {
   //   cada exercício é seu próprio grupo — comportamento idêntico ao de sempre, sem mudança.
   const trainingMethod = currentPlan?.trainingMethod || 'tradicional';
 
-  const getGroupInfo = (exIndex: number): { isLastInGroup: boolean; pairIndex: number | null } => {
+  /**
+   * O bloco gravado no plano, quando existe (lib/blocosDeTreino.ts, 22/10/2026).
+   *
+   * A partir daqui o par é DADO, não cálculo de paridade de índice. As duas regras davam o
+   * mesmo resultado hoje — e era exatamente esse o risco: duas implementações que concordam
+   * até alguém mexer numa delas. O servidor já grava `bloco`; a tela passa a ler.
+   *
+   * Plano salvo antes disso não tem o campo, e aí a paridade continua valendo. Sem migração.
+   */
+  const planoTemBlocos = (currentSession?.exercises || []).some(e => typeof e?.bloco === 'number');
+
+  /**
+   * A que bloco este exercício pertence. UMA regra, não duas.
+   *
+   * Plano novo traz `bloco` do servidor. Plano antigo não tem o campo, e aí a paridade de
+   * índice reproduz exatamente o que esta tela já fazia desde que superset e circuito ganharam
+   * mecânica — mesmo par, mesmo descanso, sem migração e sem mudança de comportamento.
+   *
+   * Antes isto vivia em dois lugares: aqui, por paridade, e no servidor, no campo. Os dois
+   * concordavam — e era esse o risco, porque concordar não é o mesmo que ser a mesma regra.
+   */
+  const blocoDe = (exIndex: number): number | null => {
+    if (exIndex < 0 || exIndex >= activeExercises.length) return null;
+
+    if (planoTemBlocos) {
+      const b = currentSession?.exercises[exIndex]?.bloco;
+      return typeof b === 'number' ? b : null;
+    }
+    if (trainingMethod === 'circuito') return 1;
     if (trainingMethod === 'superset') {
-      const pairStart = exIndex % 2 === 0 ? exIndex : exIndex - 1;
-      const pairEnd = pairStart + 1;
-      const hasPair = pairEnd < activeExercises.length;
-      if (!hasPair) return { isLastInGroup: true, pairIndex: null };
-      return { isLastInGroup: exIndex === pairEnd, pairIndex: exIndex === pairStart ? pairEnd : pairStart };
+      const inicio = exIndex % 2 === 0 ? exIndex : exIndex - 1;
+      // Ímpar que sobra no fim não tem par, e não forma bloco.
+      return inicio + 1 < activeExercises.length ? Math.floor(inicio / 2) + 1 : null;
     }
-    if (trainingMethod === 'circuito') {
-      return { isLastInGroup: exIndex === activeExercises.length - 1, pairIndex: null };
-    }
-    return { isLastInGroup: true, pairIndex: null };
+    return null;
+  };
+
+  const getGroupInfo = (exIndex: number): { isLastInGroup: boolean; pairIndex: number | null } => {
+    const meu = blocoDe(exIndex);
+    if (meu === null) return { isLastInGroup: true, pairIndex: null };
+
+    const doBloco = activeExercises.map((_, i) => i).filter(i => blocoDe(i) === meu);
+    const ultimo = doBloco[doBloco.length - 1];
+    const parceiro = doBloco.length === 2 ? doBloco.find(i => i !== exIndex) ?? null : null;
+    return { isLastInGroup: exIndex === ultimo, pairIndex: parceiro };
   };
 
   const handleSetUpdate = (exerciseIndex: number, setIndex: number, field: keyof ActiveSet, value: any) => {
@@ -947,8 +981,46 @@ export default function ActiveWorkout() {
           const customMediaUrl = dbMatch?.mediaUrl;
           const searchQuery = encodeURIComponent(exercise.youtubeSearchTerm || `${ex.name} como fazer exercicio`);
 
+          /* O BLOCO CERCA OS EXERCÍCIOS, em vez de juntá-los num cartão só.
+             A informação que o aluno precisa é a mesma — estes aqui vão juntos, a pausa é no
+             fim —, e cercar não reescreve o cartão de exercício, que é onde a carga é
+             registrada. Num arquivo que grava o histórico do aluno, a versão de menor risco
+             com o mesmo resultado ganha. */
+          const meuBloco = blocoDe(exIndex);
+          const abreBloco = meuBloco !== null && blocoDe(exIndex - 1) !== meuBloco;
+          const fechaBloco = meuBloco !== null && blocoDe(exIndex + 1) !== meuBloco;
+          const doBloco = meuBloco === null
+            ? []
+            : activeExercises.map((_, i) => i).filter(i => blocoDe(i) === meuBloco);
+          const tipo = tipoDoBloco(doBloco.map(i => currentSession.exercises[i]), trainingMethod);
+          const nomeDoBloco = tipo === 'circuito' ? 'Circuito' : tipo === 'biset' ? 'Bi-set' : 'Superset';
+          const descansoDoBloco = profile?.defaultRestTimer || exercise?.restSeconds || 60;
+
           return (
-          <Card key={ex.workoutExerciseId} variant="glass" className="p-0 relative overflow-hidden group">
+          <div key={`bloco-${ex.workoutExerciseId}`} className={meuBloco !== null ? 'relative pl-3 md:pl-4' : ''}>
+            {meuBloco !== null && (
+              <div className={`absolute left-0 top-0 bottom-0 w-0.5 bg-accent/30 ${abreBloco ? 'rounded-t-full' : ''} ${fechaBloco ? 'rounded-b-full' : ''}`} />
+            )}
+
+            {abreBloco && (
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-2.5">
+                <span className="text-xs font-bold text-accent uppercase tracking-wide inline-flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 shrink-0" />
+                  {nomeDoBloco}
+                </span>
+                <span className="text-xs text-foreground-muted">
+                  {tipo === 'circuito'
+                    ? `${doBloco.length} exercícios em sequência`
+                    : '1 série de cada, sem descanso entre eles'}
+                </span>
+              </div>
+            )}
+
+            {abreBloco && tipo === 'biset' && (
+              <p className="text-[11px] text-foreground-muted mb-2.5 leading-relaxed">{AVISO_DO_BISET}</p>
+            )}
+
+          <Card variant="glass" className="p-0 relative overflow-hidden group">
             {/* Glow effect in background */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[80px] -z-10 group-hover:bg-accent/20 transition-all duration-700 pointer-events-none"></div>
             
@@ -1017,19 +1089,17 @@ export default function ActiveWorkout() {
                     {String(activeExercises.length).padStart(2, '0')}
                   </p>
                   <h2 className="text-2xl font-outfit font-bold text-white mb-2">{ex.name}</h2>
-                  {trainingMethod === 'superset' && (() => {
-                    const { pairIndex } = getGroupInfo(exIndex);
-                    return pairIndex !== null ? (
-                      <p className="text-xs font-bold text-accent flex items-center gap-1.5 mb-2 uppercase tracking-wide">
-                        <Zap className="w-3.5 h-3.5 shrink-0" />
-                        Superset com {activeExercises[pairIndex]?.name} — sem descanso entre os dois
-                      </p>
-                    ) : null;
-                  })()}
-                  {trainingMethod === 'circuito' && (
+                  {/* A LINHA "Superset com X" SAIU DAQUI (22/10/2026).
+                      O bloco que cerca os exercícios já diz isso uma vez, no lugar certo:
+                      antes do primeiro do par, não repetida dentro de cada cartão. Repetir
+                      vira ruído, e ruído de método é o que ninguém lê.
+
+                      Para plano antigo, sem `bloco` gravado, o aviso aparece mesmo assim: o
+                      getGroupInfo cai na paridade de índice e o cerco é montado igual. */}
+                  {meuBloco !== null && !abreBloco && (
                     <p className="text-xs font-bold text-accent flex items-center gap-1.5 mb-2 uppercase tracking-wide">
-                      <RefreshCw className="w-3.5 h-3.5 shrink-0" />
-                      Circuito — etapa {exIndex + 1} de {activeExercises.length} (descanso só no fim da volta)
+                      {tipo === 'circuito' ? <RefreshCw className="w-3.5 h-3.5 shrink-0" /> : <Zap className="w-3.5 h-3.5 shrink-0" />}
+                      {tipo === 'circuito' ? `Estação ${doBloco.indexOf(exIndex) + 1} de ${doBloco.length}` : 'Segundo do par — emende no anterior'}
                     </p>
                   )}
                   <p className="text-sm text-primary flex items-center gap-2 mb-2">
@@ -1332,6 +1402,16 @@ export default function ActiveWorkout() {
             </div>
             </div>
           </Card>
+
+            {fechaBloco && (
+              <div className="flex items-center gap-2 mt-2.5 text-xs text-foreground-muted">
+                <Timer className="w-3.5 h-3.5 shrink-0 text-accent" />
+                {tipo === 'circuito'
+                  ? <span>Descanso de <strong className="text-foreground tabular-nums">{descansoDoBloco}s</strong> no fim da volta, não entre as estações.</span>
+                  : <span>Descanso de <strong className="text-foreground tabular-nums">{descansoDoBloco}s</strong> só depois dos dois.</span>}
+              </div>
+            )}
+          </div>
           );
         })}
       </div>

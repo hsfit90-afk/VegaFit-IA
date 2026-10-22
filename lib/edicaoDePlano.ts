@@ -43,7 +43,7 @@ export const CAMPOS_EDITAVEIS = [
  * montador, então ela é dado do formulário, não dado preservado. Se um dia sair da tela, ela
  * volta para esta lista.
  */
-export const CAMPOS_PRESERVADOS = ['method', 'targetReps', 'targetLabels', 'youtubeSearchTerm'] as const;
+export const CAMPOS_PRESERVADOS = ['method', 'targetReps', 'targetLabels', 'youtubeSearchTerm', 'bloco'] as const;
 
 export interface ExercicioComChave {
   id?: string;

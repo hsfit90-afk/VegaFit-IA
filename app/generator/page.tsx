@@ -10,7 +10,7 @@ import { getExercises } from '@/lib/db/exercises';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
-import { mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
+import { mapAnamneseLocationToEquipment, treinaEmCasa } from '@/lib/trainingLocation';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 import Link from 'next/link';
 import { LIMITE_PREFERENCIAS } from '@/lib/aiHealthContext';
@@ -21,7 +21,20 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
 
 export default function Generator() {
-  const { addWorkoutPlan, profile, history } = useAppContext();
+  const { addWorkoutPlan, profile, history, atualizarLocalDeTreino } = useAppContext();
+
+  /**
+   * Local escolhido aqui que ainda não vale, esperando confirmação.
+   *
+   * O seletor abaixo oferecia "Academia completa" e o servidor descartava em silêncio: o
+   * perfil ganha do corpo da requisição (lib/localEfetivo.ts, para que ninguém em casa receba
+   * Leg Press). Quem marcasse academia recebia o treino de casa sem explicação nenhuma — foi
+   * a primeira coisa que o profissional estranhou ao testar.
+   *
+   * Em vez de afrouxar a trava, a escolha vai para o perfil, que é a fonte da verdade. Aí não
+   * sobra contradição para o servidor resolver.
+   */
+  const [localPendente, setLocalPendente] = useState<string | null>(null);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -421,7 +434,14 @@ export default function Generator() {
                 <label className="text-sm text-foreground-muted font-medium">Equipamentos</label>
                 <select
                   value={form.equipment}
-                  onChange={e => setForm({ ...form, equipment: e.target.value })}
+                  onChange={e => {
+                    const novo = e.target.value;
+                    // Só a saída de casa precisa de confirmação: é a única direção que o
+                    // servidor desfaz. Ir para casa nunca contradiz o perfil.
+                    const saindoDeCasa = treinaEmCasa(mapAnamneseLocationToEquipment(profile?.trainingLocation)) && !treinaEmCasa(novo);
+                    if (saindoDeCasa) setLocalPendente(novo);
+                    else setForm({ ...form, equipment: novo });
+                  }}
                   className="w-full bg-surface border border-border rounded-xl p-3 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                 >
                   {/* Duas opções, não quatro. "Halteres em casa" e "Barra e anilhas"
@@ -432,6 +452,34 @@ export default function Generator() {
                   <option>Academia completa</option>
                   <option>Em casa</option>
                 </select>
+
+                {localPendente && (
+                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+                    <p className="text-sm text-foreground">
+                      Sua anamnese diz que você treina <strong className="text-white">em casa</strong>, e é por
+                      isso que os exercícios de máquina ficam de fora. Passou a treinar em academia?
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          await atualizarLocalDeTreino(localPendente);
+                          setForm({ ...form, equipment: localPendente });
+                          setLocalPendente(null);
+                        }}
+                      >
+                        Sim, atualizar meu perfil
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setLocalPendente(null)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                    <p className="text-xs text-foreground-muted">
+                      Isso muda o seu perfil, não só este treino. Os próximos também passam a
+                      contar com a academia.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 md:col-span-2">

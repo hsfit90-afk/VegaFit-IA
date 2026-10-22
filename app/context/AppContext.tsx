@@ -29,6 +29,7 @@ interface AppContextState {
   resetSessionIndex: () => void;
   banExerciseForUser: (exerciseId: string) => Promise<void>;
   toggleFavoriteExercise: (exerciseId: string) => Promise<void>;
+  atualizarLocalDeTreino: (local: string) => Promise<void>;
   // Novidades
   bodyWeightHistory: BodyWeightEntry[];
   addBodyWeight: (weight: number) => Promise<void>;
@@ -282,6 +283,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  /**
+   * Onde o aluno treina, mudado de fora da anamnese.
+   *
+   * Existe porque o seletor do gerador oferecia "Academia completa" e o servidor descartava em
+   * silêncio: lib/localEfetivo.ts manda o perfil ganhar do corpo da requisição, então quem
+   * marcasse academia recebia o treino de casa sem nenhum aviso. O campo prometia uma escolha
+   * que não cumpria.
+   *
+   * A saída não é afrouxar a trava — ela existe porque um aluno de casa recebeu Leg Press —,
+   * é deixar a escolha chegar à FONTE DA VERDADE. Mudando o perfil, não há mais contradição
+   * para o servidor resolver.
+   *
+   * ESCREVE SÓ A PRÓPRIA COLUNA, como banExerciseForUser e toggleFavoriteExercise. O upsert do
+   * setProfile grava a linha inteira a partir da cópia em memória, e é por isso que as listas
+   * saíram de lá.
+   */
+  const atualizarLocalDeTreino = async (local: string) => {
+    if (!profile || !userId) return;
+    if (profile.trainingLocation === local) return;
+    setProfileState({ ...profile, trainingLocation: local });
+    await supabase.from('profiles').update({ training_location: local }).eq('id', userId);
+  };
+
   const banExerciseForUser = async (exerciseId: string) => {
     if (!profile || !userId) return;
     const currentBanned = profile.bannedExercises || [];
@@ -498,6 +522,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         resetSessionIndex,
         banExerciseForUser,
         toggleFavoriteExercise,
+        atualizarLocalDeTreino,
         bodyWeightHistory,
         addBodyWeight,
         activePlanId,
