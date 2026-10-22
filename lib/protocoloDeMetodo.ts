@@ -1,4 +1,4 @@
-import { ehSerieEspecial } from './metodoTreino';
+import { ehSerieEspecial, ehRetomadaDeRestPause } from './metodoTreino';
 
 /**
  * O protocolo de cada método de treino, fixado em código.
@@ -58,14 +58,25 @@ export const QUEDA_MAXIMA_DO_DROP = 0.25;
 export const RETOMADAS_DO_REST_PAUSE = { minimo: 1, maximo: 2 } as const;
 
 /**
- * As retomadas do rest-pause são continuação da MESMA série, não séries novas.
+ * Quantas SÉRIES este exercício somou ao volume semanal do músculo.
  *
- * Importa para o volume semanal: a revisão pede somar as repetições de todos os mini-blocos
- * como uma série só. No drop set é o contrário — cada queda é uma série de trabalho com carga
- * menor, e conta. Hoje app/progress/page.tsx conta tudo igual, e quem treina rest-pause vê o
- * volume inflado.
+ * As retomadas do rest-pause não contam: são continuação da mesma série, com o aluno sem
+ * largar o peso. A revisão de 22/10/2026 pede somar as repetições dos mini-blocos como uma
+ * série só — e era o que o app não fazia: um exercício com "S1 · RP1 · RP2" aparecia como 3
+ * séries no gráfico de volume, inflando a semana de quem treina rest-pause.
+ *
+ * O drop set conta tudo, de propósito: cada queda é uma série de trabalho com carga menor, e
+ * a própria revisão pede que entre no volume como qualquer outra.
+ *
+ * Isto conta SÉRIES. Repetição e tonelagem continuam somando os mini-blocos, que é o que a
+ * revisão pede — são duas perguntas diferentes sobre o mesmo treino.
  */
-export const REST_PAUSE_CONTA_COMO_UMA_SERIE = true;
+export function contarSeriesNoVolume(
+  series: { label?: string; completed?: boolean }[] | null | undefined,
+): number {
+  if (!Array.isArray(series)) return 0;
+  return series.filter(s => s?.completed && !ehRetomadaDeRestPause(s.label)).length;
+}
 
 export function ehMetodoIntensificado(metodo: string | null | undefined): boolean {
   return (METODOS_INTENSIFICADOS as readonly string[]).includes((metodo ?? '').trim());

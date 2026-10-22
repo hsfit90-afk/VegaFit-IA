@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   aplicarTetoDeIntensificacao,
+  contarSeriesNoVolume,
   ehMetodoIntensificado,
   indicesQueMantemTecnica,
   rotulosNeutros,
@@ -181,5 +182,54 @@ describe('aplicarTetoDeIntensificacao', () => {
     const r = aplicarTetoDeIntensificacao(sessao, 'drop_set');
     const comTecnica = r.filter(e => e.targetLabels?.some(l => /drop/i.test(l)));
     expect(comTecnica).toHaveLength(TETO_INTENSIFICADO_POR_GRUPO);
+  });
+});
+
+/**
+ * O volume semanal contava TODA serie concluida, inclusive RP1 e RP2. Um exercicio com
+ * "S1 RP1 RP2" aparecia como 3 series no grafico, quando a revisao de 22/10/2026 diz que as
+ * retomadas sao continuacao da mesma serie. Quem treinava rest-pause via a semana inflada.
+ */
+describe('contarSeriesNoVolume', () => {
+  const s = (label: string, completed = true) => ({ label, completed, reps: 10, weight: 20 });
+
+  it('rest-pause inteiro conta como UMA serie', () => {
+    expect(contarSeriesNoVolume([s('S1'), s('RP1'), s('RP2')])).toBe(1);
+  });
+
+  it('drop set conta TODAS: cada queda e serie de trabalho com carga menor', () => {
+    expect(contarSeriesNoVolume([s('S1'), s('S2'), s('Drop Set')])).toBe(3);
+  });
+
+  it('serie comum conta normal', () => {
+    expect(contarSeriesNoVolume([s('S1'), s('S2'), s('S3')])).toBe(3);
+  });
+
+  it('serie nao concluida nao conta', () => {
+    expect(contarSeriesNoVolume([s('S1'), s('S2', false), s('S3')])).toBe(2);
+  });
+
+  it('retomada nao concluida tambem nao conta', () => {
+    expect(contarSeriesNoVolume([s('S1'), s('RP1', false)])).toBe(1);
+  });
+
+  it('aceita as variacoes de rotulo que o resto do app aceita', () => {
+    expect(contarSeriesNoVolume([s('S1'), s('RP'), s('RP 2'), s('Rest-Pause'), s('Rest Pause')])).toBe(1);
+  });
+
+  it('serie sem rotulo conta: plano antigo nao tem targetLabels', () => {
+    expect(contarSeriesNoVolume([{ completed: true }, { completed: true }])).toBe(2);
+  });
+
+  it('aguenta lista vazia, nula ou que nao e array', () => {
+    expect(contarSeriesNoVolume([])).toBe(0);
+    expect(contarSeriesNoVolume(null)).toBe(0);
+    expect(contarSeriesNoVolume(undefined)).toBe(0);
+    expect(contarSeriesNoVolume('nao e array' as never)).toBe(0);
+  });
+
+  it('nao confunde um rotulo qualquer com RP', () => {
+    // A regex nao pode casar com qualquer coisa que tenha r e p.
+    expect(contarSeriesNoVolume([s('Rampa'), s('Prep'), s('Reps')])).toBe(3);
   });
 });

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ChartSkeleton } from '@/components/charts/ChartSkeleton';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
+import { contarSeriesNoVolume } from '@/lib/protocoloDeMetodo';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 // recharts (~100 kB) sai do bundle inicial da rota. Os três gráficos vêm do mesmo módulo, então
@@ -106,7 +107,8 @@ export default function ProgressPage() {
 
     recentHistory.forEach(session => {
       session.exercises.forEach(ex => {
-        const completedSets = ex.sets.filter(s => s.completed).length;
+        // Retomada de rest-pause não soma série: é continuação da mesma (lib/protocoloDeMetodo.ts).
+        const completedSets = contarSeriesNoVolume(ex.sets);
         if (completedSets > 0) {
           // Simplificação: tentamos encaixar o músculo numa das chaves
           const m = ex.muscleGroup || 'Geral';
