@@ -13,11 +13,12 @@ import { requireAuth } from "@/utils/supabase/auth-guard";
  *    banco), então apagar o usuário do Auth deixaria os arquivos dele órfãos no bucket para
  *    sempre. Tem que ser antes, porque depois de apagar o usuário perdemos o prefixo de pasta.
  *
- * 2. DEPOIS O USUÁRIO DO AUTH. As 9 tabelas de `public` têm `ON DELETE CASCADE` para
- *    `auth.users` (ai_usage_log, anamnese_history, body_weight_history, exercises, profiles,
- *    push_subscriptions, user_session_index, workout_history, workout_plans), então um único
- *    `deleteUser` apaga tudo de forma atômica. DELETEs manuais tabela a tabela seriam redundantes
- *    e, pior, poderiam divergir do schema com o tempo.
+ * 2. DEPOIS O USUÁRIO DO AUTH. As 11 tabelas de `public` têm `ON DELETE CASCADE` para
+ *    `auth.users` (ai_usage_log, anamnese_history, body_weight_history, exercises,
+ *    modelos_de_sessao, profiles, push_subscriptions, treino_personalizado_pedidos,
+ *    user_session_index, workout_history, workout_plans), então um único `deleteUser` apaga
+ *    tudo de forma atômica. DELETEs manuais tabela a tabela seriam redundantes e, pior,
+ *    poderiam divergir do schema com o tempo.
  *
  * 3. VERIFICAÇÃO. Em vez de confiar na cascata no escuro, conferimos depois se sobrou alguma
  *    linha. Se um dia alguém criar uma tabela sem CASCADE, isso aparece no log em vez de virar
@@ -28,12 +29,27 @@ import { requireAuth } from "@/utils/supabase/auth-guard";
  */
 
 const BUCKET = "exercise-media";
+
+/**
+ * As tabelas conferidas pela etapa 3. A chave é `user_id` em todas — é o que permite a mesma
+ * consulta servir para a lista inteira.
+ *
+ * MANTER SINCRONIZADA COM O SCHEMA. Uma tabela que existe no banco e falta aqui não deixa dado
+ * para trás (quem apaga é a cascata, não esta lista), mas apaga o ALARME: a verificação varre
+ * as outras, não acha nada e registra "resíduo: nenhum" — um comprovante de exclusão dizendo
+ * que está tudo limpo enquanto não está. Foi o caso de `treino_personalizado_pedidos`, que
+ * ficou de fora da lista desde a migração 35 e entrou aqui em 22/10/2026, na auditoria de LGPD.
+ *
+ * `modelos_de_sessao` fica fora de propósito: a chave dela é `master_id`, e o conteúdo é do
+ * profissional, não do aluno. Também cascateia, mas não cabe nesta consulta.
+ */
 const TABELAS_COM_USER_ID = [
   "ai_usage_log",
   "anamnese_history",
   "body_weight_history",
   "exercises",
   "push_subscriptions",
+  "treino_personalizado_pedidos",
   "user_session_index",
   "workout_history",
   "workout_plans",

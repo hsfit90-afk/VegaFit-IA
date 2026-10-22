@@ -91,7 +91,7 @@ export default function ActiveWorkout() {
       if (cached) {
         setActiveExercises(cached.activeExercises);
         setStartTime(cached.startTime);
-        audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        audioRef.current = new Audio('/sons/descanso.mp3');
         return;
       }
 
@@ -173,7 +173,11 @@ export default function ActiveWorkout() {
     }
     
     // Initialize audio
-    audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    //
+    // O ARQUIVO É LOCAL DE PROPÓSITO (22/10/2026). Antes vinha de assets.mixkit.co, baixado a
+    // cada treino iniciado: expunha o IP do aluno a um terceiro que a política não declarava,
+    // e deixava o aviso de descanso dependendo de um CDN alheio estar no ar.
+    audioRef.current = new Audio('/sons/descanso.mp3');
   }, [currentSession, activeExercises.length]);
 
   // Cache local: salva o progresso do treino a cada mudança, para sobreviver a fechar o app no meio do treino
