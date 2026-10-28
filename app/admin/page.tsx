@@ -87,7 +87,7 @@ export default function AdminDashboard() {
       case 'ativo':
         return { texto: `Pago até ${fmt(u.subscription_expires_at)}`, cor: 'bg-primary/20 text-primary' };
       case 'trial':
-        return { texto: `Teste até ${fmt(u.trial_ends_at)}`, cor: 'bg-blue-500/20 text-blue-400' };
+        return { texto: `Teste até ${fmt(u.trial_ends_at)}`, cor: 'bg-info/20 text-info' };
       case 'cancelado':
         return { texto: `Cancelado (até ${fmt(u.subscription_expires_at)})`, cor: 'bg-yellow-500/20 text-yellow-400' };
       case 'vencido':
@@ -144,7 +144,7 @@ export default function AdminDashboard() {
         </Card>
         <Card className="p-5 bg-surface border-white/5">
           <h3 className="text-foreground-muted font-medium mb-1">Alunos Ativos</h3>
-          <p className="text-4xl font-bold text-blue-400">{clients.length}</p>
+          <p className="text-4xl font-bold text-info">{clients.length}</p>
         </Card>
       </div>
 
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold
                         ${u.role === 'master' ? 'bg-accent/20 text-accent' : 
                           u.role === 'trainer' ? 'bg-primary/20 text-primary' : 
-                          'bg-blue-500/20 text-blue-400'}`}>
+                          'bg-info/20 text-info'}`}>
                         {u.role || 'client'}
                       </span>
                     </td>
@@ -229,7 +229,7 @@ export default function AdminDashboard() {
                           onClick={() => mudarAssinatura(u.id, 'trial', 'em teste por 7 dias', 7)}
                           disabled={mudando === u.id}
                           title="Reinicia o teste gratuito por 7 dias"
-                          className="text-xs bg-surface-light hover:bg-blue-500/20 hover:text-blue-400 disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
+                          className="text-xs bg-surface-light hover:bg-info/20 hover:text-info disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
                         >
                           Teste 7d
                         </button>

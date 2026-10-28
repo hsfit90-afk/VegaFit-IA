@@ -190,7 +190,7 @@ export default function Dashboard() {
     if (history.length >= 10) list.push({ icon: <Star className="w-5 h-5 text-yellow-400"/>, title: "Dedicado", desc: "10 treinos concluídos" });
     
     const totalVol = history.reduce((acc, h) => acc + h.totalVolume, 0);
-    if (totalVol >= 10000) list.push({ icon: <Trophy className="w-5 h-5 text-blue-400"/>, title: "Monstro", desc: "10 Toneladas levantadas" });
+    if (totalVol >= 10000) list.push({ icon: <Trophy className="w-5 h-5 text-info"/>, title: "Monstro", desc: "10 Toneladas levantadas" });
 
     return list.slice(0, 3); // Mostra os 3 mais relevantes (primeiros da fila)
   }, [history, streak]);

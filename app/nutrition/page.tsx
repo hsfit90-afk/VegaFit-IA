@@ -118,7 +118,7 @@ export default function NutritionPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card variant="glass" className="flex flex-col items-center text-center p-5 border-orange-500/10">
-              <Activity className="w-8 h-8 text-blue-400 mb-2" />
+              <Activity className="w-8 h-8 text-info mb-2" />
               <p className="text-sm text-foreground-muted font-semibold uppercase tracking-wider mb-1">Basal</p>
               <p className="text-2xl font-bold font-mono">{data.tmb} <span className="text-sm font-sans font-normal text-foreground-muted">kcal</span></p>
             </Card>
@@ -153,7 +153,7 @@ export default function NutritionPage() {
 
                 <div>
                   <div className="flex justify-between mb-2">
-                    <span className="font-bold text-blue-400">Carboidratos</span>
+                    <span className="font-bold text-info">Carboidratos</span>
                     <span className="font-mono font-bold">{data.macros.carbs}g</span>
                   </div>
                   <div className="w-full bg-surface h-3 rounded-full overflow-hidden border border-border">
@@ -205,11 +205,11 @@ export default function NutritionPage() {
             </Card>
           </div>
 
-          <div className="mt-8 bg-blue-500/10 border border-blue-500/20 rounded-xl p-5 flex items-start gap-4">
-            <Info className="w-6 h-6 text-blue-400 shrink-0 mt-0.5" />
+          <div className="mt-8 bg-info/10 border border-info/20 rounded-xl p-5 flex items-start gap-4">
+            <Info className="w-6 h-6 text-info shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-blue-400 font-bold text-sm mb-1">Aviso Importante</h4>
-              <p className="text-sm text-blue-200/70 leading-relaxed">
+              <h4 className="text-info font-bold text-sm mb-1">Aviso Importante</h4>
+              <p className="text-sm text-info/70 leading-relaxed">
                 As informações geradas acima são baseadas em estimativas de Inteligência Artificial para fins educativos e não substituem o acompanhamento profissional. Para um plano alimentar preciso e seguro para a sua saúde, <strong>consulte sempre um nutricionista.</strong>
               </p>
             </div>

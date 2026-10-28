@@ -43,7 +43,7 @@ const PROXIMO: Record<string, { status: string; rotulo: string } | null> = {
 
 const COR: Record<string, string> = {
   aguardando_pagamento: 'bg-yellow-500/20 text-yellow-400',
-  pago: 'bg-blue-500/20 text-blue-400',
+  pago: 'bg-info/20 text-info',
   em_producao: 'bg-primary/20 text-primary',
   entregue: 'bg-white/10 text-foreground-muted',
   cancelado: 'bg-red-500/20 text-red-400',

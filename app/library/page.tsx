@@ -363,7 +363,7 @@ export default function Library() {
               <h3 className="font-outfit text-xl font-semibold mb-2 group-hover:text-primary transition-colors pr-8">{ex.name}</h3>
               
               {ex.mediaUrl ? (
-                <span className="text-xs text-blue-400 flex items-center gap-1 mt-3"><ImageIcon className="w-3 h-3"/> GIF Customizado</span>
+                <span className="text-xs text-info flex items-center gap-1 mt-3"><ImageIcon className="w-3 h-3"/> GIF Customizado</span>
               ) : ex.youtubeId ? (
                 <span className="text-xs text-red-400 flex items-center gap-1 mt-3"><Play className="w-3 h-3"/> YouTube</span>
               ) : (
