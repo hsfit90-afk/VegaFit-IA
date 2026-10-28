@@ -220,27 +220,55 @@ acrescentada é um `count` que roda depois que a conta deixou de existir. O que 
 alarme — sem a tabela na lista, uma cascata quebrada no futuro produziria um comprovante de
 exclusão dizendo "resíduo: nenhum" sem ter olhado lá.
 
+### Depois, em 28/10/2026
+
+Três lacunas fecharam porque o profissional decidiu as duas coisas que dependiam dele: a idade
+mínima e o e-mail de contato.
+
+| | O quê | Onde |
+|---|---|---|
+| ✅ | **Lacuna 1** — o controlador identificado e o canal de contato publicado | seção 1 da política |
+| ✅ | **Lacuna 7** — Encarregado nomeado e contato divulgado (Art. 41) | seção 1 da política |
+| ✅ | **Lacuna 5** — a idade mínima de 18 virou regra, com teste | `lib/idadeMinima.ts` |
+
+O e-mail é `souza.higor@gmail.com`, o mesmo que ele já usa, e aparece como `mailto:` nas duas
+seções — o canal de contato que não dá para tocar no celular é metade de um canal. O prazo de
+resposta de 15 dias (Art. 19) entrou junto, porque prometer um canal sem prazo deixa o titular
+sem saber quando reclamar.
+
+Sobre o Encarregado: a Resolução CD/ANPD nº 2/2022 **dispensa** o agente de pequeno porte de
+nomear um, e se ele se enquadra ou não continua sendo pergunta de advogado (dado de saúde pesa
+na avaliação de risco). Nomear ele mesmo não depende dessa resposta: a dispensa permite não
+nomear, nunca proíbe nomear. Qualquer que seja o parecer, o parágrafo publicado está certo.
+
+Sobre a idade: o piso do onboarding era **14**, escrito no código, contra uma política que dizia
+"não é direcionado a menores de 18 anos" desde que foi publicada. Não era lacuna por omissão —
+era contradição. Detalhe em `lib/idadeMinima.ts`.
+
 ---
 
 ## O que ainda falta
 
-**Depende de você, e eu não consigo fazer:**
+**Depende de advogado, não de mim:**
 
-1. **Os dados reais da política** — razão social (ou seu nome, se for pessoa física) e e-mail de
-   contato. É o item de maior gravidade da auditoria, e o único que deixa a política sem
-   serventia: hoje a seção que explica como exercer direitos aponta para um colchete.
-2. **A regra de idade** — manter 18 e validar de fato, baixar e exigir responsável, ou assumir
-   a divergência. Depois que você decidir, eu implemento.
-3. **O Termo de Uso** — advogado. Não é trabalho meu, e não é a política de privacidade.
+1. **O Termo de Uso.** O app cobra e tem página de vendas, e não existe documento que diga o que
+   o serviço entrega nem o que acontece no cancelamento. É a maior lacuna aberta.
+2. **A hipótese do Art. 33** para a transferência internacional (lacuna 8). Depende de ler os
+   contratos do Google e da Vercel.
+3. **Se você é agente de pequeno porte** (aparece nas lacunas 7 e 9). A resposta muda o tamanho
+   de várias obrigações, e dado de saúde pesa contra o enquadramento.
 
-**Em aberto, de menor urgência:**
+**Depende de você responder, e aí eu faço:**
 
-4. **Nomear o Encarregado e publicar o contato** (lacuna 7). Sai junto com o item 1 — é o mesmo
-   parágrafo da política. Só depende do e-mail.
-5. **A hipótese do Art. 33** para a transferência internacional (lacuna 8). Depende de ler os
-   contratos do Google e da Vercel; vai com o advogado.
-6. O prazo de retenção para conta abandonada (lacuna 9). O padrão já existe no projeto, em
-   `database/32_ai_usage_log_retencao.sql`.
+4. **O Cloudflare R2 não está declarado na seção 5** — e esse é um erro meu, de 22/10. Eu
+   procurei no código, não achei, e **tirei o R2 do relatório**. Estava errado: as URLs não
+   estão no código, estão no banco, na coluna de mídia dos exercícios. O domínio é
+   `pub-20e2bb4fb01f47b09d9f59b35f3cf731.r2.dev` e ele serve **todos os vídeos de exercício**
+   do app. Em 28/10/2026 você disse que não mexeu com Cloudflare. Então antes de eu escrever
+   qualquer coisa na política, precisamos saber de onde veio esse bucket — porque se é seu, é
+   operador e precisa ser declarado; e se não é seu, é pior.
+5. O prazo de retenção para conta abandonada (lacuna 9). O padrão já existe no projeto, em
+   `database/32_ai_usage_log_retencao.sql`. Depende da resposta do item 3.
 
 ---
 
@@ -251,5 +279,6 @@ pelo WhatsApp, o canal de contato ausente na política era uma formalidade. Hoje
 ligada e existe página de vendas — o próximo cadastro pode ser de alguém que não te conhece,
 que paga, e que lê a política antes de entregar lesão, medicamento e condição médica.
 
-É nesse cadastro que o placeholder `[E-MAIL DE CONTATO — completar antes de publicar]` deixa de
-ser detalhe.
+Era nesse cadastro que o placeholder `[E-MAIL DE CONTATO — completar antes de publicar]` deixava
+de ser detalhe. Em 28/10/2026 ele saiu, e com ele a idade de 14. O que sobrou de alta gravidade
+é o Termo de Uso, e esse não é documento de proteção de dados — é o contrato do serviço.

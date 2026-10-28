@@ -29,7 +29,10 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-white font-outfit font-semibold text-lg mb-2">1. Quem somos</h2>
             <p>
-              O VegaFit é um aplicativo de geração de treinos com auxílio de inteligência artificial. O responsável pelo tratamento dos dados pessoais descritos nesta política é [RAZÃO SOCIAL / NOME DO RESPONSÁVEL — completar antes de publicar], podendo ser contatado através de [E-MAIL DE CONTATO — completar antes de publicar].
+              O VegaFit é um aplicativo de geração de treinos com auxílio de inteligência artificial. O responsável pelo tratamento dos dados pessoais descritos nesta política é Higor Souza, pessoa física, profissional de Educação Física registrado no CREF, podendo ser contatado em <a href="mailto:souza.higor@gmail.com" className="text-primary underline underline-offset-2">souza.higor@gmail.com</a>.
+            </p>
+            <p className="mt-3">
+              <strong className="text-foreground">Encarregado pelo tratamento de dados (Art. 41 da LGPD):</strong> Higor Souza, pelo mesmo endereço, <a href="mailto:souza.higor@gmail.com" className="text-primary underline underline-offset-2">souza.higor@gmail.com</a>. É com ele que você fala para exercer qualquer direito descrito nesta política, e é ele quem responde a pedidos da Autoridade Nacional de Proteção de Dados (ANPD).
             </p>
           </section>
 
@@ -102,7 +105,7 @@ export default function PrivacyPolicyPage() {
             <p className="mt-3">
               <strong className="text-foreground">Revisão de decisões automatizadas (Art. 20 da LGPD):</strong> o seu plano de treino, a carga sugerida e a progressão de cada semana são definidos por critérios automatizados, com apoio de inteligência artificial. Você tem o direito de solicitar que essas decisões sejam revistas por uma pessoa. No VegaFit, essa revisão é feita pelo profissional de Educação Física registrado no CREF responsável pela plataforma — basta pedir pelo canal de contato indicado abaixo.
             </p>
-            <p className="mt-3">Para exercer qualquer um desses direitos, entre em contato em [E-MAIL DE CONTATO — completar antes de publicar].</p>
+            <p className="mt-3">Para exercer qualquer um desses direitos, entre em contato em <a href="mailto:souza.higor@gmail.com" className="text-primary underline underline-offset-2">souza.higor@gmail.com</a>. Respondemos em até 15 dias, o prazo que a LGPD estabelece no Art. 19.</p>
           </section>
 
           <section>
