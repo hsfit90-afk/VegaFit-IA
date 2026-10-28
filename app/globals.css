@@ -86,6 +86,18 @@
   --color-info-rgb: 96 165 250;
 
   /*
+   * CHAMA — queima, ofensiva, fadiga. O laranja que andava junto do ícone de Flame.
+   *
+   * Mesmo caso do `info`: a cor já estava no app em sete lugares (conclusão do treino,
+   * ofensiva de dias, aviso de fadiga no dashboard), sempre com o mesmo sentido, e sempre
+   * como `orange-400` cru. Contraste 8,36 sobre o fundo.
+   *
+   * NÃO é `warning`. Amarelo avisa de problema; a chama marca esforço e constância, que são
+   * coisas boas. Mapear os dois no mesmo token faria a ofensiva de 10 dias parecer um alerta.
+   */
+  --color-flame: #FB923C;
+
+  /*
    * Roxo de destaque. O código já usava `text-accent`/`bg-accent` em 27 lugares, mas o token
    * nunca existiu — então essas classes não eram geradas e os elementos ficavam sem cor,
    * herdando a do pai.

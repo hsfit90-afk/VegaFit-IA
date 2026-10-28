@@ -363,13 +363,13 @@ export default function ProgressPage() {
               {prs.length > 0 ? (
                 <div className="space-y-4">
                   {prs.map((pr, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-3 bg-surface rounded-xl border border-border group hover:border-yellow-400/30 transition-colors">
+                    <div key={idx} className="flex justify-between items-center p-3 bg-surface rounded-xl border border-border group hover:border-gold/30 transition-colors">
                       <div className="flex-1 min-w-0 pr-3">
                         <p className="text-white font-bold text-sm truncate">{pr.name}</p>
                         <p className="text-xs text-foreground-muted mt-0.5">{new Date(pr.date).toLocaleDateString('pt-BR')}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-mono font-bold text-yellow-400 text-lg leading-none">{pr.weight} <span className="text-xs text-yellow-400/70 font-sans">kg</span></p>
+                        <p className="font-mono font-bold text-gold text-lg leading-none">{pr.weight} <span className="text-xs text-gold/70 font-sans">kg</span></p>
                         <p className="text-xs font-mono text-foreground-muted mt-1">{pr.reps} reps</p>
                       </div>
                     </div>

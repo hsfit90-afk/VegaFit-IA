@@ -814,7 +814,7 @@ export default function ActiveWorkout() {
               </div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col items-center gap-3">
-              <Flame className="w-6 h-6 text-orange-400" />
+              <Flame className="w-6 h-6 text-flame" />
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-black text-white">{completedSetsCount}</span>
                 <span className="text-nano text-foreground-muted uppercase tracking-widest font-bold mt-1">séries</span>
@@ -1213,7 +1213,7 @@ export default function ActiveWorkout() {
                       return (
                         <button
                           onClick={() => toggleFavoriteExercise(ex.exerciseId)}
-                          className={`p-3 border rounded-xl transition-all flex items-center justify-center shadow-lg ${isFav ? 'bg-red-500/20 border-red-500/50 text-red-400' : 'bg-white/5 border-white/10 text-foreground-muted hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'}`}
+                          className={`p-3 border rounded-xl transition-all flex items-center justify-center shadow-lg ${isFav ? 'bg-destructive/20 border-destructive/50 text-destructive' : 'bg-white/5 border-white/10 text-foreground-muted hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive'}`}
                           title={isFav ? 'Remover dos favoritos' : 'Favoritar exercício'}
                           aria-label={`${ex.name}: ${isFav ? 'remover dos favoritos' : 'adicionar aos favoritos'}`}
                           aria-pressed={isFav}
@@ -1234,7 +1234,7 @@ export default function ActiveWorkout() {
                     <button 
                       onClick={() => handleBanExercise(exIndex)}
                       aria-label={`Banir ${ex.name}: remove do treino e não aparece mais nos seus planos`}
-                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all text-foreground-muted flex items-center justify-center shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
+                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-destructive/20 hover:border-destructive/50 hover:text-destructive transition-all text-foreground-muted flex items-center justify-center shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
                       title="Banir exercício (excluir da biblioteca)"
                     >
                       <Trash2 className="w-5 h-5" />

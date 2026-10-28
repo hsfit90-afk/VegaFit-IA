@@ -118,7 +118,7 @@ export default function ProgressionCheckIn() {
                 </div>
               </div>
               {lastWeekWorkouts.length === 0 && (
-                <p className="text-sm text-yellow-400 mt-4 bg-yellow-400/10 p-3 rounded-lg">Você não registrou treinos nos últimos 7 dias. O check-in pode não ser tão preciso.</p>
+                <p className="text-sm text-warning mt-4 bg-warning/10 p-3 rounded-lg">Você não registrou treinos nos últimos 7 dias. O check-in pode não ser tão preciso.</p>
               )}
             </CardContent>
           </Card>
@@ -154,7 +154,7 @@ export default function ProgressionCheckIn() {
                 <div className="flex gap-4">
                   <button
                     onClick={() => setJointPain(true)}
-                    className={`flex-1 py-3 rounded-xl border font-semibold transition-colors ${jointPain ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-surface border-border text-foreground-muted hover:bg-surface-light'}`}
+                    className={`flex-1 py-3 rounded-xl border font-semibold transition-colors ${jointPain ? 'bg-destructive/20 border-destructive text-destructive' : 'bg-surface border-border text-foreground-muted hover:bg-surface-light'}`}
                   >
                     Sim, senti dor
                   </button>

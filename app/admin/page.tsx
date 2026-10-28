@@ -89,9 +89,9 @@ export default function AdminDashboard() {
       case 'trial':
         return { texto: `Teste até ${fmt(u.trial_ends_at)}`, cor: 'bg-info/20 text-info' };
       case 'cancelado':
-        return { texto: `Cancelado (até ${fmt(u.subscription_expires_at)})`, cor: 'bg-yellow-500/20 text-yellow-400' };
+        return { texto: `Cancelado (até ${fmt(u.subscription_expires_at)})`, cor: 'bg-warning/20 text-warning' };
       case 'vencido':
-        return { texto: 'Sem acesso', cor: 'bg-red-500/20 text-red-400' };
+        return { texto: 'Sem acesso', cor: 'bg-destructive/20 text-destructive' };
       default:
         return { texto: u.subscription_status || '-', cor: 'bg-white/10 text-foreground-muted' };
     }
@@ -241,7 +241,7 @@ export default function AdminDashboard() {
                           }}
                           disabled={mudando === u.id}
                           title="Bloqueia geração de treino novo. O histórico e o plano atual continuam"
-                          className="text-xs bg-surface-light hover:bg-red-500/20 hover:text-red-400 disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
+                          className="text-xs bg-surface-light hover:bg-destructive/20 hover:text-destructive disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
                         >
                           Cortar
                         </button>

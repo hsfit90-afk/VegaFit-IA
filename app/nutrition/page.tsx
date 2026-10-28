@@ -142,7 +142,7 @@ export default function NutritionPage() {
               <div className="space-y-6">
                 <div>
                   <div className="flex justify-between mb-2">
-                    <span className="font-bold text-red-400">Proteína</span>
+                    <span className="font-bold text-destructive">Proteína</span>
                     <span className="font-mono font-bold">{data.macros.protein}g</span>
                   </div>
                   <div className="w-full bg-surface h-3 rounded-full overflow-hidden border border-border">

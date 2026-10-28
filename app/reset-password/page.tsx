@@ -64,7 +64,7 @@ export default function ResetPassword() {
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-5 rounded-xl mb-6 text-sm text-center">
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive p-5 rounded-xl mb-6 text-sm text-center">
             {error}
           </div>
         )}
@@ -75,7 +75,7 @@ export default function ResetPassword() {
             <p>Senha atualizada! Redirecionando para o login...</p>
           </div>
         ) : hasSession === false ? (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-5 rounded-xl text-sm text-center">
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive p-5 rounded-xl text-sm text-center">
             Este link de redefinição expirou ou é inválido. Solicite um novo em &quot;Esqueceu sua senha?&quot; na tela de login.
           </div>
         ) : (

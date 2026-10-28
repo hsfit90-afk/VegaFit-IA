@@ -42,11 +42,11 @@ const PROXIMO: Record<string, { status: string; rotulo: string } | null> = {
 };
 
 const COR: Record<string, string> = {
-  aguardando_pagamento: 'bg-yellow-500/20 text-yellow-400',
+  aguardando_pagamento: 'bg-warning/20 text-warning',
   pago: 'bg-info/20 text-info',
   em_producao: 'bg-primary/20 text-primary',
   entregue: 'bg-white/10 text-foreground-muted',
-  cancelado: 'bg-red-500/20 text-red-400',
+  cancelado: 'bg-destructive/20 text-destructive',
 };
 
 export function FilaPersonalizado() {
@@ -169,7 +169,7 @@ export function FilaPersonalizado() {
                         }
                       }}
                       disabled={mexendo === p.id}
-                      className="text-xs bg-surface-light hover:bg-red-500/20 hover:text-red-400 disabled:opacity-40 transition-colors px-3 py-2 rounded-lg"
+                      className="text-xs bg-surface-light hover:bg-destructive/20 hover:text-destructive disabled:opacity-40 transition-colors px-3 py-2 rounded-lg"
                     >
                       Cancelar
                     </button>

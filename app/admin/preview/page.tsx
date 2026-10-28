@@ -287,13 +287,13 @@ export default function PreviaDoAluno() {
       {/* O MESMO desvio por fadiga que o dashboard dele faz. Sem isto a prévia diria
           "Treino A" e ele abriria o B. */}
       {plano && ehOAtivo && escolha.desviadoPorFadiga && (
-        <div className="mb-5 flex items-start gap-2 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3">
-          <AlertTriangle className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+        <div className="mb-5 flex items-start gap-2 bg-warning/10 border border-warning/30 rounded-xl p-3">
+          <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
           <div className="min-w-0">
-            <p className="text-orange-400 font-bold text-micro uppercase tracking-wider">
+            <p className="text-warning font-bold text-micro uppercase tracking-wider">
               Ele vai ver &quot;Fadiga Detectada&quot;
             </p>
-            <p className="text-orange-300/80 text-xs mt-0.5">
+            <p className="text-warning/80 text-xs mt-0.5">
               {sessaoDoCiclo?.name} usa músculo treinado nas últimas 24h. O app desvia para o{' '}
               {sessaoDeHoje?.name}.
             </p>

@@ -185,9 +185,9 @@ export default function Dashboard() {
   // --- Achievements Logic ---
   const achievements = useMemo(() => {
     const list = [];
-    if (history.length >= 1) list.push({ icon: <CheckCircle2 className="w-5 h-5 text-green-400"/>, title: "Primeiro Passo", desc: "Completou seu 1º treino!" });
-    if (streak >= 3) list.push({ icon: <Flame className="w-5 h-5 text-orange-400"/>, title: "No Ritmo", desc: "3 dias seguidos treinando!" });
-    if (history.length >= 10) list.push({ icon: <Star className="w-5 h-5 text-yellow-400"/>, title: "Dedicado", desc: "10 treinos concluídos" });
+    if (history.length >= 1) list.push({ icon: <CheckCircle2 className="w-5 h-5 text-success"/>, title: "Primeiro Passo", desc: "Completou seu 1º treino!" });
+    if (streak >= 3) list.push({ icon: <Flame className="w-5 h-5 text-flame"/>, title: "No Ritmo", desc: "3 dias seguidos treinando!" });
+    if (history.length >= 10) list.push({ icon: <Star className="w-5 h-5 text-warning"/>, title: "Dedicado", desc: "10 treinos concluídos" });
     
     const totalVol = history.reduce((acc, h) => acc + h.totalVolume, 0);
     if (totalVol >= 10000) list.push({ icon: <Trophy className="w-5 h-5 text-info"/>, title: "Monstro", desc: "10 Toneladas levantadas" });
@@ -287,7 +287,7 @@ export default function Dashboard() {
 
         {streak > 0 && (
           <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-surface border border-border shrink-0">
-            <Flame className="w-4 h-4 text-orange-400" />
+            <Flame className="w-4 h-4 text-flame" />
             <span className="text-sm font-bold tabular-nums">{streak}</span>
             <span className="text-xs text-foreground-muted">{streak === 1 ? 'dia' : 'dias'}</span>
           </div>
@@ -327,10 +327,10 @@ export default function Dashboard() {
 
             <div className="relative z-10 p-5 md:p-8">
               {wasRedirectedDueToFatigue && (
-                <div className="flex items-start gap-2 mb-4 text-orange-300/90">
-                  <Flame className="w-4 h-4 shrink-0 mt-0.5 text-orange-400" />
+                <div className="flex items-start gap-2 mb-4 text-flame/90">
+                  <Flame className="w-4 h-4 shrink-0 mt-0.5 text-flame" />
                   <p className="text-xs leading-relaxed">
-                    <span className="font-bold text-orange-400">Treino trocado.</span>{' '}
+                    <span className="font-bold text-flame">Treino trocado.</span>{' '}
                     {originalSession?.name} usa músculo que ainda está se recuperando.
                   </p>
                 </div>

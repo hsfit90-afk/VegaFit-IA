@@ -126,10 +126,10 @@ export default function Settings() {
     const limit = form.gender === 'F' ? 0.85 : 0.90;
     if (Number(rcq) > limit) {
       rcqRisk = 'Risco Aumentado';
-      rcqColor = 'text-red-500';
+      rcqColor = 'text-destructive';
     } else {
       rcqRisk = 'Risco Baixo';
-      rcqColor = 'text-green-500';
+      rcqColor = 'text-success';
     }
   }
 

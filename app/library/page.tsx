@@ -340,7 +340,7 @@ export default function Library() {
                 <div className="flex items-center gap-1">
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleFavoriteExercise(ex.id); }}
-                  className={`p-1.5 rounded-lg transition-colors ${favorites.includes(ex.id) ? 'text-red-500' : 'text-foreground-muted hover:text-red-400 hover:bg-red-500/10'}`}
+                  className={`p-1.5 rounded-lg transition-colors ${favorites.includes(ex.id) ? 'text-destructive' : 'text-foreground-muted hover:text-destructive hover:bg-destructive/10'}`}
                   title={favorites.includes(ex.id) ? 'Remover dos favoritos' : 'Favoritar'}
                   aria-label={`${ex.name}: ${favorites.includes(ex.id) ? 'remover dos favoritos' : 'adicionar aos favoritos'}`}
                   aria-pressed={favorites.includes(ex.id)}
@@ -365,7 +365,7 @@ export default function Library() {
               {ex.mediaUrl ? (
                 <span className="text-xs text-info flex items-center gap-1 mt-3"><ImageIcon className="w-3 h-3"/> GIF Customizado</span>
               ) : ex.youtubeId ? (
-                <span className="text-xs text-red-400 flex items-center gap-1 mt-3"><Play className="w-3 h-3"/> YouTube</span>
+                <span className="text-xs text-destructive flex items-center gap-1 mt-3"><Play className="w-3 h-3"/> YouTube</span>
               ) : (
                 <span className="text-xs text-foreground-muted flex items-center gap-1 mt-3">Sem mídia</span>
               )}

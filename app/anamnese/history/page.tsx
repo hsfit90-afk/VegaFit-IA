@@ -106,7 +106,7 @@ export default function AnamneseHistoryPage() {
                       <span
                         key={d.id}
                         className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border ${
-                          d.delta < 0 ? 'text-primary border-primary/30 bg-primary/10' : 'text-orange-400 border-orange-400/30 bg-orange-400/10'
+                          d.delta < 0 ? 'text-primary border-primary/30 bg-primary/10' : 'text-flame border-flame/30 bg-flame/10'
                         }`}
                       >
                         {d.delta < 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
