@@ -384,6 +384,28 @@ export default function Dashboard() {
                     Ver outro treino
                   </button>
                 )}
+
+                {/* QUEM JA TEM TREINO NAO TINHA COMO PEDIR OUTRO, NO CELULAR.
+
+                    Os tres links para /generator no app estavam todos dentro de estado
+                    vazio: este cartao no ramo "sem plano", app/active no `if
+                    (!currentSession)` e app/cardio no `if (!plano || !cardio)`. O quarto
+                    caminho e a barra lateral, que e `hidden md:flex`.
+
+                    Resultado medido: com plano ativo, no celular, o Gerador nao tinha
+                    NENHUMA porta. E a mesma armadilha do conserto de 09/10/2026, quando
+                    Check-in e Historico so existiam naquela barra lateral.
+
+                    Fica aqui, e nao como sexta aba do rodape: a barra usa `min-w-[70px]`
+                    por item e ja soma 350px com cinco. Um sexto pede 420px, e nao cabe em
+                    tela de 360px -- a maioria dos celulares Android. */}
+                <Link
+                  href="/generator"
+                  className="inline-flex items-center gap-1.5 min-h-[44px] py-2 text-sm text-foreground-muted hover:text-primary transition-colors underline-offset-4 hover:underline"
+                >
+                  <Zap className="w-4 h-4" />
+                  Gerar um treino novo
+                </Link>
               </div>
             </div>
           </div>
