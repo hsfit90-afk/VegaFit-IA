@@ -68,7 +68,7 @@ export function InstallPrompt() {
       <button
         onClick={handleClose}
         aria-label="Dispensar convite para instalar o app"
-        className="absolute top-2 right-2 text-gray-400 hover:text-white p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+        className="absolute top-2 right-2 text-foreground-muted hover:text-white p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
       >
         <X size={18} />
       </button>
@@ -82,7 +82,7 @@ export function InstallPrompt() {
         
         <div className="flex-1">
           <h3 className="text-white font-bold text-sm mb-1">Instalar VegaFit IA</h3>
-          <p className="text-gray-400 text-xs mb-3">
+          <p className="text-foreground-muted text-xs mb-3">
             {isIOS 
               ? "Para instalar: toque em Compartilhar e selecione 'Adicionar à Tela de Início'." 
               : deferredPrompt 

@@ -45,7 +45,7 @@ const COR: Record<string, string> = {
   aguardando_pagamento: 'bg-yellow-500/20 text-yellow-400',
   pago: 'bg-blue-500/20 text-blue-400',
   em_producao: 'bg-primary/20 text-primary',
-  entregue: 'bg-white/10 text-gray-400',
+  entregue: 'bg-white/10 text-foreground-muted',
   cancelado: 'bg-red-500/20 text-red-400',
 };
 
@@ -106,7 +106,7 @@ export function FilaPersonalizado() {
           }`}>
             {vagas.ocupadas} de {vagas.limite} vagas do lote
           </span>
-          <span className="text-gray-500">{concluidos} entregues no total</span>
+          <span className="text-foreground-subtle">{concluidos} entregues no total</span>
         </div>
       </div>
 
@@ -126,7 +126,7 @@ export function FilaPersonalizado() {
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="min-w-0">
                       <p className="font-outfit font-bold text-white">{p.nome}</p>
-                      <p className="text-xs text-gray-500 tabular-nums">
+                      <p className="text-xs text-foreground-subtle tabular-nums">
                         Pedido em {new Date(p.created_at).toLocaleDateString('pt-BR')} · R$ {p.valor}
                       </p>
                     </div>
@@ -136,12 +136,12 @@ export function FilaPersonalizado() {
                   </div>
 
                   {p.objetivo && (
-                    <p className="text-sm text-gray-300">
-                      <span className="text-gray-500">Objetivo: </span>{p.objetivo}
+                    <p className="text-sm text-foreground-muted">
+                      <span className="text-foreground-subtle">Objetivo: </span>{p.objetivo}
                     </p>
                   )}
                   {p.observacoes && (
-                    <p className="text-sm text-gray-400 bg-white/5 rounded-lg p-3 whitespace-pre-wrap">
+                    <p className="text-sm text-foreground-muted bg-white/5 rounded-lg p-3 whitespace-pre-wrap">
                       {p.observacoes}
                     </p>
                   )}

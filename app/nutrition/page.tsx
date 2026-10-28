@@ -196,7 +196,7 @@ export default function NutritionPage() {
                 <CardTitle className="text-lg text-orange-400">Dica da IA</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-300 leading-relaxed mb-6">{data.tips}</p>
+                <p className="text-foreground-muted leading-relaxed mb-6">{data.tips}</p>
                 
                 <Button onClick={generateNutrition} variant="outline" fullWidth>
                   Recalcular Dados

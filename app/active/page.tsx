@@ -919,7 +919,7 @@ export default function ActiveWorkout() {
             baixo, que é curta e cabe folgada. */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 md:gap-4 mb-3">
           <div className="min-w-0">
-            <p className="text-nano uppercase tracking-[0.2em] text-foreground-muted mb-1">
+            <p className="text-nano uppercase tracking-widest text-foreground-muted mb-1">
               Em treino
             </p>
             <h1 className="text-lg md:text-xl font-outfit font-bold leading-tight md:truncate">
@@ -1081,7 +1081,7 @@ export default function ActiveWorkout() {
                       no meio do treino, sem numeração, não dá para saber se falta muito nem em
                       que ponto da sessão se está. O número é fino e apagado de propósito —
                       informa a posição sem disputar com o nome do exercício. */}
-                  <p className="text-nano uppercase tracking-[0.2em] text-foreground-muted mb-1.5 tabular-nums">
+                  <p className="text-nano uppercase tracking-widest text-foreground-muted mb-1.5 tabular-nums">
                     <span className="text-primary font-bold">
                       {String(exIndex + 1).padStart(2, '0')}
                     </span>

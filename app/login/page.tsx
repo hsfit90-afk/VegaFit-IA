@@ -79,7 +79,7 @@ export default function Login() {
             <Dumbbell className="w-8 h-8 text-black" />
           </div>
           <h1 className="text-3xl font-outfit font-bold text-white mb-2">Bem-vindo de volta</h1>
-          <p className="text-gray-400 text-center">Entre para continuar sua evolução.</p>
+          <p className="text-foreground-muted text-center">Entre para continuar sua evolução.</p>
         </div>
 
         {contaExcluida && (
@@ -144,7 +144,7 @@ export default function Login() {
             <div className="w-full border-t border-white/10"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-[var(--color-background-deep)] text-gray-500">Ou continue com</span>
+            <span className="px-2 bg-[var(--color-background-deep)] text-foreground-subtle">Ou continue com</span>
           </div>
         </div>
 
@@ -173,7 +173,7 @@ export default function Login() {
           Google
         </button>
 
-        <p className="text-center text-gray-400 text-sm">
+        <p className="text-center text-foreground-muted text-sm">
           Ainda não tem uma conta?{' '}
           <Link href="/register" className="text-[var(--color-primary)] hover:underline font-medium">
             Criar conta

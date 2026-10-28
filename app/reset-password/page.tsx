@@ -60,7 +60,7 @@ export default function ResetPassword() {
             <Dumbbell className="w-8 h-8 text-black" />
           </div>
           <h1 className="text-3xl font-outfit font-bold text-white mb-2">Nova senha</h1>
-          <p className="text-gray-400 text-center">Defina a nova senha para sua conta.</p>
+          <p className="text-foreground-muted text-center">Defina a nova senha para sua conta.</p>
         </div>
 
         {error && (

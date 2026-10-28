@@ -196,7 +196,7 @@ export default function RevisarEquipamentos() {
           ].map(c => (
             <div key={c.r} className={`rounded-xl border p-3 ${c.destaque ? 'border-warning/40 bg-warning/5' : 'border-border bg-surface'}`}>
               <p className="text-2xl font-bold tabular-nums">{c.n}</p>
-              <p className="text-[11px] text-foreground-muted">{c.r}</p>
+              <p className="text-micro text-foreground-muted">{c.r}</p>
             </div>
           ))}
         </div>
@@ -279,12 +279,12 @@ export default function RevisarEquipamentos() {
                       {confirmado && <Check className="w-4 h-4 text-primary shrink-0" />}
                       {salvando === ex.id && <LoadingSpinner tamanho="sm" rotulo="Salvando…" className="shrink-0" />}
                     </div>
-                    <p className="text-[11px] text-foreground-muted mt-0.5">{ex.muscle_group || '—'}</p>
+                    <p className="text-micro text-foreground-muted mt-0.5">{ex.muscle_group || '—'}</p>
 
                     {/* Dizer DE QUE LADO está a discordância poupa o profissional de
                         reconstruir o raciocínio em cada um dos 24. */}
                     {ex.divergente && !confirmado && (
-                      <p className="text-[11px] text-warning mt-1.5 flex items-start gap-1">
+                      <p className="text-micro text-warning mt-1.5 flex items-start gap-1">
                         <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
                         {ex.iaDizQueCabeEmCasa
                           ? 'A regra antiga cortava este; a classificação diz que cabe em casa.'
@@ -327,7 +327,7 @@ export default function RevisarEquipamentos() {
 
                     {/* O que esta aceso sem confirmacao e palpite. Dizer isso evita achar que
                         ja revisou o que so foi deduzido do equipamento. */}
-                    <p className="text-[11px] text-foreground-muted mt-1.5">
+                    <p className="text-micro text-foreground-muted mt-1.5">
                       {!confirmado && 'Sugerido — toque para confirmar. '}
                       {!ids.includes('maquina') && (ids.length > 0
                         ? `Precisa de: ${ids.join(', ')}.`
@@ -342,7 +342,7 @@ export default function RevisarEquipamentos() {
                             key={o.id}
                             onClick={() => alternar(ex, o.id)}
                             disabled={salvando === ex.id}
-                            className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors disabled:opacity-40 ${
+                            className={`text-micro px-2.5 py-1 rounded-lg border transition-colors disabled:opacity-40 ${
                               ativo
                                 ? (o.id === 'maquina'
                                     ? 'bg-destructive/20 text-destructive border-destructive/40 font-semibold'
@@ -357,7 +357,7 @@ export default function RevisarEquipamentos() {
                     </div>
 
                     {ids.length === 0 && (
-                      <p className="text-[11px] text-foreground-muted mt-1.5">
+                      <p className="text-micro text-foreground-muted mt-1.5">
                         Nada marcado: peso do corpo, faz em qualquer lugar.
                       </p>
                     )}

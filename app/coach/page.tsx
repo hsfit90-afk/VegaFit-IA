@@ -125,7 +125,7 @@ export default function Coach() {
             <div className={`max-w-[85%] md:max-w-[70%] p-5 ${
               msg.role === 'user' 
                 ? 'bg-accent text-white rounded-[20px] rounded-br-sm shadow-[0_5px_15px_rgb(var(--color-accent-rgb)/0.2)]' 
-                : 'bg-surface backdrop-blur-md border border-border text-gray-200 rounded-[20px] rounded-bl-sm shadow-sm'
+                : 'bg-surface backdrop-blur-md border border-border text-foreground rounded-[20px] rounded-bl-sm shadow-sm'
             }`}>
               <div className="whitespace-pre-wrap text-sm md:text-base leading-relaxed">
                 {parseMarkdown(msg.content)}
@@ -153,7 +153,7 @@ export default function Coach() {
               <button 
                 key={i} 
                 onClick={() => handleSend(sug)}
-                className="whitespace-nowrap px-4 py-2 bg-surface hover:bg-surface-light border border-border rounded-full text-xs text-gray-300 transition-colors"
+                className="whitespace-nowrap px-4 py-2 bg-surface hover:bg-surface-light border border-border rounded-full text-xs text-foreground-muted transition-colors"
               >
                 {sug}
               </button>

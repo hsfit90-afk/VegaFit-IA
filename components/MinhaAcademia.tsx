@@ -143,7 +143,7 @@ export function MinhaAcademia() {
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold leading-tight">{eq.rotulo}</span>
                       {eq.ajuda && (
-                        <span className="block text-[11px] text-foreground-muted mt-0.5 leading-snug">{eq.ajuda}</span>
+                        <span className="block text-micro text-foreground-muted mt-0.5 leading-snug">{eq.ajuda}</span>
                       )}
                     </span>
                   </button>

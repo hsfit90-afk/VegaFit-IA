@@ -290,7 +290,7 @@ export default function PreviaDoAluno() {
         <div className="mb-5 flex items-start gap-2 bg-orange-500/10 border border-orange-500/30 rounded-xl p-3">
           <AlertTriangle className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
           <div className="min-w-0">
-            <p className="text-orange-400 font-bold text-[11px] uppercase tracking-wider">
+            <p className="text-orange-400 font-bold text-micro uppercase tracking-wider">
               Ele vai ver &quot;Fadiga Detectada&quot;
             </p>
             <p className="text-orange-300/80 text-xs mt-0.5">
@@ -324,20 +324,20 @@ export default function PreviaDoAluno() {
                   >
                     <button onClick={() => setVendo(pl.id)} className="flex-1 min-w-0 text-left">
                       <span className="block font-medium truncate">{pl.name}</span>
-                      <span className="block text-[11px] text-foreground-muted">
+                      <span className="block text-micro text-foreground-muted">
                         {pl.sessions?.length ?? 0} dias · {new Date(pl.created_at).toLocaleDateString('pt-BR')}
                       </span>
                     </button>
 
                     {ativo ? (
-                      <span className="text-[11px] font-semibold text-primary flex items-center gap-1 shrink-0 px-2">
+                      <span className="text-micro font-semibold text-primary flex items-center gap-1 shrink-0 px-2">
                         <Check className="w-3.5 h-3.5" /> o aluno abre neste
                       </span>
                     ) : (
                       <button
                         onClick={() => ativar(pl.id)}
                         disabled={mexendo}
-                        className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-surface-light border border-white/10 hover:text-primary hover:border-primary/40 disabled:opacity-40 transition-colors shrink-0"
+                        className="text-micro font-semibold px-2.5 py-1.5 rounded-lg bg-surface-light border border-white/10 hover:text-primary hover:border-primary/40 disabled:opacity-40 transition-colors shrink-0"
                       >
                         Tornar este o ativo
                       </button>
@@ -357,7 +357,7 @@ export default function PreviaDoAluno() {
             </div>
 
             {planos.length > 1 && (
-              <p className="flex items-start gap-2 text-[11px] text-foreground-muted mt-3">
+              <p className="flex items-start gap-2 text-micro text-foreground-muted mt-3">
                 <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
                 O aluno <strong>só enxerga o ativo</strong> — o dashboard dele mostra um treino
                 só. Os outros existem apenas aqui, e quem decide qual ele abre é você.
@@ -424,11 +424,11 @@ export default function PreviaDoAluno() {
                   {sessao.name}
                 </h2>
                 {ehODeHoje ? (
-                  <span className="text-[11px] font-semibold text-primary px-2 py-1 rounded-full bg-primary/10 shrink-0">
+                  <span className="text-micro font-semibold text-primary px-2 py-1 rounded-full bg-primary/10 shrink-0">
                     é este que ele abre agora
                   </span>
                 ) : (
-                  <span className="text-[11px] text-foreground-muted px-2 py-1 shrink-0">
+                  <span className="text-micro text-foreground-muted px-2 py-1 shrink-0">
                     dia {i + 1} de {plano?.sessions?.length ?? 0}
                   </span>
                 )}
@@ -490,13 +490,13 @@ export default function PreviaDoAluno() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium leading-tight">{ex.name}</p>
                         {ex.muscleGroup && (
-                          <p className="text-[11px] text-foreground-muted mt-0.5">{ex.muscleGroup}</p>
+                          <p className="text-micro text-foreground-muted mt-0.5">{ex.muscleGroup}</p>
                         )}
                         <p className="text-xs text-primary mt-1 font-mono tabular-nums">
                           {ex.sets} × {ex.reps} · descanso {ex.restSeconds}s
                         </p>
                         {ex.tips && (
-                          <p className="text-[11px] text-foreground-muted mt-1.5 leading-relaxed">{ex.tips}</p>
+                          <p className="text-micro text-foreground-muted mt-1.5 leading-relaxed">{ex.tips}</p>
                         )}
                       </div>
                     </div>
@@ -516,7 +516,7 @@ export default function PreviaDoAluno() {
                   <p className="text-xs text-foreground-muted">
                     {sessao.abdominal.map(a => a.name).join(' · ')}
                   </p>
-                  <p className="text-[11px] text-foreground-muted mt-1.5">
+                  <p className="text-micro text-foreground-muted mt-1.5">
                     Aparece em dias alternados. Séries e repetições saem do protocolo do objetivo.
                   </p>
                 </div>

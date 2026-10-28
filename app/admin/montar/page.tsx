@@ -1125,14 +1125,14 @@ export default function MontarTreino() {
                     >
                       <Pencil className="w-3.5 h-3.5" />
                       {pl.name}
-                      <span className="text-[11px] text-foreground-muted">
+                      <span className="text-micro text-foreground-muted">
                         ({pl.sessions?.length ?? 0}d)
                       </span>
                     </button>
                   ))}
                 </div>
                 {editandoId && (
-                  <p className="text-[11px] text-primary mt-2.5">
+                  <p className="text-micro text-primary mt-2.5">
                     Editando um treino existente. Salvar atualiza ele — a periodização e o
                     histórico do aluno continuam de onde estão.
                   </p>
@@ -1181,7 +1181,7 @@ export default function MontarTreino() {
                       >
                         <Bookmark className="w-3.5 h-3.5" />
                         {m.nome}
-                        <span className="text-[11px] text-foreground-muted">({m.exercicios.length})</span>
+                        <span className="text-micro text-foreground-muted">({m.exercicios.length})</span>
                       </button>
                       <button
                         onClick={() => apagarModelo(m)}
@@ -1319,7 +1319,7 @@ export default function MontarTreino() {
                         />
                       </div>
                       {ex.muscleGroup && (
-                        <span className="text-[11px] text-foreground-muted pl-1">{ex.muscleGroup}</span>
+                        <span className="text-micro text-foreground-muted pl-1">{ex.muscleGroup}</span>
                       )}
 
                       {/* O AVISO NA LINHA, e não só no contador lá em cima.
@@ -1328,7 +1328,7 @@ export default function MontarTreino() {
                           o improviso. O que não pode é entrar sem ninguém perceber, que era o
                           que acontecia. */}
                       {ex.name.trim() && noCatalogo(ex)?.cabe === false && (
-                        <span className="text-[11px] text-warning pl-1 flex items-start gap-1">
+                        <span className="text-micro text-warning pl-1 flex items-start gap-1">
                           <AlertTriangle className="w-3 h-3 mt-0.5 flex-none" />
                           <span>
                             Fora do que o aluno tem
@@ -1342,7 +1342,7 @@ export default function MontarTreino() {
                       {/* A dica de improviso vem do mesmo lugar que a geração usa, então é a
                           mesma que o aluno veria no treino gerado. */}
                       {ex.name.trim() && noCatalogo(ex)?.dica && (
-                        <span className="text-[11px] text-secondary pl-1">{noCatalogo(ex)!.dica}</span>
+                        <span className="text-micro text-secondary pl-1">{noCatalogo(ex)!.dica}</span>
                       )}
 
                       {/* PRESETS DO PROTOCOLO.
@@ -1358,7 +1358,7 @@ export default function MontarTreino() {
                             type="button"
                             onClick={() => aplicarProtocolo(sessao.id, ex.id, tipo)}
                             title={`Preenche séries, reps e descanso do protocolo para ${tipo}`}
-                            className="text-[11px] px-2 py-1 rounded-lg bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors capitalize"
+                            className="text-micro px-2 py-1 rounded-lg bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors capitalize"
                           >
                             {tipo}
                           </button>
@@ -1367,21 +1367,21 @@ export default function MontarTreino() {
                     </div>
 
                     <div className="col-span-3 md:col-span-2 flex flex-col gap-1">
-                      <label className="text-[10px] uppercase tracking-wider text-foreground-muted pl-1">Séries</label>
+                      <label className="text-nano uppercase tracking-wider text-foreground-muted pl-1">Séries</label>
                       <input type="number" min={1} max={10} value={ex.sets}
                         onChange={e => mudaExercicio(sessao.id, ex.id, 'sets', Number(e.target.value))}
                         className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center tabular-nums focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40" />
                     </div>
 
                     <div className="col-span-4 md:col-span-2 flex flex-col gap-1">
-                      <label className="text-[10px] uppercase tracking-wider text-foreground-muted pl-1">Reps</label>
+                      <label className="text-nano uppercase tracking-wider text-foreground-muted pl-1">Reps</label>
                       <input value={ex.reps} maxLength={20}
                         onChange={e => mudaExercicio(sessao.id, ex.id, 'reps', e.target.value)}
                         className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40" />
                     </div>
 
                     <div className="col-span-4 md:col-span-2 flex flex-col gap-1">
-                      <label className="text-[10px] uppercase tracking-wider text-foreground-muted pl-1">Desc. (s)</label>
+                      <label className="text-nano uppercase tracking-wider text-foreground-muted pl-1">Desc. (s)</label>
                       <input type="number" min={0} max={600} step={15} value={ex.restSeconds}
                         onChange={e => mudaExercicio(sessao.id, ex.id, 'restSeconds', Number(e.target.value))}
                         className="w-full bg-black/30 border border-border rounded-lg py-2 px-2 text-sm text-center tabular-nums focus:outline-none focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40" />
@@ -1426,7 +1426,7 @@ export default function MontarTreino() {
                         caberiam na mesma linha das séries. */}
                     {ex.name.trim() && (
                       <div className="col-span-12 border-t border-border/60 pt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                        <span className="text-[10px] uppercase tracking-wider text-foreground-muted">
+                        <span className="text-nano uppercase tracking-wider text-foreground-muted">
                           Carga sugerida (kg)
                         </span>
                         <div className="flex flex-wrap gap-1.5">
@@ -1449,12 +1449,12 @@ export default function MontarTreino() {
                             type="button"
                             onClick={() => igualarCarga(sessao.id, ex.id)}
                             title="Repetir a carga da primeira série nas outras"
-                            className="text-[11px] px-2 py-1 rounded-lg bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors"
+                            className="text-micro px-2 py-1 rounded-lg bg-surface-light border border-white/5 text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors"
                           >
                             igualar
                           </button>
                         )}
-                        <span className="text-[10px] text-foreground-muted">
+                        <span className="text-nano text-foreground-muted">
                           Em branco: o aluno registra a carga dele.
                         </span>
                       </div>

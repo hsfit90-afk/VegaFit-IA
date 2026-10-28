@@ -98,7 +98,7 @@ export default function History() {
         <>
           <Card className="mb-10">
             <CardHeader className="flex flex-row justify-between items-center pb-2">
-               <CardTitle className="text-[10px] uppercase tracking-[0.18em] text-foreground-muted font-semibold m-0">Progressão de volume · kg</CardTitle>
+               <CardTitle className="text-nano uppercase tracking-widest text-foreground-muted font-semibold m-0">Progressão de volume · kg</CardTitle>
                {(leftBounds !== null || rightBounds !== null) && (
                  <Button 
                    onClick={zoomOut}

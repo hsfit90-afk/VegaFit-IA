@@ -200,27 +200,27 @@ export default function TreinosDosAlunos() {
                     <p className="font-semibold leading-tight">
                       {a.nome || 'Sem nome'}
                       {a.role === 'master' && (
-                        <span className="text-[11px] text-foreground-muted font-normal"> (master)</span>
+                        <span className="text-micro text-foreground-muted font-normal"> (master)</span>
                       )}
                     </p>
 
                     <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1.5">
                       {a.ponteiroQuebrado ? (
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-destructive/15 text-destructive font-semibold">
+                        <span className="text-micro px-2 py-0.5 rounded-full bg-destructive/15 text-destructive font-semibold">
                           Treino ativo apagado
                         </span>
                       ) : !a.temTreinoAtivo ? (
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-warning/15 text-warning font-semibold">
+                        <span className="text-micro px-2 py-0.5 rounded-full bg-warning/15 text-warning font-semibold">
                           Sem treino ativo
                         </span>
                       ) : (
-                        <span className="text-[11px] text-foreground-muted truncate max-w-[220px]">
+                        <span className="text-micro text-foreground-muted truncate max-w-[220px]">
                           {a.planoAtivoNome}
                         </span>
                       )}
 
                       <span
-                        className={`text-[11px] ${
+                        className={`text-micro ${
                           a.diasSemTreinar !== null && a.diasSemTreinar >= DIAS_PARA_RESET
                             ? 'text-warning'
                             : 'text-foreground-muted'
@@ -230,14 +230,14 @@ export default function TreinosDosAlunos() {
                       </span>
 
                       {a.planos > 0 && (
-                        <span className="text-[11px] text-foreground-muted">
+                        <span className="text-micro text-foreground-muted">
                           {a.planos} {a.planos === 1 ? 'treino salvo' : 'treinos salvos'}
                         </span>
                       )}
                     </div>
 
                     {a.diasSemTreinar !== null && a.diasSemTreinar >= DIAS_PARA_RESET && (
-                      <p className="text-[11px] text-foreground-muted mt-1.5">
+                      <p className="text-micro text-foreground-muted mt-1.5">
                         Passou de {DIAS_PARA_RESET} dias parado: ao voltar, o ciclo recomeça na
                         semana 1.
                       </p>

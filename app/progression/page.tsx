@@ -105,15 +105,15 @@ export default function ProgressionCheckIn() {
             <CardContent>
               <div className="grid grid-cols-3 gap-4 mb-2">
                 <div className="bg-surface p-5 rounded-xl text-center border border-border">
-                  <p className="text-foreground-muted text-[10px] md:text-xs mb-1 uppercase tracking-wider font-semibold">Treinos Feitos</p>
+                  <p className="text-foreground-muted text-nano md:text-xs mb-1 uppercase tracking-wider font-semibold">Treinos Feitos</p>
                   <p className="text-xl md:text-2xl font-bold font-mono">{lastWeekWorkouts.length}</p>
                 </div>
                 <div className="bg-surface p-5 rounded-xl text-center border border-border">
-                  <p className="text-foreground-muted text-[10px] md:text-xs mb-1 uppercase tracking-wider font-semibold">Carga (Vol)</p>
+                  <p className="text-foreground-muted text-nano md:text-xs mb-1 uppercase tracking-wider font-semibold">Carga (Vol)</p>
                   <p className="text-xl md:text-2xl font-bold font-mono">{totalVolume.toLocaleString()} <span className="text-sm font-sans font-normal text-foreground-muted">kg</span></p>
                 </div>
                 <div className="bg-blue-500/10 p-5 rounded-xl text-center border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-                  <p className="text-blue-400 text-[10px] md:text-xs mb-1 uppercase tracking-wider font-bold">Séries Efetivas</p>
+                  <p className="text-blue-400 text-nano md:text-xs mb-1 uppercase tracking-wider font-bold">Séries Efetivas</p>
                   <p className="text-xl md:text-2xl font-bold text-blue-400 font-mono">{totalEffectiveSets}</p>
                 </div>
               </div>

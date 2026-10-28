@@ -58,7 +58,7 @@ export default function Register() {
             <Dumbbell className="w-8 h-8 text-black" />
           </div>
           <h1 className="text-3xl font-outfit font-bold text-white mb-2">Criar Conta</h1>
-          <p className="text-gray-400 text-center">O primeiro passo para sua melhor versão.</p>
+          <p className="text-foreground-muted text-center">O primeiro passo para sua melhor versão.</p>
         </div>
 
         {error && (
@@ -93,7 +93,7 @@ export default function Register() {
                 sente enganado e pede reembolso — mesmo tendo gostado do treino. Avisar aqui
                 custa alguns cadastros de quem nunca ia pagar, e evita todos os cancelamentos
                 por surpresa. */}
-            <p className="text-center text-xs text-gray-500 leading-relaxed">
+            <p className="text-center text-xs text-foreground-subtle leading-relaxed">
               7 dias grátis para testar. Depois, R$ 37 por mês.
               <br />
               Sem cartão agora e sem fidelidade — cancele quando quiser.
@@ -101,7 +101,7 @@ export default function Register() {
           </form>
         )}
 
-        <p className="text-center text-gray-400 text-sm">
+        <p className="text-center text-foreground-muted text-sm">
           Já tem uma conta?{' '}
           <Link href="/login" className="text-[var(--color-accent)] hover:underline font-medium">
             Fazer login
@@ -112,9 +112,9 @@ export default function Register() {
             login — a pessoa criava conta sem ter como saber quais dados seriam tratados.
             O app coleta dado de saúde na anamnese, então a informação prévia não é cortesia:
             é o art. 9 da LGPD, e o consentimento do art. 11, I depende dela. */}
-        <p className="text-center text-gray-500 text-xs mt-6">
+        <p className="text-center text-foreground-subtle text-xs mt-6">
           Ao criar sua conta você concorda com nossa{' '}
-          <Link href="/privacy" className="text-gray-400 hover:text-[var(--color-accent)] underline">
+          <Link href="/privacy" className="text-foreground-muted hover:text-[var(--color-accent)] underline">
             Política de Privacidade
           </Link>
           .
