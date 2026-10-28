@@ -71,6 +71,21 @@
   --color-warning: #ffd60a;
 
   /*
+   * INFORMAÇÃO — o azul que já existia e não tinha nome.
+   *
+   * Medido em 28/10/2026: a tela de treino usava `blue-400` e `blue-500` do Tailwind em sete
+   * lugares, sempre com o mesmo sentido — a faixa de periodização ("Semana 2/4") e o RIR de
+   * série efetiva. Cor com significado e sem nome é a mesma doença dos 52 cinzas: funciona
+   * até alguém escolher outro tom de azul no lugar seguinte.
+   *
+   * Não reaproveitei `--color-chart-weight`, que é o mesmo valor: a paleta dos gráficos é
+   * separada de propósito, e misturar as duas faria uma mudança de gráfico repintar a tela de
+   * treino. Contraste 7,45 sobre o fundo e 6,74 sobre o cartão.
+   */
+  --color-info: #60A5FA;
+  --color-info-rgb: 96 165 250;
+
+  /*
    * Roxo de destaque. O código já usava `text-accent`/`bg-accent` em 27 lugares, mas o token
    * nunca existiu — então essas classes não eram geradas e os elementos ficavam sem cor,
    * herdando a do pai.
