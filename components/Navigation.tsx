@@ -160,7 +160,7 @@ export function Navigation() {
               <div className={`p-3 rounded-xl transition-all duration-300 ${isActive ? 'bg-primary/10 text-primary' : 'text-foreground-muted group-hover:text-foreground'}`}>
                 <Icon className={`w-6 h-6 ${isActive ? 'fill-primary/20' : ''}`} />
               </div>
-              <span className={`text-[11px] font-medium mt-1 transition-all duration-300 ${isActive ? 'text-primary' : 'text-foreground-muted group-hover:text-foreground'}`}>
+              <span className={`text-micro font-medium mt-1 transition-all duration-300 ${isActive ? 'text-primary' : 'text-foreground-muted group-hover:text-foreground'}`}>
                 {item.label}
               </span>
             </Link>

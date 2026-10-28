@@ -85,8 +85,14 @@
   --color-accent: #A78BFA;
   --color-accent-hover: #8B5CF6;
 
-  /* Fundo mais escuro que o --color-background, usado em telas de entrada e overlays. */
-  --color-background-deep: #0A0A0F;
+  /*
+   * Fundo mais escuro que o --color-background, para telas de entrada e sobreposições.
+   *
+   * Reajustado em 28/10/2026 junto com as superfícies, e tirado do <body>: ele estava sendo
+   * o fundo do app inteiro, o que fazia dele a regra e não a exceção. Agora volta ao papel
+   * que o próprio nome descreve.
+   */
+  --color-background-deep: #0A0B0C;
 
   /* Dourado de recorde pessoal (troféu, PR). */
   --color-gold: #FFD700;

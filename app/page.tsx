@@ -12,6 +12,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { WorkoutPlan } from '@/lib/types';
 import { musculosEmFadiga, escolherSessao, sessaoSeguinte, minutosDaSessao } from '@/lib/proximoTreino';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Rotulo } from '@/components/ui/Rotulo';
 import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
 import { CardPersonalizado } from '@/components/CardPersonalizado';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
@@ -276,9 +277,9 @@ export default function Dashboard() {
           da dobra no celular. */}
       <motion.header variants={itemVariants} className="flex items-end justify-between gap-4 mb-6 mt-1">
         <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted mb-1">
+          <Rotulo className="mb-1">
             {hoje()}
-          </p>
+          </Rotulo>
           <h1 className="text-2xl md:text-3xl font-outfit font-bold tracking-tight truncate">
             {greeting()}, <span className="text-primary">{profile?.name || 'Atleta'}</span>
           </h1>
@@ -335,9 +336,9 @@ export default function Dashboard() {
                 </div>
               )}
 
-              <p className="text-[11px] uppercase tracking-[0.18em] text-primary font-semibold mb-2">
+              <Rotulo className="!text-primary font-semibold mb-2">
                 {wasRedirectedDueToFatigue ? 'Sugestão de hoje' : 'Seu treino de hoje'}
-              </p>
+              </Rotulo>
 
               <h2 className="text-3xl md:text-5xl font-outfit font-bold leading-[1.05] tracking-tight mb-4 max-w-[18ch]">
                 {suggestedSession?.name}
@@ -350,7 +351,7 @@ export default function Dashboard() {
                   <p className="text-2xl md:text-3xl font-bold tabular-nums leading-none">
                     {suggestedSession?.exercises?.length || 0}
                   </p>
-                  <p className="text-[11px] uppercase tracking-wider text-foreground-muted mt-1.5">
+                  <p className="text-nano font-semibold uppercase tracking-widest text-foreground-muted mt-1.5">
                     exercícios
                   </p>
                 </div>
@@ -359,7 +360,7 @@ export default function Dashboard() {
                     {minutosDaSessao(suggestedSession)}
                     <span className="text-base font-medium text-foreground-muted ml-1">min</span>
                   </p>
-                  <p className="text-[11px] uppercase tracking-wider text-foreground-muted mt-1.5">
+                  <p className="text-nano font-semibold uppercase tracking-widest text-foreground-muted mt-1.5">
                     estimados
                   </p>
                 </div>
@@ -429,9 +430,9 @@ export default function Dashboard() {
           Agora o número é o elemento, e a barra mostra a semana sem precisar de outro card. */}
       <motion.section variants={itemVariants} className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted font-semibold">
+          <Rotulo as="h3">
             Esta semana
-          </h3>
+          </Rotulo>
           <Link href="/progress" className="text-xs text-foreground-muted hover:text-primary transition-colors">
             ver progresso
           </Link>
@@ -448,7 +449,7 @@ export default function Dashboard() {
             meta, diz. */}
         {metaSemanal > 0 && (
           <div className="mt-6">
-            <div className="flex justify-between text-[11px] text-foreground-muted mb-2">
+            <div className="flex justify-between text-micro text-foreground-muted mb-2">
               <span>{currentWeekWorkouts.length} de {metaSemanal} na semana</span>
               <span className="tabular-nums">
                 {Math.min(100, Math.round((currentWeekWorkouts.length / metaSemanal) * 100))}%
@@ -480,9 +481,9 @@ export default function Dashboard() {
           Eram seis cards quadrados numa grade. A informação é um estado por músculo — um
           ponto colorido e um nome bastam, e numa linha dá para ler os seis de uma vez. */}
       <motion.section variants={itemVariants} className="mb-8">
-        <h3 className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted font-semibold mb-4">
+        <Rotulo as="h3" className="mb-4">
           Recuperação muscular
-        </h3>
+        </Rotulo>
         <div className="flex gap-2 overflow-x-auto barra-fina pb-2 -mx-1 px-1">
           {['Peito', 'Costas', 'Ombro', 'Bíceps', 'Tríceps', 'Pernas (quadríceps)'].map((muscle) => {
             const latestWorkout = [...history].sort((a, b) => b.date - a.date).find(h =>
@@ -512,7 +513,7 @@ export default function Dashboard() {
                 <span className="text-sm whitespace-nowrap">
                   {muscle === 'Pernas (quadríceps)' ? 'Pernas' : muscle}
                 </span>
-                <span className="text-[11px] text-foreground-muted whitespace-nowrap">{label}</span>
+                <span className="text-micro text-foreground-muted whitespace-nowrap">{label}</span>
               </div>
             );
           })}
@@ -524,9 +525,9 @@ export default function Dashboard() {
           de alguém abrir o app — são recompensa e leitura, e ficam onde se lê depois. */}
       <motion.section variants={itemVariants} className="grid md:grid-cols-2 gap-5 mb-8">
         <div>
-          <h3 className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted font-semibold mb-4">
+          <Rotulo as="h3" className="mb-4">
             Suas conquistas
-          </h3>
+          </Rotulo>
           {achievements.length > 0 ? (
             <div className="flex flex-col gap-2">
               {achievements.map((ach, i) => (
@@ -547,9 +548,9 @@ export default function Dashboard() {
         </div>
 
         <div>
-          <h3 className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted font-semibold mb-4">
+          <Rotulo as="h3" className="mb-4">
             Dica do dia
-          </h3>
+          </Rotulo>
           <div className="flex items-start gap-3 p-5 rounded-xl bg-primary/5 border border-primary/15">
             <Lightbulb className="w-5 h-5 text-primary shrink-0 mt-0.5" />
             <p className="text-sm leading-relaxed text-foreground/90">{dailyTip}</p>
@@ -562,9 +563,9 @@ export default function Dashboard() {
           profissional, pelo /admin/preview. */}
       {activePlan && (
         <motion.section variants={itemVariants}>
-          <h3 className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted font-semibold mb-4">
+          <Rotulo as="h3" className="mb-4">
             Seu plano
-          </h3>
+          </Rotulo>
           <div className="flex flex-wrap items-center gap-4 p-5 rounded-xl bg-surface border border-border">
             <div className="min-w-0 flex-1">
               <p className="font-outfit font-bold truncate">{activePlan.name}</p>
@@ -606,7 +607,7 @@ function AtalhoDaSessao({
     >
       <span className="text-primary">{icone}</span>
       <span className="min-w-0">
-        <span className="block text-[10px] uppercase tracking-wider text-foreground-muted leading-none mb-1">
+        <span className="block text-nano font-semibold uppercase tracking-widest text-foreground-muted leading-none mb-1">
           {quando}
         </span>
         <span className="block text-sm font-medium whitespace-nowrap group-hover:text-primary transition-colors">
@@ -631,7 +632,7 @@ function Numero({ valor, unidade, rotulo }: { valor: string; unidade?: string; r
         {valor}
         {unidade && <span className="text-base font-medium text-foreground-muted ml-1">{unidade}</span>}
       </p>
-      <p className="text-[11px] uppercase tracking-wider text-foreground-muted mt-1.5">{rotulo}</p>
+      <p className="text-nano font-semibold uppercase tracking-widest text-foreground-muted mt-1.5">{rotulo}</p>
     </div>
   );
 }
