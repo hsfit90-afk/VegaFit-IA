@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/components/ui/Toast';
 import { tratarBloqueioDeAssinatura } from "@/utils/assinatura";
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { IDADE_MINIMA, IDADE_MAXIMA } from '@/lib/idadeMinima';
 
 const LOADING_PHRASES = [
   "Analisando seu biotipo...",
@@ -315,9 +316,9 @@ export default function Onboarding() {
                 <h1 className="text-3xl font-bold text-foreground mb-12 tracking-tight text-center">Sua Idade</h1>
                 <div className="w-full flex flex-col items-center mt-10">
                   <div className="flex items-center justify-center gap-6">
-                    <button onClick={() => adjustNumber(setAge, -1, 14, 100)} aria-label="Diminuir idade" className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Minus /></button>
+                    <button onClick={() => adjustNumber(setAge, -1, IDADE_MINIMA, IDADE_MAXIMA)} aria-label="Diminuir idade" className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Minus /></button>
                     <div className="text-6xl md:text-7xl font-black text-primary w-28 md:w-32 text-center drop-shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.3)]">{age}</div>
-                    <button onClick={() => adjustNumber(setAge, 1, 14, 100)} aria-label="Aumentar idade" className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Plus /></button>
+                    <button onClick={() => adjustNumber(setAge, 1, IDADE_MINIMA, IDADE_MAXIMA)} aria-label="Aumentar idade" className="w-14 h-14 rounded-full bg-surface hover:bg-surface-hover border border-border flex items-center justify-center text-foreground text-2xl active:scale-95 shadow-lg transition-transform"><Plus /></button>
                   </div>
                   <p className="text-foreground-muted mt-12 text-center px-4 max-w-sm">
                     A idade nos ajuda a ajustar o volume e a intensidade de recuperação do treino.

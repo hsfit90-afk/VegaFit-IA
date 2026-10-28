@@ -10,6 +10,7 @@ import { anamneseSteps as steps, type AnamneseStep, type AnamneseField } from '@
 import { EQUIPAMENTOS_CASA } from '@/lib/equipamentoCasa';
 import { passosEssenciais } from '@/lib/anamneseEssencial';
 import { traduzirErro } from '@/utils/mensagensDeErro';
+import { validarIdade, IDADE_MINIMA, IDADE_MAXIMA } from '@/lib/idadeMinima';
 
 export default function AnamnesePage() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function AnamnesePage() {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [reviewMode, setReviewMode] = useState(false);
-  const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [toastMessage, setToastMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [consentAccepted, setConsentAccepted] = useState(false);
@@ -73,7 +74,7 @@ export default function AnamnesePage() {
       }
       return next;
     });
-    setErrors(prev => ({ ...prev, [fieldId]: false }));
+    setErrors(prev => ({ ...prev, [fieldId]: '' }));
   };
 
   const getRcqHint = () => {
@@ -106,17 +107,37 @@ export default function AnamnesePage() {
       .map(r => EQUIPAMENTOS_CASA.find(e => e.rotulo === r)?.id)
       .filter((id): id is string => Boolean(id));
 
+  /**
+   * O ERRO PASSOU A SER UMA MENSAGEM, NÃO UM SIM/NÃO.
+   *
+   * Até 28/10/2026 `errors` era `Record<string, boolean>` e a tela mostrava sempre o mesmo
+   * texto: "Esse campo é obrigatório". Serve para campo vazio e é ERRADO para quem digitou 16
+   * na idade — a pessoa preencheu, o problema é outro, e a tela mandava preencher de novo.
+   *
+   * A regra da idade mora em lib/idadeMinima.ts com teste, não aqui: a política de privacidade
+   * promete 18 anos, e promessa publicada é regra de negócio.
+   */
   const validateStep = () => {
     let valid = true;
-    const newErrors: Record<string, boolean> = {};
+    const newErrors: Record<string, string> = {};
 
     camposVisiveis(currentStep).forEach(f => {
-      if (f.optional) return;
       const val = answers[f.id];
       const empty = val === undefined || val === "" || (Array.isArray(val) && val.length === 0);
+
+      if (f.id === 'idade') {
+        const problema = validarIdade(val);
+        if (problema) {
+          valid = false;
+          newErrors[f.id] = problema;
+        }
+        return;
+      }
+
+      if (f.optional) return;
       if (empty) {
         valid = false;
-        newErrors[f.id] = true;
+        newErrors[f.id] = 'Esse campo é obrigatório';
       }
     });
 
@@ -357,9 +378,15 @@ export default function AnamnesePage() {
 
                 {(f.type === 'text' || f.type === 'number') && (
                   <>
+                    {/* min/max só na idade: é o único campo com regra publicada (a política
+                        promete 18 anos). O navegador passa a ajudar no teclado numérico, mas
+                        quem decide é validarIdade — atributo de HTML se contorna. */}
                     <input
                       type={f.type}
                       placeholder={f.placeholder}
+                      min={f.id === 'idade' ? IDADE_MINIMA : undefined}
+                      max={f.id === 'idade' ? IDADE_MAXIMA : undefined}
+                      aria-invalid={errors[f.id] ? true : undefined}
                       value={answers[f.id] || ''}
                       onChange={e => handleChange(f.id, e.target.value)}
                       className="w-full bg-surface border border-border focus:border-primary rounded-[10px] text-foreground font-inter text-base p-3 outline-none transition-colors"
@@ -444,7 +471,7 @@ export default function AnamnesePage() {
                 )}
 
                 {errors[f.id] && (
-                  <div className="text-destructive text-xs mt-1.5">Esse campo é obrigatório</div>
+                  <div className="text-destructive text-xs mt-1.5">{errors[f.id]}</div>
                 )}
               </div>
             ))}
