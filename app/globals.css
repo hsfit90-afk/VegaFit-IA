@@ -167,10 +167,25 @@
 
   /* Paleta dos gráficos (components/charts/). Separada de propósito: eixo e grade não são
      "foreground-muted", são elementos de leitura de dado, e mudam junto com o gráfico. */
-  --color-chart-axis: #6B7280;
-  --color-chart-label: #9CA3AF;
-  --color-chart-surface: #0F0F13;
-  --color-chart-border: #1F2937;
+  /*
+   * REALINHADOS EM 28/10/2026, junto com o aprofundamento das superfícies.
+   *
+   * O `chart-surface` era #0F0F13, calibrado para o fundo antigo (#151718). Com o fundo novo
+   * (#0F1112) ele passou a dar 1,01 de contraste — a dica do gráfico virou um retângulo
+   * invisível flutuando sobre a página. Foi a mudança de paleta que quebrou isto, e só
+   * apareceu porque eu fui conferir.
+   *
+   * A dica FLUTUA, então precisa ser mais clara que o cartão, não mais escura que a página.
+   * Agora usa o terceiro nível de superfície, e a borda acompanha a do app — a anterior
+   * (#1F2937) era azulada e destoava.
+   *
+   * O eixo subiu de 3,92 para 4,99: linha de grade pode ser discreta, mas número de eixo é
+   * dado, e dado se lê.
+   */
+  --color-chart-axis: #7C848B;
+  --color-chart-label: #9BA1A6;
+  --color-chart-surface: #23272A;
+  --color-chart-border: #2C3134;
   --color-chart-weight: #60A5FA;
   --color-chart-weight-active: #3B82F6;
 }
