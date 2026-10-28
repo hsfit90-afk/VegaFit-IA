@@ -97,7 +97,7 @@ export default function AnamneseHistoryPage() {
               <div key={entry.id} className="bg-surface border border-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-semibold text-white">{formatDate(entry.created_at)}</span>
-                  {i === 0 && <span className="text-[11px] uppercase tracking-wider text-primary font-semibold">Mais recente</span>}
+                  {i === 0 && <span className="text-micro uppercase tracking-wider text-primary font-semibold">Mais recente</span>}
                 </div>
 
                 {diffs.length > 0 && (
@@ -106,7 +106,7 @@ export default function AnamneseHistoryPage() {
                       <span
                         key={d.id}
                         className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border ${
-                          d.delta < 0 ? 'text-primary border-primary/30 bg-primary/10' : 'text-orange-400 border-orange-400/30 bg-orange-400/10'
+                          d.delta < 0 ? 'text-primary border-primary/30 bg-primary/10' : 'text-flame border-flame/30 bg-flame/10'
                         }`}
                       >
                         {d.delta < 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
@@ -134,7 +134,7 @@ export default function AnamneseHistoryPage() {
                       if (rows.length === 0) return null;
                       return (
                         <div key={step.id}>
-                          <h4 className="font-outfit text-[12px] font-semibold uppercase tracking-[0.08em] text-primary mb-1.5">{step.title}</h4>
+                          <h4 className="font-outfit text-xs font-semibold uppercase tracking-[0.08em] text-primary mb-1.5">{step.title}</h4>
                           {rows.map(f => {
                             const v = entry.answers[f.id];
                             return (

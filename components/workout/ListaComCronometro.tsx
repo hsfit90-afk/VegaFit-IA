@@ -113,10 +113,10 @@ export function ListaComCronometro({
                   {item.name}
                 </p>
                 {item.muscle_group && (
-                  <p className="text-[11px] text-foreground-muted mt-0.5">{item.muscle_group}</p>
+                  <p className="text-micro text-foreground-muted mt-0.5">{item.muscle_group}</p>
                 )}
                 {feito && !ativo && (
-                  <p className="text-[11px] text-primary mt-1 flex items-center gap-1">
+                  <p className="text-micro text-primary mt-1 flex items-center gap-1">
                     <Check className="w-3 h-3" /> feito
                   </p>
                 )}

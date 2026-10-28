@@ -98,7 +98,7 @@ export default function History() {
         <>
           <Card className="mb-10">
             <CardHeader className="flex flex-row justify-between items-center pb-2">
-               <CardTitle className="text-[10px] uppercase tracking-[0.18em] text-foreground-muted font-semibold m-0">Progressão de volume · kg</CardTitle>
+               <CardTitle className="text-nano uppercase tracking-widest text-foreground-muted font-semibold m-0">Progressão de volume · kg</CardTitle>
                {(leftBounds !== null || rightBounds !== null) && (
                  <Button 
                    onClick={zoomOut}
@@ -136,7 +136,7 @@ export default function History() {
                   </div>
                   <div className="flex gap-4 mt-3 md:mt-0 text-sm font-medium text-foreground-muted">
                     <span className="flex items-center gap-1"><Calendar className="w-4 h-4 text-accent"/> {new Date(h.date).toLocaleDateString()}</span>
-                    <span className="flex items-center gap-1"><Clock className="w-4 h-4 text-blue-400"/> {formatDuration(h.durationSeconds)}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-4 h-4 text-info"/> {formatDuration(h.durationSeconds)}</span>
                     {/* Aeróbico não tem carga: mostrar "0 kg" numa esteira seria informação errada,
                         não informação neutra. O que essa sessão entregou é tempo, já na coluna ao lado. */}
                     {h.sessionId === 'cardio' ? (

@@ -105,20 +105,20 @@ export default function ProgressionCheckIn() {
             <CardContent>
               <div className="grid grid-cols-3 gap-4 mb-2">
                 <div className="bg-surface p-5 rounded-xl text-center border border-border">
-                  <p className="text-foreground-muted text-[10px] md:text-xs mb-1 uppercase tracking-wider font-semibold">Treinos Feitos</p>
+                  <p className="text-foreground-muted text-nano md:text-xs mb-1 uppercase tracking-wider font-semibold">Treinos Feitos</p>
                   <p className="text-xl md:text-2xl font-bold font-mono">{lastWeekWorkouts.length}</p>
                 </div>
                 <div className="bg-surface p-5 rounded-xl text-center border border-border">
-                  <p className="text-foreground-muted text-[10px] md:text-xs mb-1 uppercase tracking-wider font-semibold">Carga (Vol)</p>
+                  <p className="text-foreground-muted text-nano md:text-xs mb-1 uppercase tracking-wider font-semibold">Carga (Vol)</p>
                   <p className="text-xl md:text-2xl font-bold font-mono">{totalVolume.toLocaleString()} <span className="text-sm font-sans font-normal text-foreground-muted">kg</span></p>
                 </div>
-                <div className="bg-blue-500/10 p-5 rounded-xl text-center border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-                  <p className="text-blue-400 text-[10px] md:text-xs mb-1 uppercase tracking-wider font-bold">Séries Efetivas</p>
-                  <p className="text-xl md:text-2xl font-bold text-blue-400 font-mono">{totalEffectiveSets}</p>
+                <div className="bg-info/10 p-5 rounded-xl text-center border border-info/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                  <p className="text-info text-nano md:text-xs mb-1 uppercase tracking-wider font-bold">Séries Efetivas</p>
+                  <p className="text-xl md:text-2xl font-bold text-info font-mono">{totalEffectiveSets}</p>
                 </div>
               </div>
               {lastWeekWorkouts.length === 0 && (
-                <p className="text-sm text-yellow-400 mt-4 bg-yellow-400/10 p-3 rounded-lg">Você não registrou treinos nos últimos 7 dias. O check-in pode não ser tão preciso.</p>
+                <p className="text-sm text-warning mt-4 bg-warning/10 p-3 rounded-lg">Você não registrou treinos nos últimos 7 dias. O check-in pode não ser tão preciso.</p>
               )}
             </CardContent>
           </Card>
@@ -154,7 +154,7 @@ export default function ProgressionCheckIn() {
                 <div className="flex gap-4">
                   <button
                     onClick={() => setJointPain(true)}
-                    className={`flex-1 py-3 rounded-xl border font-semibold transition-colors ${jointPain ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-surface border-border text-foreground-muted hover:bg-surface-light'}`}
+                    className={`flex-1 py-3 rounded-xl border font-semibold transition-colors ${jointPain ? 'bg-destructive/20 border-destructive text-destructive' : 'bg-surface border-border text-foreground-muted hover:bg-surface-light'}`}
                   >
                     Sim, senti dor
                   </button>

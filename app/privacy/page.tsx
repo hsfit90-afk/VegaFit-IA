@@ -6,7 +6,7 @@ import { LARGURA_FOCO } from '@/lib/layout';
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground font-inter pb-20">
+    <div className="min-h-screen bg-background text-foreground font-sans pb-20">
       <div className={`${LARGURA_FOCO} mx-auto px-5 md:px-8 py-10`}>
         <Link href="/settings" className="inline-flex items-center gap-2 text-sm text-foreground-muted hover:text-primary transition-colors mb-8">
           <ArrowLeft className="w-4 h-4" /> Voltar

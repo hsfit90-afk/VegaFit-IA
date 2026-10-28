@@ -49,7 +49,22 @@ export const viewport: Viewport = {
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="pt-BR" className={`${inter.variable} ${outfit.variable}`}>
-      <body className="font-sans bg-[var(--color-background-deep)] text-white antialiased" suppressHydrationWarning>
+      {/*
+        O FUNDO DA PÁGINA É `background`, NÃO `background-deep`.
+
+        Até 28/10/2026 o <body> usava `background-deep` — o token descrito como "mais escuro
+        que o background, para telas de entrada e overlays". Resultado: o app inteiro vivia na
+        cor de exceção, e `--color-background` governava 36 lugares soltos enquanto a maior
+        superfície da tela ignorava o token principal.
+
+        Só apareceu porque a paleta foi reajustada e NADA mudou na tela. Trocar a cor certa no
+        token errado não avisa: é a mesma família de armadilha da `font-outfit` e da cor
+        `accent`, que existiam no código e não existiam no CSS.
+
+        `text-foreground` pelo mesmo motivo: `text-white` cravado ignora o token e impede o
+        tema claro de funcionar um dia.
+      */}
+      <body className="font-sans bg-background text-foreground antialiased" suppressHydrationWarning>
         <AppProvider>
           <ClientLayout>
             {children}

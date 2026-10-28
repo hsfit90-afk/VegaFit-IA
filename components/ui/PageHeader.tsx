@@ -29,7 +29,7 @@ export function PageHeader({ titulo, subtitulo, acoes, icone, etiqueta, classNam
     <header className={cn('mb-8 md:mb-10 flex flex-col md:flex-row md:justify-between md:items-end gap-4', className)}>
       <div className="min-w-0">
         {etiqueta && (
-          <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted mb-2">
+          <p className="text-nano uppercase tracking-widest text-foreground-muted mb-2">
             {etiqueta}
           </p>
         )}

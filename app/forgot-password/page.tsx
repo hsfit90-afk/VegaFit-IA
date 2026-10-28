@@ -44,7 +44,7 @@ export default function ForgotPassword() {
             <Dumbbell className="w-8 h-8 text-black" />
           </div>
           <h1 className="text-3xl font-outfit font-bold text-white mb-2">Recuperar senha</h1>
-          <p className="text-gray-400 text-center">
+          <p className="text-foreground-muted text-center">
             {sent
               ? 'Confira seu e-mail para continuar.'
               : 'Informe seu e-mail e enviaremos um link para redefinir sua senha.'}
@@ -52,7 +52,7 @@ export default function ForgotPassword() {
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-5 rounded-xl mb-6 text-sm text-center">
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive p-5 rounded-xl mb-6 text-sm text-center">
             {error}
           </div>
         )}
@@ -78,7 +78,7 @@ export default function ForgotPassword() {
           </form>
         )}
 
-        <Link href="/login" className="flex items-center justify-center gap-2 text-gray-400 hover:text-white text-sm transition-colors">
+        <Link href="/login" className="flex items-center justify-center gap-2 text-foreground-muted hover:text-white text-sm transition-colors">
           <ArrowLeft className="w-4 h-4" /> Voltar para o login
         </Link>
       </div>

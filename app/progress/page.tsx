@@ -179,7 +179,7 @@ export default function ProgressPage() {
           56px ao lado do texto empurrava o conteúdo para baixo em toda visita. O padrão do
           app agora é etiqueta miúda e título limpo — o mesmo da tela inicial e da de treino. */}
       <header className="mb-8">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted mb-2">
+        <p className="text-nano uppercase tracking-widest text-foreground-muted mb-2">
           Sua evolução
         </p>
         <h1 className="text-3xl md:text-4xl font-outfit font-bold tracking-tight">
@@ -194,7 +194,7 @@ export default function ProgressPage() {
             volume — a pergunta seguinte de quem está olhando a própria evolução. */}
         <Link
           href="/history"
-          className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-blue-400 hover:text-blue-300 bg-surface border border-border rounded-xl px-4 py-2.5 transition-colors"
+          className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-info hover:text-info/80 bg-surface border border-border rounded-xl px-4 py-2.5 transition-colors"
         >
           <History className="w-4 h-4" />
           Ver treinos realizados
@@ -209,7 +209,7 @@ export default function ProgressPage() {
           {/* Card de Peso Corporal */}
           <Card>
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-[10px] uppercase tracking-[0.18em] text-foreground-muted font-semibold">Peso corporal</CardTitle>
+              <CardTitle className="text-nano uppercase tracking-widest text-foreground-muted font-semibold">Peso corporal</CardTitle>
               <Button size="sm" variant="outline" onClick={() => setIsAddingWeight(!isAddingWeight)}>
                 <Plus className="w-4 h-4 mr-1" /> Registrar
               </Button>
@@ -235,7 +235,7 @@ export default function ProgressPage() {
                   dança na horizontal a cada registro. */}
               <div className="flex flex-wrap items-end gap-x-4 gap-y-2 mb-6">
                 <div>
-                  <p className="text-[10px] text-foreground-muted uppercase tracking-[0.18em] mb-1.5">
+                  <p className="text-nano text-foreground-muted uppercase tracking-widest mb-1.5">
                     Peso atual
                   </p>
                   <p className="text-5xl md:text-6xl font-outfit font-bold tabular-nums leading-none">
@@ -269,7 +269,7 @@ export default function ProgressPage() {
           {/* Card de Volume por Músculo */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-[10px] uppercase tracking-[0.18em] text-foreground-muted font-semibold">Volume por músculo · últimos 7 dias</CardTitle>
+              <CardTitle className="text-nano uppercase tracking-widest text-foreground-muted font-semibold">Volume por músculo · últimos 7 dias</CardTitle>
             </CardHeader>
             <CardContent>
               {muscleVolume.length > 0 ? (
@@ -287,7 +287,7 @@ export default function ProgressPage() {
           {/* FEATURE: Gráfico de Evolução por Exercício */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-[10px] uppercase tracking-[0.18em] text-foreground-muted font-semibold">Evolução por exercício</CardTitle>
+              <CardTitle className="text-nano uppercase tracking-widest text-foreground-muted font-semibold">Evolução por exercício</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-foreground-muted mb-4">Selecione um exercício para ver a evolução da sua carga máxima ao longo do tempo.</p>
@@ -315,16 +315,16 @@ export default function ProgressPage() {
                       {/* Resumo numérico */}
                       <div className="flex gap-4 mb-5">
                         <div className="flex-1 bg-surface rounded-xl p-3 border border-border text-center">
-                          <p className="text-[10px] text-foreground-muted uppercase tracking-wider font-bold mb-1">Máx. Atual</p>
+                          <p className="text-nano text-foreground-muted uppercase tracking-wider font-bold mb-1">Máx. Atual</p>
                           <p className="text-2xl font-mono font-bold text-secondary">{exerciseEvolutionData[exerciseEvolutionData.length - 1].maxWeight}<span className="text-sm text-foreground-muted ml-1">kg</span></p>
                         </div>
                         <div className="flex-1 bg-surface rounded-xl p-3 border border-border text-center">
-                          <p className="text-[10px] text-foreground-muted uppercase tracking-wider font-bold mb-1">Início</p>
+                          <p className="text-nano text-foreground-muted uppercase tracking-wider font-bold mb-1">Início</p>
                           <p className="text-2xl font-mono font-bold text-white">{exerciseEvolutionData[0].maxWeight}<span className="text-sm text-foreground-muted ml-1">kg</span></p>
                         </div>
                         {evolutionDiff && (
                           <div className="flex-1 bg-surface rounded-xl p-3 border border-border text-center">
-                            <p className="text-[10px] text-foreground-muted uppercase tracking-wider font-bold mb-1">Evolução</p>
+                            <p className="text-nano text-foreground-muted uppercase tracking-wider font-bold mb-1">Evolução</p>
                             <p className={`text-2xl font-mono font-bold ${evolutionDiff.isPositive ? 'text-primary' : 'text-destructive'}`}>
                               {evolutionDiff.isPositive ? '+' : ''}{evolutionDiff.pct}%
                             </p>
@@ -357,19 +357,19 @@ export default function ProgressPage() {
         <div className="space-y-6">
           <Card className="h-full">
             <CardHeader className="pb-4 border-b border-border">
-              <CardTitle className="text-[10px] uppercase tracking-[0.18em] text-foreground-muted font-semibold">Recordes pessoais</CardTitle>
+              <CardTitle className="text-nano uppercase tracking-widest text-foreground-muted font-semibold">Recordes pessoais</CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               {prs.length > 0 ? (
                 <div className="space-y-4">
                   {prs.map((pr, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-3 bg-surface rounded-xl border border-border group hover:border-yellow-400/30 transition-colors">
+                    <div key={idx} className="flex justify-between items-center p-3 bg-surface rounded-xl border border-border group hover:border-gold/30 transition-colors">
                       <div className="flex-1 min-w-0 pr-3">
                         <p className="text-white font-bold text-sm truncate">{pr.name}</p>
                         <p className="text-xs text-foreground-muted mt-0.5">{new Date(pr.date).toLocaleDateString('pt-BR')}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-mono font-bold text-yellow-400 text-lg leading-none">{pr.weight} <span className="text-xs text-yellow-400/70 font-sans">kg</span></p>
+                        <p className="font-mono font-bold text-gold text-lg leading-none">{pr.weight} <span className="text-xs text-gold/70 font-sans">kg</span></p>
                         <p className="text-xs font-mono text-foreground-muted mt-1">{pr.reps} reps</p>
                       </div>
                     </div>

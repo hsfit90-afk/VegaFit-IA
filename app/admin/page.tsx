@@ -83,17 +83,17 @@ export default function AdminDashboard() {
       iso ? new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
     switch (u.subscription_status) {
       case 'cortesia':
-        return { texto: 'Cortesia (vitalício)', cor: 'bg-purple-500/20 text-purple-400' };
+        return { texto: 'Cortesia (vitalício)', cor: 'bg-accent/20 text-accent' };
       case 'ativo':
         return { texto: `Pago até ${fmt(u.subscription_expires_at)}`, cor: 'bg-primary/20 text-primary' };
       case 'trial':
-        return { texto: `Teste até ${fmt(u.trial_ends_at)}`, cor: 'bg-blue-500/20 text-blue-400' };
+        return { texto: `Teste até ${fmt(u.trial_ends_at)}`, cor: 'bg-info/20 text-info' };
       case 'cancelado':
-        return { texto: `Cancelado (até ${fmt(u.subscription_expires_at)})`, cor: 'bg-yellow-500/20 text-yellow-400' };
+        return { texto: `Cancelado (até ${fmt(u.subscription_expires_at)})`, cor: 'bg-warning/20 text-warning' };
       case 'vencido':
-        return { texto: 'Sem acesso', cor: 'bg-red-500/20 text-red-400' };
+        return { texto: 'Sem acesso', cor: 'bg-destructive/20 text-destructive' };
       default:
-        return { texto: u.subscription_status || '-', cor: 'bg-white/10 text-gray-400' };
+        return { texto: u.subscription_status || '-', cor: 'bg-white/10 text-foreground-muted' };
     }
   };
 
@@ -130,21 +130,21 @@ export default function AdminDashboard() {
     <div className={`${PADDING_TELA} ${LARGURA_CONTEUDO} mx-auto space-y-8 ${RODAPE_SEGURO}`}>
       <div>
         <h1 className="text-3xl font-outfit font-bold text-white mb-2">Painel Master</h1>
-        <p className="text-gray-400">Visão geral da plataforma VegaFit.</p>
+        <p className="text-foreground-muted">Visão geral da plataforma VegaFit.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-5 bg-surface border-white/5">
-          <h3 className="text-gray-400 font-medium mb-1">Total de Usuários</h3>
+          <h3 className="text-foreground-muted font-medium mb-1">Total de Usuários</h3>
           <p className="text-4xl font-bold text-white">{users.length}</p>
         </Card>
         <Card className="p-5 bg-surface border-white/5">
-          <h3 className="text-gray-400 font-medium mb-1">Personal Trainers</h3>
+          <h3 className="text-foreground-muted font-medium mb-1">Personal Trainers</h3>
           <p className="text-4xl font-bold text-primary">{trainers.length}</p>
         </Card>
         <Card className="p-5 bg-surface border-white/5">
-          <h3 className="text-gray-400 font-medium mb-1">Alunos Ativos</h3>
-          <p className="text-4xl font-bold text-blue-400">{clients.length}</p>
+          <h3 className="text-foreground-muted font-medium mb-1">Alunos Ativos</h3>
+          <p className="text-4xl font-bold text-info">{clients.length}</p>
         </Card>
       </div>
 
@@ -177,8 +177,8 @@ export default function AdminDashboard() {
         <h2 className="text-2xl font-outfit font-bold mb-4">Todos os Usuários</h2>
         <div className="bg-surface rounded-xl overflow-hidden border border-white/5">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-300">
-              <thead className="bg-white/5 text-gray-400 uppercase text-xs">
+            <table className="w-full text-left text-sm text-foreground-muted">
+              <thead className="bg-white/5 text-foreground-muted uppercase text-xs">
                 <tr>
                   <th className="px-6 py-4">Nome</th>
                   <th className="px-6 py-4">Papel (Role)</th>
@@ -193,9 +193,9 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 font-medium text-white">{u.name || 'Sem nome'}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold
-                        ${u.role === 'master' ? 'bg-purple-500/20 text-purple-400' : 
+                        ${u.role === 'master' ? 'bg-accent/20 text-accent' : 
                           u.role === 'trainer' ? 'bg-primary/20 text-primary' : 
-                          'bg-blue-500/20 text-blue-400'}`}>
+                          'bg-info/20 text-info'}`}>
                         {u.role || 'client'}
                       </span>
                     </td>
@@ -213,7 +213,7 @@ export default function AdminDashboard() {
                           onClick={() => mudarAssinatura(u.id, 'cortesia', 'cortesia vitalícia')}
                           disabled={mudando === u.id}
                           title="Acesso liberado para sempre, sem cobrança"
-                          className="text-xs bg-surface-light hover:bg-purple-500/20 hover:text-purple-400 disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
+                          className="text-xs bg-surface-light hover:bg-accent/20 hover:text-accent disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
                         >
                           Cortesia
                         </button>
@@ -229,7 +229,7 @@ export default function AdminDashboard() {
                           onClick={() => mudarAssinatura(u.id, 'trial', 'em teste por 7 dias', 7)}
                           disabled={mudando === u.id}
                           title="Reinicia o teste gratuito por 7 dias"
-                          className="text-xs bg-surface-light hover:bg-blue-500/20 hover:text-blue-400 disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
+                          className="text-xs bg-surface-light hover:bg-info/20 hover:text-info disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
                         >
                           Teste 7d
                         </button>
@@ -241,7 +241,7 @@ export default function AdminDashboard() {
                           }}
                           disabled={mudando === u.id}
                           title="Bloqueia geração de treino novo. O histórico e o plano atual continuam"
-                          className="text-xs bg-surface-light hover:bg-red-500/20 hover:text-red-400 disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
+                          className="text-xs bg-surface-light hover:bg-destructive/20 hover:text-destructive disabled:opacity-40 transition-colors px-2.5 py-1.5 rounded-lg border border-white/5"
                         >
                           Cortar
                         </button>

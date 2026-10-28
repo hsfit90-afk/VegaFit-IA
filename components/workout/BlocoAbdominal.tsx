@@ -229,7 +229,7 @@ export function BlocoAbdominal({
                     <span className={`block text-sm leading-tight ${feito ? 'line-through text-foreground-muted' : ''}`}>
                       {ex.name}
                     </span>
-                    <span className="block text-[11px] text-primary mt-0.5 font-mono tabular-nums">
+                    <span className="block text-micro text-primary mt-0.5 font-mono tabular-nums">
                       {receita.series} × {receita.reps}
                     </span>
                   </span>
@@ -242,11 +242,11 @@ export function BlocoAbdominal({
               Oferecer "trocar os exercícios" logo abaixo do que o profissional escolheu seria
               o app desfazendo, com um link, o trabalho pelo qual a pessoa pagou. */}
           {prescrito ? (
-            <p className="text-[11px] text-foreground-muted mt-1">
+            <p className="text-micro text-foreground-muted mt-1">
               Escolhido pelo seu personal para este dia. Marcar é opcional.
             </p>
           ) : (
-            <p className="text-[11px] text-foreground-muted mt-1">
+            <p className="text-micro text-foreground-muted mt-1">
               Marcar é opcional. Quer registrar no histórico ou trocar os exercícios?{' '}
               <Link href="/abdominal" className="text-primary underline">Abrir a sessão de abdominal</Link>.
             </p>

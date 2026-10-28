@@ -134,7 +134,7 @@ export function EditorDePreparo({
           {/* OS NOMES NO CABEÇALHO, para não precisar abrir cada dia só para conferir.
               Era a queixa: "não consigo ver qual é a mobilidade que está ativa". */}
           {!aberto && visivel.length > 0 && (
-            <span className="block font-normal text-[11px] text-foreground-muted truncate mt-0.5">
+            <span className="block font-normal text-micro text-foreground-muted truncate mt-0.5">
               {visivel.map(i => i.name).join(' · ')}
             </span>
           )}
@@ -144,7 +144,7 @@ export function EditorDePreparo({
 
       {aberto && (
         <div className="px-3.5 pb-3.5">
-          <p className="text-[11px] text-foreground-muted mb-2.5 leading-relaxed">{ajuda}</p>
+          <p className="text-micro text-foreground-muted mb-2.5 leading-relaxed">{ajuda}</p>
 
           {/* A LISTA APARECE NOS DOIS MODOS.
               No automático ela é a sugestão e não tem controles por item: mexer em alguma
@@ -152,7 +152,7 @@ export function EditorDePreparo({
               desta mesma lista. Sem esse passo, o profissional ajustaria segundos achando que
               ficou guardado, e o servidor remontaria tudo no salvamento. */}
           {visivel.length === 0 ? (
-            <p className="text-[11px] text-warning mb-2.5">
+            <p className="text-micro text-warning mb-2.5">
               Nenhum exercício do catálogo cabe no que este aluno tem. O bloco vai chegar vazio
               para ele.
             </p>
@@ -170,7 +170,7 @@ export function EditorDePreparo({
                     <span className="flex-1 min-w-0">
                       <span className="block text-xs truncate">{item.name}</span>
                       {legenda && (
-                        <span className="block text-[10px] text-foreground-muted truncate">{legenda}</span>
+                        <span className="block text-nano text-foreground-muted truncate">{legenda}</span>
                       )}
                     </span>
 
@@ -216,7 +216,7 @@ export function EditorDePreparo({
               <button
                 type="button"
                 onClick={onRoletar}
-                className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border border-white/10 bg-surface-light text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors"
+                className="inline-flex items-center gap-1.5 text-micro font-semibold px-2.5 py-1.5 rounded-lg border border-white/10 bg-surface-light text-foreground-muted hover:text-primary hover:border-primary/40 transition-colors"
               >
                 <Shuffle className="w-3 h-3" /> Roletar
               </button>
@@ -226,7 +226,7 @@ export function EditorDePreparo({
               <button
                 type="button"
                 onClick={assumirSugestao}
-                className="text-[11px] font-semibold text-primary hover:text-primary-hover"
+                className="text-micro font-semibold text-primary hover:text-primary-hover"
               >
                 Escolher à mão
               </button>
@@ -236,14 +236,14 @@ export function EditorDePreparo({
               <button
                 type="button"
                 onClick={() => onMudar(undefined)}
-                className="text-[11px] text-foreground-muted hover:text-foreground whitespace-nowrap"
+                className="text-micro text-foreground-muted hover:text-foreground whitespace-nowrap"
               >
                 Voltar ao automático
               </button>
             )}
           </div>
 
-          {rodape && <p className="text-[10px] text-foreground-muted mt-2">{rodape}</p>}
+          {rodape && <p className="text-nano text-foreground-muted mt-2">{rodape}</p>}
         </div>
       )}
     </div>

@@ -156,7 +156,7 @@ export function BlocoAquecimento({
                       {item.name}
                     </span>
                     {item.muscleGroup && (
-                      <span className="block text-[11px] text-foreground-muted mt-0.5">{item.muscleGroup}</span>
+                      <span className="block text-micro text-foreground-muted mt-0.5">{item.muscleGroup}</span>
                     )}
                   </span>
                   <span className="text-xs font-mono text-secondary flex-none tabular-nums">{item.segundos}s</span>
@@ -164,7 +164,7 @@ export function BlocoAquecimento({
               </div>
             );
           })}
-          <p className="text-[11px] text-foreground-muted mt-1">
+          <p className="text-micro text-foreground-muted mt-1">
             Marcar é opcional — serve só para você não perder o fio.
           </p>
         </div>

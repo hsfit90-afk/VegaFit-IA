@@ -340,7 +340,7 @@ export default function Library() {
                 <div className="flex items-center gap-1">
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleFavoriteExercise(ex.id); }}
-                  className={`p-1.5 rounded-lg transition-colors ${favorites.includes(ex.id) ? 'text-red-500' : 'text-foreground-muted hover:text-red-400 hover:bg-red-500/10'}`}
+                  className={`p-1.5 rounded-lg transition-colors ${favorites.includes(ex.id) ? 'text-destructive' : 'text-foreground-muted hover:text-destructive hover:bg-destructive/10'}`}
                   title={favorites.includes(ex.id) ? 'Remover dos favoritos' : 'Favoritar'}
                   aria-label={`${ex.name}: ${favorites.includes(ex.id) ? 'remover dos favoritos' : 'adicionar aos favoritos'}`}
                   aria-pressed={favorites.includes(ex.id)}
@@ -363,9 +363,9 @@ export default function Library() {
               <h3 className="font-outfit text-xl font-semibold mb-2 group-hover:text-primary transition-colors pr-8">{ex.name}</h3>
               
               {ex.mediaUrl ? (
-                <span className="text-xs text-blue-400 flex items-center gap-1 mt-3"><ImageIcon className="w-3 h-3"/> GIF Customizado</span>
+                <span className="text-xs text-info flex items-center gap-1 mt-3"><ImageIcon className="w-3 h-3"/> GIF Customizado</span>
               ) : ex.youtubeId ? (
-                <span className="text-xs text-red-400 flex items-center gap-1 mt-3"><Play className="w-3 h-3"/> YouTube</span>
+                <span className="text-xs text-destructive flex items-center gap-1 mt-3"><Play className="w-3 h-3"/> YouTube</span>
               ) : (
                 <span className="text-xs text-foreground-muted flex items-center gap-1 mt-3">Sem mídia</span>
               )}
@@ -394,7 +394,7 @@ export default function Library() {
               
               {bulkStatus === 'idle' && (
                 <>
-                  <p className="text-gray-300 mb-6">
+                  <p className="text-foreground-muted mb-6">
                     Foram encontrados <strong className="text-primary">{bulkFiles.length} arquivos</strong> de mídia.
                     Eles serão organizados automaticamente pelos nomes das subpastas e cadastrados no banco de dados.
                   </p>
@@ -402,7 +402,7 @@ export default function Library() {
                   <div className="bg-surface p-5 rounded-xl mb-6 max-h-40 overflow-y-auto border border-border">
                     <p className="text-xs text-foreground-muted mb-2 font-bold uppercase">Exemplo de Leitura:</p>
                     {bulkFiles.slice(0, 3).map((f, i) => (
-                      <div key={i} className="text-sm text-gray-300 truncate mb-1" title={f.webkitRelativePath}>
+                      <div key={i} className="text-sm text-foreground-muted truncate mb-1" title={f.webkitRelativePath}>
                         📄 {f.webkitRelativePath}
                       </div>
                     ))}
@@ -544,7 +544,7 @@ export default function Library() {
                       ) : (
                         <div>
                           <Upload className="w-8 h-8 text-foreground-muted mx-auto mb-2" />
-                          <p className="text-gray-300 text-sm font-medium">Clique para selecionar</p>
+                          <p className="text-foreground-muted text-sm font-medium">Clique para selecionar</p>
                           <p className="text-foreground-muted text-xs mt-1">GIF, MP4, JPG ou PNG (Máx. 10MB)</p>
                         </div>
                       )}
@@ -659,7 +659,7 @@ export default function Library() {
                 <div className="space-y-6">
                   <div>
                     <h4 className="text-primary font-medium mb-2">Instruções</h4>
-                    <ol className="list-decimal list-inside text-gray-300 space-y-2">
+                    <ol className="list-decimal list-inside text-foreground-muted space-y-2">
                       {selectedExercise.instructions.map((step, i) => <li key={i}>{step}</li>)}
                     </ol>
                   </div>

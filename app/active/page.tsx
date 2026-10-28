@@ -9,6 +9,8 @@ import { Check, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, Imag
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { AnelDeProgresso } from '@/components/ui/Progresso';
+import { Badge } from '@/components/ui/Badge';
 import { getExercises, deleteExercise } from '@/lib/db/exercises';
 import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
 import { loadWorkoutState, clearWorkoutState } from '@/utils/workoutCache';
@@ -797,10 +799,10 @@ export default function ActiveWorkout() {
           {/* Stats Cards - Story Style */}
           <div className="grid grid-cols-3 gap-4 w-full mb-8">
             <div className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col items-center gap-3">
-              <Timer className="w-6 h-6 text-blue-400" />
+              <Timer className="w-6 h-6 text-info" />
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-black text-white">{durationMin}</span>
-                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1">min</span>
+                <span className="text-nano text-foreground-muted uppercase tracking-widest font-bold mt-1">min</span>
               </div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col items-center gap-3 relative overflow-hidden">
@@ -808,14 +810,14 @@ export default function ActiveWorkout() {
               <Zap className="w-6 h-6 text-primary relative z-10" />
               <div className="flex flex-col items-center relative z-10">
                 <span className="text-3xl font-black text-white">{finishedVolume}</span>
-                <span className="text-[10px] text-primary/70 uppercase tracking-widest font-bold mt-1">kg vol</span>
+                <span className="text-nano text-primary/70 uppercase tracking-widest font-bold mt-1">kg vol</span>
               </div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col items-center gap-3">
-              <Flame className="w-6 h-6 text-orange-400" />
+              <Flame className="w-6 h-6 text-flame" />
               <div className="flex flex-col items-center">
                 <span className="text-3xl font-black text-white">{completedSetsCount}</span>
-                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1">séries</span>
+                <span className="text-nano text-foreground-muted uppercase tracking-widest font-bold mt-1">séries</span>
               </div>
             </div>
           </div>
@@ -919,7 +921,7 @@ export default function ActiveWorkout() {
             baixo, que é curta e cabe folgada. */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 md:gap-4 mb-3">
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted mb-1">
+            <p className="text-nano uppercase tracking-widest text-foreground-muted mb-1">
               Em treino
             </p>
             <h1 className="text-lg md:text-xl font-outfit font-bold leading-tight md:truncate">
@@ -931,7 +933,7 @@ export default function ActiveWorkout() {
             <p className="font-mono text-3xl md:text-4xl font-bold text-primary leading-none tabular-nums">
               {formatTime(elapsedSeconds)}
             </p>
-            <p className="text-[10px] uppercase tracking-wider text-foreground-muted tabular-nums md:mt-1.5">
+            <p className="text-nano uppercase tracking-wider text-foreground-muted tabular-nums md:mt-1.5">
               {completedSets}/{totalSets} séries · {Math.round(progressPercent)}%
             </p>
           </div>
@@ -1003,11 +1005,13 @@ export default function ActiveWorkout() {
             )}
 
             {abreBloco && (
-              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-2.5">
-                <span className="text-xs font-bold text-accent uppercase tracking-wide inline-flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 shrink-0" />
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2.5">
+                {/* Selo em vez de texto solto: o bloco é um ESTADO do treino, e estado tem
+                    fundo. Era `text-xs font-bold text-accent uppercase` escrito à mão aqui. */}
+                <Badge tom="destaque">
+                  <Zap className="w-3 h-3 shrink-0" aria-hidden="true" />
                   {nomeDoBloco}
-                </span>
+                </Badge>
                 <span className="text-xs text-foreground-muted">
                   {tipo === 'circuito'
                     ? `${doBloco.length} exercícios em sequência`
@@ -1017,7 +1021,7 @@ export default function ActiveWorkout() {
             )}
 
             {abreBloco && tipo === 'biset' && (
-              <p className="text-[11px] text-foreground-muted mb-2.5 leading-relaxed">{AVISO_DO_BISET}</p>
+              <p className="text-micro text-foreground-muted mb-2.5 leading-relaxed">{AVISO_DO_BISET}</p>
             )}
 
           <Card variant="glass" className="p-0 relative overflow-hidden group">
@@ -1050,9 +1054,13 @@ export default function ActiveWorkout() {
                     ) : (
                       <img src={customMediaUrl} alt={ex.name} className="w-full h-full object-contain" />
                     )}
-                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded-lg backdrop-blur-md flex items-center gap-1.5 border border-white/10">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                      <span className="text-[10px] text-primary font-bold uppercase tracking-wider">Verificado</span>
+                    {/* O selo fica sobre a mídia, então o fundo escuro continua aqui: o
+                        `Badge` sozinho não teria contraste garantido contra um GIF qualquer. */}
+                    <div className="absolute bottom-2 left-2 bg-black/60 rounded-full backdrop-blur-md border border-white/10">
+                      <Badge tom="primario" className="bg-transparent">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse motion-reduce:animate-none" aria-hidden="true" />
+                        Verificado
+                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -1081,14 +1089,34 @@ export default function ActiveWorkout() {
                       no meio do treino, sem numeração, não dá para saber se falta muito nem em
                       que ponto da sessão se está. O número é fino e apagado de propósito —
                       informa a posição sem disputar com o nome do exercício. */}
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted mb-1.5 tabular-nums">
+                  <p className="text-nano uppercase tracking-widest text-foreground-muted mb-1.5 tabular-nums">
                     <span className="text-primary font-bold">
                       {String(exIndex + 1).padStart(2, '0')}
                     </span>
                     <span className="mx-1.5 opacity-40">/</span>
                     {String(activeExercises.length).padStart(2, '0')}
                   </p>
-                  <h2 className="text-2xl font-outfit font-bold text-white mb-2">{ex.name}</h2>
+
+                  {/*
+                    O ANEL AO LADO DO NOME, e não no meio das estatísticas.
+
+                    A pergunta que o aluno faz ao voltar ao celular é "quantas faltam neste
+                    aqui", e ela precisa ser respondida ANTES do nome do exercício, não depois
+                    de rolar até as caixas de Séries e Volume.
+
+                    Puramente aditivo: lê `ex.sets` e não escreve nada. O contador de séries
+                    continua sendo o campo editável lá embaixo — este não aceita toque, para
+                    ninguém achar que mudou o treino ao encostar.
+                  */}
+                  <div className="flex items-center gap-3 mb-2">
+                    <AnelDeProgresso
+                      valor={ex.sets.length ? (ex.sets.filter(s => s.completed).length / ex.sets.length) * 100 : 0}
+                      aria-label={`Séries concluídas de ${ex.name}`}
+                    >
+                      {ex.sets.filter(s => s.completed).length}/{ex.sets.length}
+                    </AnelDeProgresso>
+                    <h2 className="text-2xl font-outfit font-bold text-foreground min-w-0">{ex.name}</h2>
+                  </div>
                   {/* A LINHA "Superset com X" SAIU DAQUI (22/10/2026).
                       O bloco que cerca os exercícios já diz isso uma vez, no lugar certo:
                       antes do primeiro do par, não repetida dentro de cada cartão. Repetir
@@ -1130,11 +1158,11 @@ export default function ActiveWorkout() {
                     // Fallback: se o texto não for parseável, mostra como antes mas formatado
                     if (parsedWeeks.length === 0) {
                       return (
-                        <div className="bg-[var(--color-background-deep)] border border-blue-500/30 p-3 rounded-xl mt-2">
-                          <p className="text-[11px] text-blue-400 font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                        <div className="bg-[var(--color-background-deep)] border border-info/30 p-3 rounded-xl mt-2">
+                          <p className="text-micro text-info font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
                             <CalendarDays className="w-3.5 h-3.5 shrink-0" /> Periodização (4 Semanas)
                           </p>
-                          <p className="text-sm text-gray-300 leading-relaxed">{methodText}</p>
+                          <p className="text-sm text-foreground-muted leading-relaxed">{methodText}</p>
                         </div>
                       );
                     }
@@ -1146,26 +1174,26 @@ export default function ActiveWorkout() {
                       <div className="mt-2 p-3 bg-white/[0.03] border border-white/8 rounded-xl">
                         {/* Barra de progresso fina */}
                         <div className="flex items-center gap-1.5 mb-2.5">
-                          <span className="text-[10px] text-gray-500 font-semibold shrink-0 tabular-nums">S{currentWeek}/4</span>
+                          <span className="text-nano text-foreground-subtle font-semibold shrink-0 tabular-nums">S{currentWeek}/4</span>
                           <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-blue-500 rounded-full transition-all"
+                              className="h-full bg-info rounded-full transition-all"
                               style={{ width: `${(currentWeek / 4) * 100}%` }}
                             />
                           </div>
-                          <span className="text-[10px] text-blue-400 font-bold shrink-0">Semana {currentWeek}</span>
+                          <span className="text-nano text-info font-bold shrink-0">Semana {currentWeek}</span>
                         </div>
 
                         {/* Conteúdo da semana atual */}
                         {currentWeekData && (
-                          <p className="text-xs text-gray-300 leading-relaxed">
+                          <p className="text-xs text-foreground-muted leading-relaxed">
                             {currentWeekData.content}
                           </p>
                         )}
 
                         {/* Teaser das próximas semanas */}
                         {futureCount > 0 && (
-                          <p className="text-[10px] text-gray-600 mt-1.5 flex items-center gap-1">
+                          <p className="text-nano text-foreground-subtle mt-1.5 flex items-center gap-1">
                             <Lock className="w-3 h-3 shrink-0" />
                             <span>{futureCount} {futureCount === 1 ? 'semana bloqueada' : 'semanas bloqueadas'} — continue treinando para desbloquear</span>
                           </p>
@@ -1185,7 +1213,7 @@ export default function ActiveWorkout() {
                       return (
                         <button
                           onClick={() => toggleFavoriteExercise(ex.exerciseId)}
-                          className={`p-3 border rounded-xl transition-all flex items-center justify-center shadow-lg ${isFav ? 'bg-red-500/20 border-red-500/50 text-red-400' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'}`}
+                          className={`p-3 border rounded-xl transition-all flex items-center justify-center shadow-lg ${isFav ? 'bg-destructive/20 border-destructive/50 text-destructive' : 'bg-white/5 border-white/10 text-foreground-muted hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive'}`}
                           title={isFav ? 'Remover dos favoritos' : 'Favoritar exercício'}
                           aria-label={`${ex.name}: ${isFav ? 'remover dos favoritos' : 'adicionar aos favoritos'}`}
                           aria-pressed={isFav}
@@ -1198,7 +1226,7 @@ export default function ActiveWorkout() {
                       onClick={() => handleAutoSwap(exIndex)}
                       disabled={swappingIndex === exIndex}
                       aria-label={swappingIndex === exIndex ? 'Buscando substituto…' : `Substituir ${ex.name} por outro exercício`}
-                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:text-primary transition-all text-gray-400 flex items-center justify-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:text-primary transition-all text-foreground-muted flex items-center justify-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       title="Substituir por outro com IA inteligente"
                     >
                       <RefreshCw className={`w-5 h-5 ${swappingIndex === exIndex ? 'animate-spin text-primary' : ''}`} />
@@ -1206,7 +1234,7 @@ export default function ActiveWorkout() {
                     <button 
                       onClick={() => handleBanExercise(exIndex)}
                       aria-label={`Banir ${ex.name}: remove do treino e não aparece mais nos seus planos`}
-                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all text-gray-400 flex items-center justify-center shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
+                      className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-destructive/20 hover:border-destructive/50 hover:text-destructive transition-all text-foreground-muted flex items-center justify-center shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
                       title="Banir exercício (excluir da biblioteca)"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -1214,7 +1242,7 @@ export default function ActiveWorkout() {
                   </div>
 
                   <div className="bg-white/5 px-4 py-2 rounded-xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
-                     <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Séries</span>
+                     <span className="text-nano text-foreground-muted uppercase tracking-widest font-bold mb-1">Séries</span>
                      <input
                        type="number"
                        value={ex.sets.length}
@@ -1225,15 +1253,15 @@ export default function ActiveWorkout() {
                      />
                   </div>
                   <div className="bg-white/5 px-4 py-2 rounded-xl border border-white/10 text-center flex flex-col items-center justify-center backdrop-blur-md">
-                     <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Volume Atual</span>
+                     <span className="text-nano text-foreground-muted uppercase tracking-widest font-bold mb-1">Volume Atual</span>
                      <div className="text-xl font-mono font-bold text-white flex items-baseline gap-1">
-                        {ex.sets.filter(s => s.completed).reduce((acc, s) => acc + (s.reps * s.weight), 0)} <span className="text-sm text-gray-500 font-medium">kg</span>
+                        {ex.sets.filter(s => s.completed).reduce((acc, s) => acc + (s.reps * s.weight), 0)} <span className="text-sm text-foreground-subtle font-medium">kg</span>
                      </div>
                   </div>
                 </div>
               </div>
             <div className="space-y-4">
-              <div className="grid grid-cols-12 gap-2 text-[10px] text-gray-400 font-bold px-2 mb-2 uppercase tracking-widest">
+              <div className="grid grid-cols-12 gap-2 text-nano text-foreground-muted font-bold px-2 mb-2 uppercase tracking-widest">
                 <div className="col-span-1 text-center">#</div>
                 <div className="col-span-3 text-center">Carga</div>
                 <div className="col-span-3 text-center">Reps</div>
@@ -1271,7 +1299,7 @@ export default function ActiveWorkout() {
                     <span className={`text-[0.7rem] font-mono font-bold tracking-tight ${
                       set.completed ? 'text-primary'
                       : ehSerieEspecial(set.label) ? 'text-accent'
-                      : 'text-gray-600'
+                      : 'text-foreground-subtle'
                     }`}>
                       {rotuloCurto(set.label, setIndex)}
                     </span>
@@ -1313,7 +1341,7 @@ export default function ActiveWorkout() {
 
                   <div className="col-span-2">
                     <div className={`relative flex items-center bg-black/40 rounded-xl overflow-hidden border transition-all duration-300 ${
-                      set.completed ? 'border-primary/30' : 'border-border focus-within:border-blue-500/50 focus-within:bg-black/60'
+                      set.completed ? 'border-primary/30' : 'border-border focus-within:border-info/50 focus-within:bg-black/60'
                     }`}>
                       <input 
                         type="number" 
@@ -1327,7 +1355,7 @@ export default function ActiveWorkout() {
                            em branco. Com os três do mesmo tamanho, o campo que menos importa
                            disputava atenção com os dois que mais importam. */
                         className={`w-full bg-transparent py-2.5 md:py-3 text-center font-mono text-lg outline-none transition-all ${
-                          set.completed ? (set.rir !== undefined && set.rir <= 3 ? 'text-blue-400 font-bold' : 'text-gray-400') : 'text-white placeholder:text-white/20'
+                          set.completed ? (set.rir !== undefined && set.rir <= 3 ? 'text-info font-bold' : 'text-foreground-muted') : 'text-white placeholder:text-white/20'
                         }`}
                         disabled={set.completed}
                       />
@@ -1342,7 +1370,7 @@ export default function ActiveWorkout() {
                       className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                         set.completed 
                           ? 'bg-primary text-[var(--color-background-deep)] shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.5)]' 
-                          : 'bg-white/5 text-gray-500 hover:bg-primary/20 hover:text-primary hover:scale-110'
+                          : 'bg-white/5 text-foreground-subtle hover:bg-primary/20 hover:text-primary hover:scale-110'
                       }`}
                     >
                       <Check className="w-5 h-5" />
@@ -1355,7 +1383,7 @@ export default function ActiveWorkout() {
                     o aluno precisa saber se faz 8 repetições ou vai até a falha. Some depois
                     de concluída, para não poluir o que já passou. */}
                 {!set.completed && instrucaoDaSerie(set.label, set.weight) && (
-                  <p className="flex items-start gap-1.5 text-[11px] leading-snug text-accent/90 mt-1.5 mb-1 px-2">
+                  <p className="flex items-start gap-1.5 text-micro leading-snug text-accent/90 mt-1.5 mb-1 px-2">
                     <Zap className="w-3 h-3 flex-none mt-[1px]" />
                     {instrucaoDaSerie(set.label, set.weight)}
                   </p>
@@ -1370,7 +1398,7 @@ export default function ActiveWorkout() {
                     ) : (
                       <button
                         onClick={() => setMiniPause({ exIndex, setIndex, endTime: Date.now() + 15000 })}
-                        className="text-[11px] font-semibold text-foreground-muted hover:text-accent border border-white/10 hover:border-accent/40 rounded-lg px-3 py-1 transition-colors"
+                        className="text-micro font-semibold text-foreground-muted hover:text-accent border border-white/10 hover:border-accent/40 rounded-lg px-3 py-1 transition-colors"
                       >
                         <Pause className="w-3.5 h-3.5 shrink-0" />
                         Mini-pausa (15s) entre clusters
@@ -1447,7 +1475,7 @@ export default function ActiveWorkout() {
         className="mt-10 h-16 flex-col gap-0.5 shadow-[0_0_30px_rgb(var(--color-primary-rgb)/0.3)]"
       >
         <span className="font-bold text-xl leading-none">Finalizar treino</span>
-        <span className="text-[11px] font-medium opacity-70 tabular-nums">
+        <span className="text-micro font-medium opacity-70 tabular-nums">
           {completedSets} de {totalSets} séries concluídas
         </span>
       </Button>
