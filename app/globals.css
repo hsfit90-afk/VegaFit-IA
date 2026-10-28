@@ -24,11 +24,20 @@
   --font-sans: var(--fonte-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-outfit: var(--fonte-outfit), var(--fonte-inter), ui-sans-serif, system-ui, sans-serif;
 
-  /* Core Colors - Minimalist Mint */
-  --color-background: #151718;
-  --color-surface: #202325;
-  --color-surface-hover: #2B2F31;
-  --color-surface-light: #32373A;
+  /*
+   * SUPERFÍCIES — três níveis, separados por TOM e não por borda.
+   *
+   * É assim que um app parece "liso": o cartão se distingue do fundo porque é mais claro,
+   * não porque tem uma linha em volta. Borda soma linha, linha soma ruído.
+   *
+   * Aprofundados em 28/10/2026 (eram #151718 / #202325 / #32373A). Com o fundo mais escuro o
+   * cartão passa a ler como cartão; antes os três tons eram próximos demais e a tela virava
+   * uma massa cinza só.
+   */
+  --color-background: #0F1112;
+  --color-surface: #191C1E;
+  --color-surface-hover: #1F2325;
+  --color-surface-light: #23272A;
   
   --color-primary: #05D590;
   --color-primary-hover: #04B077;
@@ -38,21 +47,43 @@
   --color-secondary: #0DA3A0;
   --color-secondary-hover: #0B8885;
   
-  --color-foreground: #f5f5f7;
-  --color-foreground-muted: #8e8e93;
-  
-  --color-border: #2B2F31;
-  --color-border-light: #32373A;
-  
-  --color-destructive: #ff453a;
+  /*
+   * TEXTO — três níveis, e três é o teto.
+   *
+   * `subtle` nasceu em 28/10/2026 para dar nome ao cinza dos rótulos micro. Até então o app
+   * tinha DOIS sistemas de cinza convivendo: este token e 52 usos de `text-gray-400/300/500`
+   * do Tailwind, tons parecidos e nunca iguais. Cinza sem nome vira cinza escolhido na hora.
+   *
+   * Contraste medido sobre o fundo: foreground 17,34 · muted 7,25 · subtle 4,05.
+   * O `muted` subiu de 5,52 para 7,25 — é o texto que sumia no sol da rua.
+   * O `subtle` fica em AA de texto grande de propósito: só serve para rótulo micro.
+   */
+  --color-foreground: #F4F5F6;
+  --color-foreground-muted: #9BA1A6;
+  --color-foreground-subtle: #6E757B;
+
+  --color-border: #23272A;
+  --color-border-light: #2C3134;
+
+  /* Clareado de #ff453a: 5,03 -> 6,14 sobre o cartão, sem perder a leitura de perigo. */
+  --color-destructive: #FF6B61;
   --color-success: #32d74b;
   --color-warning: #ffd60a;
 
-  /* Roxo de destaque. O código já usava `text-accent`/`bg-accent` em 27 lugares, mas o token
-     nunca existiu — então essas classes não eram geradas e os elementos ficavam sem cor,
-     herdando a do pai. */
-  --color-accent: #7C3AED;
-  --color-accent-hover: #6D28D9;
+  /*
+   * Roxo de destaque. O código já usava `text-accent`/`bg-accent` em 27 lugares, mas o token
+   * nunca existiu — então essas classes não eram geradas e os elementos ficavam sem cor,
+   * herdando a do pai.
+   *
+   * CLAREADO EM 28/10/2026, E O MOTIVO É MEDIDO. O #7C3AED dava contraste 3,01 sobre o
+   * cartão: REPROVA em AA, e ele é a segunda cor mais usada do app (54 ocorrências). Era a
+   * cor que menos se enxergava, justamente onde o app queria chamar atenção.
+   *
+   * #A78BFA dá 6,29 sobre o cartão — mais que o dobro — e é a mesma família, então a
+   * identidade não muda. O roxo escuro vira o `hover`, onde não há texto para ler.
+   */
+  --color-accent: #A78BFA;
+  --color-accent-hover: #8B5CF6;
 
   /* Fundo mais escuro que o --color-background, usado em telas de entrada e overlays. */
   --color-background-deep: #0A0A0F;
@@ -64,7 +95,54 @@
      shadow-[0_0_20px_rgb(var(--color-primary-rgb)/0.3)]. São 26 combinações de desfoque e
      opacidade no app — um token por combinação seria pior que a doença. */
   --color-primary-rgb: 5 213 144;
-  --color-accent-rgb: 124 58 237;
+  --color-accent-rgb: 167 139 250;
+
+  /*
+   * OS DOIS TAMANHOS QUE FALTAVAM NA ESCALA.
+   *
+   * Medido em 28/10/2026: o app tinha DUAS escalas tipográficas. A do Tailwind (text-sm 248
+   * usos, text-xs 152) e uma paralela em pixel cru — text-[11px] 67 vezes, text-[10px] 35,
+   * mais [13px], [15px] e [22px] avulsos. São 110 ocorrências fora da escala, e é daí que vem
+   * a sensação de desalinhado: dois rótulos que deveriam ser iguais saem em 10px e 11px.
+   *
+   * Com nome, param de ser número escolhido na hora e passam a ser decisão.
+   */
+  --text-micro: 0.6875rem;   /* 11px — rótulo de apoio, meta de lista */
+  --text-micro--line-height: 1rem;
+  --text-nano: 0.625rem;     /* 10px — rótulo em maiúscula, selo */
+  --text-nano--line-height: 0.875rem;
+
+  /*
+   * RAIOS — três, e o nome existe para que continuem três.
+   *
+   * O app já convergia para três (rounded-xl 208 usos, full 72, lg 66), mas tinha 11 escapes
+   * em pixel cru: [20px], [10px], [32px], [40px], [100%] e um `none`.
+   */
+  --radius-sm: 0.5rem;    /* 8px  — selo, miniatura, campo pequeno */
+  --radius-md: 0.75rem;   /* 12px — cartão, botão, entrada */
+  --radius-full: 999px;   /* pílula, avatar, indicador */
+
+  /*
+   * SOMBRAS — duas de elevação e um brilho.
+   *
+   * O brilho verde é o que mais precisa de regra: hoje ele aparece decorativo em vários
+   * lugares, e brilho que está em tudo não significa nada. Daqui em diante ele marca ESTADO
+   * ATIVO, e só.
+   */
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-float: 0 8px 30px rgb(0 0 0 / 0.45);
+  --shadow-glow: 0 0 20px rgb(var(--color-primary-rgb) / 0.3);
+
+  /*
+   * MOVIMENTO — três durações e uma curva só.
+   *
+   * Nada contínuo: animação que não para come bateria e atrapalha quem olha de relance entre
+   * séries. A curva é a mesma que o `vf-entrada` já usava.
+   */
+  --duracao-toque: 120ms;
+  --duracao-entrada: 180ms;
+  --duracao-folha: 240ms;
+  --curva-saida: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Paleta dos gráficos (components/charts/). Separada de propósito: eixo e grade não são
      "foreground-muted", são elementos de leitura de dado, e mudam junto com o gráfico. */
@@ -78,6 +156,54 @@
 
 :root {
   color-scheme: dark;
+
+  /*
+   * Verde para TEXTO. No escuro é o mesmo primário; no claro precisa ser outro, e o motivo é
+   * medido: #05D590 como texto sobre fundo claro dá 1,81 e reprova. Como PREENCHIMENTO de
+   * botão ele continua perfeito nos dois temas (preto em cima dá 10,93).
+   */
+  --color-primary-text: var(--color-primary);
+}
+
+/*
+ * TEMA CLARO.
+ *
+ * Fica aqui pronto e INERTE: só vale quando alguém marca data-tema="claro" no <html>. Nenhuma
+ * tela do app liga isso hoje, e é de propósito — o app tem `color-scheme: dark` e quatro meses
+ * de decisões que assumem fundo escuro. Definir os tokens é barato; fazer as 31 telas
+ * funcionarem nos dois é caro, e vira etapa própria.
+ *
+ * A página /design liga por cima de si mesma, para o profissional julgar os dois no celular.
+ *
+ * Contraste medido sobre o fundo claro: foreground 16,77 · muted 5,91 · subtle 3,57 ·
+ * primary-text 5,05 · accent 6,68 · destructive 5,24.
+ */
+:root[data-tema="claro"] {
+  color-scheme: light;
+
+  --color-background: #F7F8F9;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F1F3F5;
+  --color-surface-light: #E9ECEF;
+  --color-background-deep: #FFFFFF;
+
+  --color-foreground: #15181A;
+  --color-foreground-muted: #5A6168;
+  --color-foreground-subtle: #7C848B;
+
+  --color-border: #E3E6E8;
+  --color-border-light: #D7DBDE;
+
+  /* O preenchimento continua o verde da marca; só o texto escurece. */
+  --color-primary-text: #027A53;
+  --color-accent: #6D28D9;
+  --color-accent-hover: #5B21B6;
+  --color-accent-rgb: 109 40 217;
+  --color-destructive: #C62B20;
+  --color-warning: #8A6D00;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.06);
+  --shadow-float: 0 8px 30px rgb(0 0 0 / 0.12);
 }
 
 body {
