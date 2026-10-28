@@ -9,6 +9,7 @@ import { Check, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, Imag
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { AnelDeProgresso } from '@/components/ui/Progresso';
 import { getExercises, deleteExercise } from '@/lib/db/exercises';
 import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
 import { loadWorkoutState, clearWorkoutState } from '@/utils/workoutCache';
@@ -1088,7 +1089,27 @@ export default function ActiveWorkout() {
                     <span className="mx-1.5 opacity-40">/</span>
                     {String(activeExercises.length).padStart(2, '0')}
                   </p>
-                  <h2 className="text-2xl font-outfit font-bold text-white mb-2">{ex.name}</h2>
+
+                  {/*
+                    O ANEL AO LADO DO NOME, e não no meio das estatísticas.
+
+                    A pergunta que o aluno faz ao voltar ao celular é "quantas faltam neste
+                    aqui", e ela precisa ser respondida ANTES do nome do exercício, não depois
+                    de rolar até as caixas de Séries e Volume.
+
+                    Puramente aditivo: lê `ex.sets` e não escreve nada. O contador de séries
+                    continua sendo o campo editável lá embaixo — este não aceita toque, para
+                    ninguém achar que mudou o treino ao encostar.
+                  */}
+                  <div className="flex items-center gap-3 mb-2">
+                    <AnelDeProgresso
+                      valor={ex.sets.length ? (ex.sets.filter(s => s.completed).length / ex.sets.length) * 100 : 0}
+                      aria-label={`Séries concluídas de ${ex.name}`}
+                    >
+                      {ex.sets.filter(s => s.completed).length}/{ex.sets.length}
+                    </AnelDeProgresso>
+                    <h2 className="text-2xl font-outfit font-bold text-foreground min-w-0">{ex.name}</h2>
+                  </div>
                   {/* A LINHA "Superset com X" SAIU DAQUI (22/10/2026).
                       O bloco que cerca os exercícios já diz isso uma vez, no lugar certo:
                       antes do primeiro do par, não repetida dentro de cada cartão. Repetir
