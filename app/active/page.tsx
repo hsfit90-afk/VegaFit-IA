@@ -10,6 +10,7 @@ import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { AnelDeProgresso } from '@/components/ui/Progresso';
+import { Badge } from '@/components/ui/Badge';
 import { getExercises, deleteExercise } from '@/lib/db/exercises';
 import { getHistorical1RM, calculateTargetWeight } from '@/utils/loadCalculator';
 import { loadWorkoutState, clearWorkoutState } from '@/utils/workoutCache';
@@ -1004,11 +1005,13 @@ export default function ActiveWorkout() {
             )}
 
             {abreBloco && (
-              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-2.5">
-                <span className="text-xs font-bold text-accent uppercase tracking-wide inline-flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 shrink-0" />
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2.5">
+                {/* Selo em vez de texto solto: o bloco é um ESTADO do treino, e estado tem
+                    fundo. Era `text-xs font-bold text-accent uppercase` escrito à mão aqui. */}
+                <Badge tom="destaque">
+                  <Zap className="w-3 h-3 shrink-0" aria-hidden="true" />
                   {nomeDoBloco}
-                </span>
+                </Badge>
                 <span className="text-xs text-foreground-muted">
                   {tipo === 'circuito'
                     ? `${doBloco.length} exercícios em sequência`
@@ -1051,9 +1054,13 @@ export default function ActiveWorkout() {
                     ) : (
                       <img src={customMediaUrl} alt={ex.name} className="w-full h-full object-contain" />
                     )}
-                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded-lg backdrop-blur-md flex items-center gap-1.5 border border-white/10">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                      <span className="text-nano text-primary font-bold uppercase tracking-wider">Verificado</span>
+                    {/* O selo fica sobre a mídia, então o fundo escuro continua aqui: o
+                        `Badge` sozinho não teria contraste garantido contra um GIF qualquer. */}
+                    <div className="absolute bottom-2 left-2 bg-black/60 rounded-full backdrop-blur-md border border-white/10">
+                      <Badge tom="primario" className="bg-transparent">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse motion-reduce:animate-none" aria-hidden="true" />
+                        Verificado
+                      </Badge>
                     </div>
                   </div>
                 </div>
