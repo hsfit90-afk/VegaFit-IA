@@ -222,14 +222,16 @@ exclusão dizendo "resíduo: nenhum" sem ter olhado lá.
 
 ### Depois, em 28/10/2026
 
-Três lacunas fecharam porque o profissional decidiu as duas coisas que dependiam dele: a idade
-mínima e o e-mail de contato.
+Quatro lacunas fecharam. Três porque o profissional decidiu as duas coisas que dependiam dele
+— a idade mínima e o e-mail de contato. A quarta porque, ao conferir o que tinha sobrado, achei
+um erro meu de 22/10 e o oposto dele no mesmo parágrafo.
 
 | | O quê | Onde |
 |---|---|---|
 | ✅ | **Lacuna 1** — o controlador identificado e o canal de contato publicado | seção 1 da política |
 | ✅ | **Lacuna 7** — Encarregado nomeado e contato divulgado (Art. 41) | seção 1 da política |
 | ✅ | **Lacuna 5** — a idade mínima de 18 virou regra, com teste | `lib/idadeMinima.ts` |
+| ✅ | **Lacuna 3** — a Cloudflare declarada, e o Mixkit (que já saiu) removido | seção 5 da política |
 
 O e-mail é `souza.higor@gmail.com`, o mesmo que ele já usa, e aparece como `mailto:` nas duas
 seções — o canal de contato que não dá para tocar no celular é metade de um canal. O prazo de
@@ -258,17 +260,72 @@ era contradição. Detalhe em `lib/idadeMinima.ts`.
 3. **Se você é agente de pequeno porte** (aparece nas lacunas 7 e 9). A resposta muda o tamanho
    de várias obrigações, e dado de saúde pesa contra o enquadramento.
 
-**Depende de você responder, e aí eu faço:**
+**Depende de você:**
 
-4. **O Cloudflare R2 não está declarado na seção 5** — e esse é um erro meu, de 22/10. Eu
-   procurei no código, não achei, e **tirei o R2 do relatório**. Estava errado: as URLs não
-   estão no código, estão no banco, na coluna de mídia dos exercícios. O domínio é
-   `pub-20e2bb4fb01f47b09d9f59b35f3cf731.r2.dev` e ele serve **todos os vídeos de exercício**
-   do app. Em 28/10/2026 você disse que não mexeu com Cloudflare. Então antes de eu escrever
-   qualquer coisa na política, precisamos saber de onde veio esse bucket — porque se é seu, é
-   operador e precisa ser declarado; e se não é seu, é pior.
-5. O prazo de retenção para conta abandonada (lacuna 9). O padrão já existe no projeto, em
+4. O prazo de retenção para conta abandonada (lacuna 9). O padrão já existe no projeto, em
    `database/32_ai_usage_log_retencao.sql`. Depende da resposta do item 3.
+
+---
+
+## A Cloudflare, e o erro meu que levou seis dias para aparecer
+
+Isto fica escrito porque o erro é instrutivo, não porque faltou resolver.
+
+Em 22/10 eu afirmei que a Cloudflare R2 não existia no projeto, e **tirei ela do relatório num
+commit**. Meu método foi procurar `cloudflare` e `r2` no código. Não achei nada, e concluí que
+não existia. Está certo que não achei: ainda hoje, `grep -rni "cloudflare|r2." --include=*.ts
+--include=*.tsx --include=*.sql .` devolve **zero linhas**.
+
+O problema é que a conclusão não seguia da medição. As URLs de mídia não estão no código — estão
+no **banco**, na coluna `media_url` da tabela `exercises`. O código só faz
+`<video src={ex.media_url} />`, sem nenhuma base de URL. Procurar terceiro no repositório, num
+app assim, não prova nada.
+
+Em 28/10 eu medi do jeito que decide, com a chave **anon** (pública, a mesma que vai no bundle
+do navegador — nunca a `service_role`), porque a policy de SELECT libera exercício global para
+qualquer um:
+
+```
+exercicios globais lidos: 882
+    882  pub-20e2bb4fb01f47b09d9f59b35f3cf731.r2.dev
+```
+
+Todos. Não uma parte. E os arquivos carregam:
+
+```
+200  cloudflare   51 KB  video/mp4   Barra fixa com Salto
+200  cloudflare   47 KB  video/mp4   Bicicleta Ergométrica Reclinada
+200  cloudflare   46 KB  video/mp4   Bom dia
+```
+
+**Por que ele achava que não usava, e por que os dois estavam certos.** Em 28/10 ele disse que a
+Cloudflare existe mas que não está usando, e que faria a migração depois. Em `.env.local`,
+`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ACCOUNT_ID` e `NEXT_PUBLIC_R2_PUBLIC_URL` estão
+**vazios** — só `R2_BUCKET` tem valor. Ele olhou para isso e concluiu, com razão, que não
+migrou nada.
+
+A chave do R2 só serve para **subir** arquivo. Para **exibir**, o navegador busca uma URL
+pública e não precisa de chave nenhuma. Então o app serve da Cloudflare há tempo sem que exista
+uma linha de integração com ela — e é por isso que nem o `grep` nem o `.env.local` mostravam.
+
+Para a LGPD o que conta é só isto: a cada vídeo que o aluno abre, o navegador dele fala com a
+Cloudflare, que recebe **IP e user-agent**. IP é dado pessoal. Logo é operador, e entrou na
+seção 5 — com a ressalva de que nenhum dado de anamnese, treino ou conta vai nesse pedido, só o
+nome do arquivo.
+
+**A regra que sai disto:** terceiro não se confirma no repositório. Confirma-se olhando o que o
+app serve. Um `grep` que não acha nada responde "não está no código", nunca "não existe".
+
+### De brinde, o Mixkit ao contrário
+
+O mesmo olhar achou o erro espelhado. A seção 5 ainda declarava o Mixkit, dizendo que o som do
+descanso "é um arquivo de áudio buscado no servidor do Mixkit". Isso deixou de ser verdade em
+22/10, quando o som virou `public/sons/descanso.mp3`. Hoje a palavra "mixkit" aparece no código
+em exatamente um lugar: um comentário em `app/active/page.tsx:178` explicando que o arquivo é
+local de propósito.
+
+Declarar operador que não recebe nada é menos grave que omitir um que recebe — mas é informação
+errada num documento que promete descrever o funcionamento real. Saiu.
 
 ---
 
