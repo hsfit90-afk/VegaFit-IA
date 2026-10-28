@@ -241,7 +241,7 @@ export default function AnamnesePage() {
 
   // Renderização do formulário
   return (
-    <div className="min-h-screen bg-background text-foreground font-inter flex flex-col pb-32">
+    <div className="min-h-screen bg-background text-foreground font-sans flex flex-col pb-32">
       <style dangerouslySetInnerHTML={{__html: `
         input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none;
@@ -260,7 +260,7 @@ export default function AnamnesePage() {
 
       {/* HEADER */}
       <header className="sticky top-0 bg-background z-10 px-5 pt-5 pb-3">
-        <p className="font-outfit font-semibold text-[13px] tracking-[0.14em] uppercase text-primary mb-3">
+        <p className="font-outfit font-semibold text-xs tracking-widest uppercase text-primary mb-3">
           {modoCurto ? 'Antes do seu primeiro treino' : 'Anamnese de treino'}
         </p>
 
@@ -306,7 +306,7 @@ export default function AnamnesePage() {
             <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center mx-auto my-5 text-primary-foreground">
               <Check size={32} strokeWidth={3} />
             </div>
-            <h2 className="font-outfit font-semibold text-[22px] leading-[1.2] text-center mt-3 text-white">Tudo pronto</h2>
+            <h2 className="font-outfit font-semibold text-xl leading-[1.2] text-center mt-3 text-white">Tudo pronto</h2>
             <p className="text-sm text-foreground-muted leading-[1.5] text-center mb-6">Confira suas respostas. Elas serão salvas no seu perfil para personalizar seus treinos.</p>
 
             {activeSteps.map(step => {
@@ -315,7 +315,7 @@ export default function AnamnesePage() {
               
               return (
                 <div key={step.id} className="bg-surface border border-border rounded-xl p-5 mb-3.5">
-                  <h4 className="font-outfit text-[13px] font-semibold uppercase tracking-[0.08em] text-primary mb-2.5">{step.title}</h4>
+                  <h4 className="font-outfit text-xs font-semibold uppercase tracking-wider text-primary mb-2.5">{step.title}</h4>
                   {camposVisiveis(step).map(f => {
                     const v = answers[f.id];
                     const empty = v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
@@ -346,12 +346,12 @@ export default function AnamnesePage() {
           </div>
         ) : (
           <div className="animate-fade-in">
-            <h2 className="font-outfit font-semibold text-[22px] leading-[1.2] mt-3.5 mb-1 text-white">{currentStep?.title}</h2>
+            <h2 className="font-outfit font-semibold text-xl leading-[1.2] mt-3.5 mb-1 text-white">{currentStep?.title}</h2>
             <p className="text-sm text-foreground-muted leading-[1.5] mb-6">{currentStep?.sub}</p>
 
             {camposVisiveis(currentStep).map(f => (
               <div key={f.id} className="mb-6">
-                <label className="block text-[15px] font-medium mb-2.5 leading-[1.4] text-white">
+                <label className="block text-sm font-medium mb-2.5 leading-[1.4] text-white">
                   {f.label} {!f.optional && <span className="text-primary ml-1">*</span>}
                 </label>
 
@@ -362,7 +362,7 @@ export default function AnamnesePage() {
                       placeholder={f.placeholder}
                       value={answers[f.id] || ''}
                       onChange={e => handleChange(f.id, e.target.value)}
-                      className="w-full bg-surface border border-border focus:border-primary rounded-[10px] text-foreground font-inter text-base p-3 outline-none transition-colors"
+                      className="w-full bg-surface border border-border focus:border-primary rounded-md text-foreground font-sans text-base p-3 outline-none transition-colors"
                     />
                     {f.hint && <div className="text-xs text-foreground-muted/70 mt-1.5">{f.hint}</div>}
                   </>
@@ -373,13 +373,13 @@ export default function AnamnesePage() {
                     placeholder={f.placeholder}
                     value={answers[f.id] || ''}
                     onChange={e => handleChange(f.id, e.target.value)}
-                    className="w-full bg-surface border border-border focus:border-primary rounded-[10px] text-foreground font-inter text-base p-3 outline-none transition-colors resize-y min-h-[88px] leading-[1.5]"
+                    className="w-full bg-surface border border-border focus:border-primary rounded-md text-foreground font-sans text-base p-3 outline-none transition-colors resize-y min-h-[88px] leading-[1.5]"
                   />
                 )}
 
                 {f.type === 'rcq-result' && (
                   <>
-                    <div className="text-left font-outfit text-[28px] font-semibold text-primary my-1">
+                    <div className="text-left font-outfit text-3xl font-semibold text-primary my-1">
                       {answers.rcq || '—'}
                     </div>
                     <div className="text-xs text-foreground-muted/70 mt-1.5">{getRcqHint()}</div>
@@ -422,7 +422,7 @@ export default function AnamnesePage() {
 
                 {f.type === 'slider' && (
                   <>
-                    <div className="text-center font-outfit text-[32px] font-semibold text-primary my-1">
+                    <div className="text-center font-outfit text-3xl font-semibold text-primary my-1">
                       {answers[f.id]}
                     </div>
                     <div className="pt-1.5 px-1">
@@ -458,7 +458,7 @@ export default function AnamnesePage() {
           {!reviewMode && currentStepIndex > 0 && (
             <button
               onClick={handleBack}
-              className="flex-none w-[88px] p-5 rounded-xl font-inter text-[15px] font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-surface-hover text-foreground"
+              className="flex-none w-[88px] p-5 rounded-xl font-sans text-sm font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-surface-hover text-foreground"
             >
               Voltar
             </button>
@@ -466,7 +466,7 @@ export default function AnamnesePage() {
           {reviewMode && (
             <button
               onClick={handleBack}
-              className="flex-none w-[88px] p-5 rounded-xl font-inter text-[15px] font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-surface-hover text-foreground"
+              className="flex-none w-[88px] p-5 rounded-xl font-sans text-sm font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-surface-hover text-foreground"
             >
               Voltar
             </button>
@@ -474,7 +474,7 @@ export default function AnamnesePage() {
           <button
             onClick={handleNext}
             disabled={isSaving || (reviewMode && !consentAccepted)}
-            className="flex-1 p-5 rounded-xl font-inter text-[15px] font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-primary text-primary-foreground disabled:opacity-50 disabled:active:scale-100"
+            className="flex-1 p-5 rounded-xl font-sans text-sm font-semibold border-none cursor-pointer transition-transform active:scale-95 bg-primary text-primary-foreground disabled:opacity-50 disabled:active:scale-100"
           >
             {isSaving ? 'Salvando...' : (reviewMode ? 'Salvar Perfil' : (currentStepIndex === activeSteps.length - 1 ? 'Revisar' : 'Próximo'))}
           </button>

@@ -540,7 +540,7 @@ export default function Generator() {
                         <div className="text-xl mb-1">{bloqueado ? '🔒' : method.icon}</div>
                         <div className="font-semibold text-sm">{method.label}</div>
                         {bloqueado ? (
-                          <div className="text-[11px] text-accent/70 mt-0.5 leading-tight font-medium">{bloqueio}</div>
+                          <div className="text-micro text-accent/70 mt-0.5 leading-tight font-medium">{bloqueio}</div>
                         ) : (
                           <div className="text-xs text-foreground-muted/70 mt-0.5 leading-tight">{method.desc}</div>
                         )}
