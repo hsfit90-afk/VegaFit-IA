@@ -14,6 +14,7 @@ import { musculosEmFadiga, escolherSessao, sessaoSeguinte, minutosDaSessao } fro
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LinhaDeLista } from '@/components/ui/LinhaDeLista';
 import { Rotulo } from '@/components/ui/Rotulo';
+import { nomeDoMetodo } from '@/lib/metodosDeTreino';
 import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
 import { CardPersonalizado } from '@/components/CardPersonalizado';
 import { PADDING_TELA, LARGURA_CONTEUDO, RODAPE_SEGURO } from '@/lib/layout';
@@ -259,6 +260,27 @@ export default function Dashboard() {
   const idDoPrimeiro = suggestedSession?.exercises?.[0]?.exerciseId;
   const midiaDoPrimeiro = idDoPrimeiro ? midiaPorExercicio[idDoPrimeiro] ?? null : null;
 
+  /**
+   * As três informações que o cartão não dava: nível, equipamento e estrutura.
+   *
+   * Os dois números grandes acima respondem "quanto tem" e "quanto demora". Faltava o que
+   * o aluno pergunta logo depois: é para quem? com o quê? como é o treino?
+   *
+   * MONTADA COM O QUE EXISTE, SEM CHUTE. Item sem dado sai da lista em vez de aparecer vazio
+   * ou com um traço: plano antigo não guarda método, e dizer "Tradicional" por padrão seria
+   * descrever ao aluno um treino que ele não recebeu (ver lib/metodosDeTreino.ts).
+   *
+   * Por isso a linha some inteira quando nada sobra — é o caso do plano montado à mão pelo
+   * profissional, que não passa pelo gerador.
+   */
+  const metaDoTreino = [
+    profile?.level ? { Icone: Activity, texto: profile.level } : null,
+    activePlan?.equipment ? { Icone: Dumbbell, texto: activePlan.equipment } : null,
+    nomeDoMetodo(activePlan?.trainingMethod)
+      ? { Icone: LayoutList, texto: nomeDoMetodo(activePlan?.trainingMethod)! }
+      : null,
+  ].filter((i): i is { Icone: typeof Activity; texto: string } => i !== null);
+
   /** Apagar o plano, com a mesma confirmação e as mesmas perdas listadas de antes. */
   const apagarPlano = async (plano: WorkoutPlan) => {
     const ok = await confirmar({
@@ -365,7 +387,7 @@ export default function Dashboard() {
 
               {/* Os dois números que decidem se a pessoa treina agora: quanto tem para fazer e
                   quanto tempo leva. Grandes, tabulares, sem moldura em volta. */}
-              <div className="flex items-end gap-8 mb-7">
+              <div className="flex items-end gap-8 mb-4">
                 <div>
                   <p className="text-2xl md:text-3xl font-bold tabular-nums leading-none">
                     {suggestedSession?.exercises?.length || 0}
@@ -384,6 +406,22 @@ export default function Dashboard() {
                   </p>
                 </div>
               </div>
+
+              {/* Nível, equipamento e estrutura, em uma linha só.
+
+                  Quebra em duas no celular estreito (flex-wrap) em vez de cortar o texto:
+                  "Academia completa" não cabe ao lado de "Intermediário" em tela de 360px, e
+                  truncar aqui esconderia justamente a palavra que diferencia os planos. */}
+              {metaDoTreino.length > 0 && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-7">
+                  {metaDoTreino.map(({ Icone, texto }) => (
+                    <span key={texto} className="inline-flex items-center gap-1.5 text-micro text-foreground-muted">
+                      <Icone className="w-3.5 h-3.5 shrink-0 text-foreground-subtle" />
+                      {texto}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               <div className="flex flex-wrap items-center gap-3">
                 <Button
