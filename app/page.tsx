@@ -12,6 +12,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { WorkoutPlan } from '@/lib/types';
 import { musculosEmFadiga, escolherSessao, sessaoSeguinte, minutosDaSessao } from '@/lib/proximoTreino';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LinhaDeLista } from '@/components/ui/LinhaDeLista';
 import { Rotulo } from '@/components/ui/Rotulo';
 import { AvisoDeAssinatura } from '@/components/AvisoDeAssinatura';
 import { CardPersonalizado } from '@/components/CardPersonalizado';
@@ -210,35 +211,53 @@ export default function Dashboard() {
   const metaSemanal = activePlan?.sessions.length ?? 0;
 
   /**
-   * O GIF do primeiro exercício do treino de hoje, para o cartão principal.
+   * A mídia dos exercícios do treino de hoje: a do primeiro vira o fundo do cartão, e todas
+   * viram a miniatura da lista abaixo dele.
    *
-   * UMA consulta, de UMA linha, só do exercício que vai aparecer. O catálogo inteiro são 882
-   * itens e esta é a tela que mais abre no app — buscar tudo para mostrar um seria pagar
-   * caro por nada.
+   * ERA UMA SÓ, E O MOTIVO ESCRITO AQUI DEIXOU DE VALER.
    *
-   * Falhar aqui não quebra nada: sem mídia, o cartão fica só com o gradiente.
+   * O comentário anterior dizia que buscar mais de uma seria "pagar caro por nada", porque só
+   * uma aparecia. Em 29/10/2026 a lista passou a mostrar todas, e o argumento caiu junto.
+   *
+   * Continua UMA consulta: o que mudou foi `.eq` virar `.in`, com os ids da sessão —
+   * tipicamente 5 a 8, nunca o catálogo de 882. Uma viagem ao banco, como antes.
+   *
+   * Falhar aqui não quebra nada: sem mídia, o cartão fica só com o gradiente e a linha mostra
+   * um ícone no lugar do vídeo.
    */
-  const [midiaDoPrimeiro, setMidiaDoPrimeiro] = useState<string | null>(null);
-  const idDoPrimeiro = suggestedSession?.exercises?.[0]?.exerciseId;
+  const [midiaPorExercicio, setMidiaPorExercicio] = useState<Record<string, string>>({});
+
+  /** Os ids da sessão como texto, para o efeito não disparar a cada render. */
+  const idsDaSessao = (suggestedSession?.exercises ?? [])
+    .map(e => e.exerciseId)
+    .filter(Boolean)
+    .join(',');
 
   useEffect(() => {
-    if (!idDoPrimeiro) { setMidiaDoPrimeiro(null); return; }
+    if (!idsDaSessao) { setMidiaPorExercicio({}); return; }
     let cancelado = false;
     (async () => {
       try {
         const supabase = createClient();
         const { data } = await supabase
           .from('exercises')
-          .select('media_url')
-          .eq('id', idDoPrimeiro)
-          .maybeSingle();
-        if (!cancelado) setMidiaDoPrimeiro(data?.media_url ?? null);
+          .select('id, media_url')
+          .in('id', idsDaSessao.split(','));
+        if (cancelado) return;
+        const mapa: Record<string, string> = {};
+        for (const linha of data ?? []) {
+          if (linha.media_url) mapa[linha.id] = linha.media_url;
+        }
+        setMidiaPorExercicio(mapa);
       } catch {
-        if (!cancelado) setMidiaDoPrimeiro(null);
+        if (!cancelado) setMidiaPorExercicio({});
       }
     })();
     return () => { cancelado = true; };
-  }, [idDoPrimeiro]);
+  }, [idsDaSessao]);
+
+  const idDoPrimeiro = suggestedSession?.exercises?.[0]?.exerciseId;
+  const midiaDoPrimeiro = idDoPrimeiro ? midiaPorExercicio[idDoPrimeiro] ?? null : null;
 
   /** Apagar o plano, com a mesma confirmação e as mesmas perdas listadas de antes. */
   const apagarPlano = async (plano: WorkoutPlan) => {
@@ -427,6 +446,53 @@ export default function Dashboard() {
           </div>
         )}
       </motion.section>
+
+      {/* OS EXERCÍCIOS DO DIA, COM A MINIATURA DO VÍDEO.
+
+          Até 29/10/2026 o painel dizia "5 exercícios" e não mostrava nenhum, enquanto o app
+          guardava 882 vídeos e tinha o componente desta linha parado, sem uso em tela
+          nenhuma. A pessoa só descobria o que ia fazer depois de apertar COMEÇAR.
+
+          A lista NÃO é clicável de propósito: é prévia, e o único destino possível seria a
+          própria tela de treino, que o botão acima já abre. Linha que parece botão e não
+          leva a lugar nenhum é pior que linha parada.
+
+          O vídeo toca sozinho, como já tocava em /abdominal e no painel do equipamento —
+          mesmo padrão, para não inventar um terceiro jeito de mostrar a mesma coisa. */}
+      {suggestedSession?.exercises?.length ? (
+        <motion.section variants={itemVariants} className="mb-8">
+          <Rotulo className="mb-2">Exercícios</Rotulo>
+
+          {suggestedSession.exercises.map((ex) => {
+            const midia = midiaPorExercicio[ex.exerciseId];
+            return (
+              <LinhaDeLista
+                key={ex.id}
+                midia={
+                  midia ? (
+                    midia.endsWith('.mp4') ? (
+                      <video
+                        src={midia}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img src={midia} alt="" className="w-full h-full object-cover" />
+                    )
+                  ) : (
+                    <Dumbbell className="w-5 h-5 text-foreground-subtle" />
+                  )
+                }
+                titulo={ex.name}
+                meta={`${ex.sets} séries · ${ex.reps} reps`}
+              />
+            );
+          })}
+        </motion.section>
+      ) : null}
 
       {/* OS COMPLEMENTOS, EM UMA LINHA.
           Eram quatro cards empilhados, cada um com moldura, ícone e três linhas de texto —
