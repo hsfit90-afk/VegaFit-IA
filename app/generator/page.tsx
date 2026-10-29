@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
 import { computeUnlock, textoBloqueio, type MethodId } from '@/lib/trainingUnlock';
+import { METODOS_DE_TREINO } from '@/lib/metodosDeTreino';
 import { Zap } from 'lucide-react';
 import { Exercise as DbExercise } from '@/lib/types';
 import { useRouter } from 'next/navigation';
@@ -70,15 +71,6 @@ export default function Generator() {
   }, []);
 
   const faltam = respostas === null ? [] : faltamEssenciais(respostas);
-
-  const TRAINING_METHODS = [
-    { id: 'tradicional', label: 'Tradicional', icon: '🏋️', desc: 'Séries e repetições padrão com descanso entre séries' },
-    { id: 'superset', label: 'Superset', icon: '⚡', desc: 'Dois exercícios alternados sem descanso entre eles' },
-    { id: 'drop_set', label: 'Drop Set', icon: '📉', desc: 'Reduz a carga ao falhar para continuar a série' },
-    { id: 'piramide', label: 'Pirâmide', icon: '🔺', desc: 'Aumenta a carga e reduz reps a cada série' },
-    { id: 'rest_pause', label: 'Rest-Pause', icon: '⏸️', desc: 'Microdescansos dentro da própria série' },
-    { id: 'circuito', label: 'Circuito', icon: '🔄', desc: 'Exercícios em sequência com mínimo descanso' },
-  ];
 
   const [form, setForm] = useState({
     goal: profile?.goal || 'Hipertrofia',
@@ -517,7 +509,7 @@ export default function Generator() {
                   ) : null}
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {TRAINING_METHODS.map(method => {
+                  {METODOS_DE_TREINO.map(method => {
                     const bloqueio = textoBloqueio(unlock, method.id as MethodId);
                     const bloqueado = bloqueio !== null;
                     return (
