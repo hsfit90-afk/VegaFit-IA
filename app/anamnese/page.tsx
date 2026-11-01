@@ -11,6 +11,7 @@ import { EQUIPAMENTOS_CASA } from '@/lib/equipamentoCasa';
 import { passosEssenciais } from '@/lib/anamneseEssencial';
 import { traduzirErro } from '@/utils/mensagensDeErro';
 import { validarIdade, IDADE_MINIMA, IDADE_MAXIMA } from '@/lib/idadeMinima';
+import { perfilDaAnamnese, devePesarDeNovo } from '@/lib/anamneseParaPerfil';
 
 export default function AnamnesePage() {
   const router = useRouter();
@@ -221,10 +222,32 @@ export default function AnamnesePage() {
         // ignora erro de clipboard se o usuário não permitiu
       }
 
+      /*
+       * OS CINCO DADOS GERAIS PASSARAM A SER GRAVADOS (01/11/2026).
+       *
+       * A anamnese perguntava nome, idade, sexo biológico, altura e peso, e não escrevia
+       * NENHUM deles nas colunas do perfil — ficavam só dentro do texto de `intent` e do
+       * JSON de `anamnese_history`, onde nenhuma conta do app alcança.
+       *
+       * O sintoma que denunciou: responder "Peso atual: 110" e o painel seguir mostrando
+       * 90 kg.
+       *
+       * Ficou caro em 01/11/2026, quando a conta de macros passou a ler `weight`,
+       * `height`, `age` e `gender` do perfil (lib/nutricao.ts). Sem isto a nutrição
+       * respondia "falta o sexo biológico" a quem acabara de respondê-lo — e esse campo
+       * sozinho vale 166 kcal por dia em Mifflin-St Jeor.
+       *
+       * `perfilDaAnamnese` só devolve o que foi respondido e é plausível. Campo em branco
+       * não vira chave, e chave ausente não apaga coluna: uma anamnese respondida pela
+       * metade não pode zerar o peso que veio do onboarding.
+       */
+      const camposGerais = perfilDaAnamnese(answers);
+
       // Salva no supabase no campo intent (ou um campo novo)
       const { error } = await supabase
         .from('profiles')
         .update({
+          ...camposGerais,
           intent: anamneseText, // Usando o campo intent para guardar a anamnese e alimentar a IA depois
           goal: answers.objetivo?.[0] || profile?.goal,
           level: answers.nivel || profile?.level,
@@ -247,6 +270,42 @@ export default function AnamnesePage() {
         summary_text: anamneseText,
         consent_accepted_at: new Date().toISOString(),
       });
+
+      /*
+       * O PESO DECLARADO VIRA REGISTRO NO HISTÓRICO.
+       *
+       * O painel e o gráfico de evolução leem `body_weight_history`, não
+       * `profiles.weight`. Sem esta parte, atualizar a coluna acima não bastaria: quem já
+       * tem qualquer registro de Check-in continuaria vendo o peso velho no painel, que é
+       * exatamente o sintoma relatado.
+       *
+       * Só registra se o peso MUDOU. Refazer a anamnese no mesmo dia sem ter mudado de
+       * peso encheria o gráfico de pontos repetidos que não contam nada.
+       *
+       * Falhar aqui não derruba o salvamento: a anamnese já está gravada acima, e perder
+       * um ponto do gráfico é muito menos grave que perder a anamnese inteira.
+       */
+      if (typeof camposGerais.weight === 'number') {
+        try {
+          const { data: ultimoPeso } = await supabase
+            .from('body_weight_history')
+            .select('weight')
+            .eq('user_id', userId)
+            .order('date', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (devePesarDeNovo(camposGerais.weight, ultimoPeso?.weight)) {
+            await supabase.from('body_weight_history').insert({
+              user_id: userId,
+              weight: camposGerais.weight,
+              date: new Date().toISOString(),
+            });
+          }
+        } catch (e) {
+          console.error('[anamnese] nao consegui registrar o peso no historico:', e);
+        }
+      }
 
       showToast("Respostas salvas e copiadas!");
       setTimeout(() => router.push('/'), 2000);
