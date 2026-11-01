@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/app/context/AppContext';
-import { Apple, Target, Flame, Activity, Info } from 'lucide-react';
+import { Apple, Target, Flame, Activity, Info, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
+import { COMO_PREENCHER, type Faltando } from '@/lib/nutricao';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
@@ -23,7 +25,26 @@ interface NutritionData {
   };
   meals: { name: string; description: string }[];
   tips: string;
+  /**
+   * De onde saíram os números. Opcional porque plano guardado no navegador antes de
+   * 01/11/2026 não tem este campo — a tela omite a linha em vez de quebrar.
+   */
+  base?: {
+    formula: string;
+    treinosPorSemana: number;
+    faixaDeAtividade: string;
+    fator: number;
+    ajuste: number;
+  };
 }
+
+/** Como cada faixa de atividade se chama para o aluno. */
+const NOME_DA_FAIXA: Record<string, string> = {
+  sedentario: 'sem treino registrado',
+  leve: 'pouco treino',
+  moderado: 'treino moderado',
+  intenso: 'treino intenso',
+};
 
 export default function NutritionPage() {
   // Tela em teste: aluno comum e devolvido para a home (ver useSomenteMaster).
@@ -33,6 +54,14 @@ export default function NutritionPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<NutritionData | null>(null);
+
+  /**
+   * O que falta no cadastro para a conta sair.
+   *
+   * A rota devolve 422 com esta lista em vez de inventar um valor. O caso que mais
+   * importa é o sexo biológico: em Mifflin-St Jeor ele vale 166 kcal por dia.
+   */
+  const [faltando, setFaltando] = useState<Faltando[] | null>(null);
 
   useEffect(() => {
     if (profile && profile.role !== 'master') {
@@ -53,16 +82,26 @@ export default function NutritionPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/nutrition', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile })
-      });
+      /*
+       * SEM CORPO. A rota lê peso, altura, idade, sexo e objetivo do BANCO desde
+       * 01/11/2026 — mandar o perfil daqui era o que permitia pedir um plano para um
+       * peso que não é o seu.
+       */
+      const response = await fetch('/api/nutrition', { method: 'POST' });
 
       const result = await response.json();
 
       if (tratarBloqueioDeAssinatura(response, result)) return;
+
+      // 422: o pedido está certo, o cadastro é que está incompleto. Não é erro a mostrar
+      // como torrada vermelha — é uma lista do que o aluno precisa preencher.
+      if (response.status === 422 && result?.error === 'perfil_incompleto') {
+        setFaltando(Array.isArray(result.faltando) ? result.faltando : []);
+        return;
+      }
+
       if (!result.error) {
+        setFaltando(null);
         setData(result);
         localStorage.setItem('fitforge_nutrition', JSON.stringify(result));
       } else {
@@ -86,8 +125,39 @@ export default function NutritionPage() {
           </div>
           <h1 className="text-3xl md:text-4xl font-outfit font-bold">Nutrição Inteligente</h1>
         </div>
-        <p className="text-foreground-muted">Macronutrientes calculados pela IA especificamente para seu objetivo.</p>
+        {/* O TEXTO MUDOU PORQUE O FATO MUDOU. Dizia "calculados pela IA", e era verdade:
+            a IA fazia a aritmética dentro do prompt. Desde 01/11/2026 a conta é do código
+            (lib/nutricao.ts, 28 testes) e a IA só monta as refeições. */}
+        <p className="text-foreground-muted">Macronutrientes calculados a partir do seu perfil e da sua frequência real de treino. As refeições são sugeridas pela IA.</p>
       </header>
+
+      {/* O QUE FALTA PREENCHER.
+
+          Antes, perfil incompleto virava um plano mesmo assim — a IA chutava o que não
+          recebia, e o sexo biológico era o chute mais caro. Agora a conta se recusa e a
+          tela diz onde preencher. */}
+      {faltando && faltando.length > 0 && !loading && (
+        <Card className="mb-6 border-warning/30 bg-warning/5">
+          <CardContent className="flex items-start gap-3 py-5">
+            <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="min-w-0">
+              <h2 className="font-bold mb-1">Falta um dado para calcular</h2>
+              <p className="text-sm text-foreground-muted mb-3">
+                A conta não sai sem isto, e preencher um valor por você daria um plano que
+                ninguém prescreveu. Complete e tente de novo:
+              </p>
+              <ul className="text-sm space-y-1 mb-4 list-disc pl-5">
+                {faltando.map(f => (
+                  <li key={f}>{COMO_PREENCHER[f] ?? f}</li>
+                ))}
+              </ul>
+              <Link href="/settings">
+                <Button size="sm" variant="outline">Abrir o Perfil</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {!data && !loading && (
         <Card className="text-center py-16 border-dashed border-2">
@@ -108,7 +178,7 @@ export default function NutritionPage() {
         <Card className="text-center py-16 border-dashed border-2">
           <CardContent className="flex flex-col items-center">
             <LoadingSpinner tamanho="lg" cor="herdada" className="text-orange-500 mb-4" />
-            <p className="font-bold text-lg animate-pulse font-outfit">A IA está processando seu metabolismo...</p>
+            <p className="font-bold text-lg animate-pulse font-outfit">Montando suas refeições...</p>
           </CardContent>
         </Card>
       )}
