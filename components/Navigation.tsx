@@ -143,8 +143,26 @@ export function Navigation() {
         </div>
       </aside>
 
-      {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 w-full bg-surface/80 backdrop-blur-2xl border-t border-white/10 px-1 pt-2 pb-[env(safe-area-inset-bottom,16px)] z-50 flex flex-row items-center justify-around rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+      {/* A BARRA INFERIOR, REDESENHADA EM 31/10/2026.
+
+          CONTINUA COM CINCO ITENS. O desenho pedia quatro, e cortar um significaria tirar
+          a única porta de uma tela no celular — foi exatamente o defeito consertado em
+          09/10/2026, quando Check-in e Histórico existiam só na barra lateral do desktop,
+          que é `hidden md:flex`. Cinco itens a 70px dão 350px e cabem em tela de 360px; o
+          sexto é que não cabe, e é por isso que o Gerador tem link no cartão do painel.
+
+          COLADA EMBAIXO, sem canto arredondado no topo. O canto redondo fazia a barra
+          parecer uma folha flutuante sobre a página, e ela não é: é a moldura do app.
+
+          FUNDO SÓLIDO em vez de `surface/80` com desfoque. Translúcida, a cor da barra
+          dependia do que estivesse rolando por baixo — e num app onde a barra é a única
+          referência fixa da tela, ela não pode mudar de tom conforme a página. Sai também
+          o custo de pintar desfoque a cada quadro de rolagem, que em celular de entrada
+          aparece como engasgo.
+
+          A borda usa o token `border` em vez de `white/10`: cinza sem nome é cinza
+          escolhido na hora, a mesma doença dos 52 cinzas anteriores à reforma. */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 w-full min-h-[84px] bg-surface border-t border-border px-1 pt-2 pb-[env(safe-area-inset-bottom,12px)] z-50 flex flex-row items-center justify-around shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
         {filteredMobileNav.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -157,10 +175,10 @@ export function Navigation() {
               {isActive && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-primary rounded-b-full shadow-[0_0_10px_rgb(var(--color-primary-rgb)/0.5)]" />
               )}
-              <div className={`p-3 rounded-xl transition-all duration-300 ${isActive ? 'bg-primary/10 text-primary' : 'text-foreground-muted group-hover:text-foreground'}`}>
+              <div className={`p-3 rounded-dia transition-colors duration-[120ms] ${isActive ? 'bg-primary/15 text-primary' : 'text-foreground-muted group-hover:text-foreground'}`}>
                 <Icon className={`w-6 h-6 ${isActive ? 'fill-primary/20' : ''}`} />
               </div>
-              <span className={`text-micro font-medium mt-1 transition-all duration-300 ${isActive ? 'text-primary' : 'text-foreground-muted group-hover:text-foreground'}`}>
+              <span className={`text-micro font-semibold mt-1 transition-colors duration-[120ms] ${isActive ? 'text-primary' : 'text-foreground-muted group-hover:text-foreground'}`}>
                 {item.label}
               </span>
             </Link>
