@@ -35,11 +35,20 @@ const PASSO_REPS = 1;
 export function ControleDaSerie({
   carga,
   repeticoes,
+  rotulo,
   onAjustar,
   className,
 }: {
   carga: number;
   repeticoes: number;
+  /**
+   * De que série é este bloco, escrito para o aluno ler: "Série 2".
+   *
+   * Acrescentado em 01/11/2026 porque o profissional, olhando a própria tela, perguntou
+   * o que era este bloco. Sem o rótulo ele parece uma quarta linha solta entre as séries,
+   * e não o controle da que está em aberto — que é o que ele é.
+   */
+  rotulo: string;
   /** Mesmo caminho do campo de digitar: quem chama liga em `handleSetUpdate`. */
   onAjustar: (campo: 'weight' | 'reps', valor: number) => void;
   className?: string;
@@ -47,25 +56,31 @@ export function ControleDaSerie({
   return (
     <div
       className={cn(
-        'grid grid-cols-2 gap-2 p-3 rounded-bloco bg-black/30 border border-primary/20',
+        'p-3 rounded-bloco bg-black/30 border border-primary/20',
         className,
       )}
     >
-      <Par
-        rotulo="Carga (kg)"
-        valor={carga}
-        passo={PASSO_CARGA}
-        /* Mostra 22,5 e 20 — não 22.5 e 20.0. Casa decimal só quando existe. */
-        formatar={v => v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
-        onMudar={v => onAjustar('weight', v)}
-      />
-      <Par
-        rotulo="Repetições"
-        valor={repeticoes}
-        passo={PASSO_REPS}
-        formatar={v => String(v)}
-        onMudar={v => onAjustar('reps', v)}
-      />
+      <p className="text-nano font-semibold uppercase tracking-widest text-primary mb-2.5 pb-2 border-b border-primary/20">
+        {rotulo} — a próxima a fazer
+      </p>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Par
+          rotulo="Carga (kg)"
+          valor={carga}
+          passo={PASSO_CARGA}
+          /* Mostra 22,5 e 20 — não 22.5 e 20.0. Casa decimal só quando existe. */
+          formatar={v => v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
+          onMudar={v => onAjustar('weight', v)}
+        />
+        <Par
+          rotulo="Repetições"
+          valor={repeticoes}
+          passo={PASSO_REPS}
+          formatar={v => String(v)}
+          onMudar={v => onAjustar('reps', v)}
+        />
+      </div>
     </div>
   );
 }

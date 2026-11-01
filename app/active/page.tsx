@@ -1568,6 +1568,9 @@ export default function ActiveWorkout() {
                     className="mt-2"
                     carga={set.weight || 0}
                     repeticoes={set.reps || 0}
+                    /* `rotuloCurto` e não `setIndex + 1`: num drop set a terceira linha
+                       se chama "D", e o bloco tem de dizer o mesmo que a linha acima. */
+                    rotulo={`Série ${rotuloCurto(set.label, setIndex)}`}
                     onAjustar={(campo, valor) => handleSetUpdate(exIndex, setIndex, campo, valor)}
                   />
                 )}

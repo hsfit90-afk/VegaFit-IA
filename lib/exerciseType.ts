@@ -23,6 +23,11 @@ const MOBILITY_KEYWORDS = [
   'rotação da coluna', 'rotacao da coluna',
   'rotação de pé e tornozelo', 'rotacao de pe e tornozelo',
   'rotação do corpo superior', 'rotacao do corpo superior',
+  // Classificado pelo profissional em 01/11/2026, olhando o vídeo: é mobilidade, não
+  // trabalho de oblíquo. Medido antes de acrescentar — a palavra pega 1 exercício no
+  // catálogo e nenhum por engano. "Rotação de Tronco", do mesmo lote, ele classificou
+  // como ABDOMINAL e por isso não entra aqui.
+  'rotação em pé', 'rotacao em pe',
   'rotação espinhal', 'rotacao espinhal',
   'rotação para trás de joelhos', 'rotacao para tras de joelhos',
   'rotação externa do ombro', 'rotacao externa do ombro',

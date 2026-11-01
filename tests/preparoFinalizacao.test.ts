@@ -33,6 +33,20 @@ describe('classificarTipo', () => {
     expect(classificarTipo('Agachamento livre')).toBe('forca');
   });
 
+  it('"Rotacao em Pe" e mobilidade, e "Rotacao de Tronco" e forca', () => {
+    /*
+     * Classificados um a um pelo profissional em 01/11/2026, olhando o video. Os dois
+     * saiam juntos no bloco de abdominal com serie e repeticao.
+     *
+     * A palavra tambem foi acrescentada em lib/exerciseType.ts: sao DUAS listas, e as duas
+     * precisam dela. Esta decide o que APARECE na tela de Mobilidade; a de la decide o que
+     * NAO entra no treino de forca. Mexer so numa tiraria o exercicio do abdominal sem lhe
+     * dar outro lugar, e ele sumiria do app.
+     */
+    expect(classificarTipo('Rotação em Pé', 'Core/Abdômen')).toBe('mobilidade');
+    expect(classificarTipo('Rotação de Tronco', 'Core/Abdômen')).toBe('forca');
+  });
+
   it('com carga, e FORCA mesmo citando articulacao em rotacao', () => {
     // "Rotacao externa do ombro com cabo" e trabalho de manguito rotador, nao aquecimento.
     // A protecao ja existia em lib/exerciseType.ts e foi mantida aqui pelo mesmo motivo.

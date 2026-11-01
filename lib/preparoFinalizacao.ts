@@ -51,6 +51,19 @@ const MOBILIDADE = [
   'rotação da coluna', 'rotacao da coluna',
   'rotação de pé e tornozelo', 'rotacao de pe e tornozelo',
   'rotação do corpo superior', 'rotacao do corpo superior',
+  /*
+   * Acrescentado em 01/11/2026 junto com a mesma palavra em lib/exerciseType.ts.
+   *
+   * SÃO DUAS LISTAS, e as duas precisam da palavra: `exerciseType` decide o que NÃO entra
+   * no treino de força e no bloco de abdominal; esta aqui decide o que APARECE na tela de
+   * Mobilidade. Mexer só numa tiraria o exercício do abdominal sem lhe dar outro lugar —
+   * ele sumiria do app.
+   *
+   * O profissional classificou como "alongamento + mobilidade". `classificarTipo` devolve
+   * UM tipo só, e entrou como mobilidade: é movimento articular para aquecer, da mesma
+   * família de "rotação da coluna" e "rotação do corpo superior", que já estão nesta lista.
+   */
+  'rotação em pé', 'rotacao em pe',
   'rotação espinhal', 'rotacao espinhal',
   'rotação para trás de joelhos', 'rotacao para tras de joelhos',
   'círculos com', 'circulos com',

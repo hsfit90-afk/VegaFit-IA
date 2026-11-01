@@ -118,6 +118,21 @@ describe('isMobilityOnly', () => {
     expect(isMobilityOnly(nome)).toBe(false);
   });
 
+  describe('os dois que o profissional classificou em 01/11/2026', () => {
+    /*
+     * Os dois saíam juntos no bloco de abdominal e foram julgados pelo vídeo, um a um.
+     * O par fica neste teste porque a diferença entre eles NÃO é óbvia pelo nome: quem
+     * mexer na lista de palavras precisa ver que a separação foi decidida, não acidental.
+     */
+    it('"Rotação em Pé" é mobilidade — fica fora do treino de força e do abdominal', () => {
+      expect(isMobilityOnly('Rotação em Pé')).toBe(true);
+    });
+
+    it('"Rotação de Tronco" é ABDOMINAL — continua no sorteio', () => {
+      expect(isMobilityOnly('Rotação de Tronco')).toBe(false);
+    });
+  });
+
   describe('override de resistência', () => {
     it('"Rotação Externa do Ombro com Cabo" é força, apesar de "rotação"', () => {
       // Tem carga real. Sem o override, cairia como mobilidade e sumiria do gerador.

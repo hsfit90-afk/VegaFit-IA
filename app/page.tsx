@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { Dumbbell, Flame, ChevronRight, Activity, Zap, LayoutList, PlayCircle, Timer, Waves, StretchHorizontal, TrendingUp, TrendingDown, Scale, Shuffle } from 'lucide-react';
+import { Dumbbell, Flame, ChevronRight, ChevronDown, Activity, Zap, LayoutList, PlayCircle, Timer, Waves, StretchHorizontal, TrendingUp, TrendingDown, Scale, Shuffle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
@@ -213,6 +213,21 @@ export default function Dashboard() {
       : null,
   ].filter((i): i is { Icone: typeof Activity; texto: string } => i !== null);
 
+  /**
+   * A BANDEJA DO RESTO DO TREINO.
+   *
+   * O cartão mostra três exercícios e guarda o resto, para o botão de começar não descer
+   * para fora da dobra num treino de oito. Mas o aluno às vezes quer conferir a sessão
+   * inteira antes de sair de casa — e, fechado, o cartão não dava esse caminho.
+   *
+   * Fechada por padrão: quem abre o app quer começar, não ler. Quem quer ler, abre.
+   *
+   * O estado NÃO é lembrado entre visitas de propósito. Guardar a preferência faria o
+   * cartão abrir com altura diferente a cada aluno, e a decisão de qual é a primeira
+   * dobra deixaria de valer para quem abriu a bandeja uma vez meses atrás.
+   */
+  const [bandejaAberta, setBandejaAberta] = useState(false);
+
   /** Os três primeiros exercícios aparecem no cartão; o resto vira uma contagem. */
   const exercicios = suggestedSession?.exercises ?? [];
   const primeiros = exercicios.slice(0, 3);
@@ -381,11 +396,77 @@ export default function Dashboard() {
                     );
                   })}
 
+                  {/* O RESTO DO TREINO, NA BANDEJA.
+
+                      Era uma linha de texto parada — "e mais 5 exercícios no treino" — que
+                      informava e não levava a lugar nenhum. Agora é o botão que abre o
+                      resto, no mesmo lugar onde o aluno já olhava para saber quantos eram.
+
+                      `aria-expanded` e `aria-controls` ligam o botão à lista para quem usa
+                      leitor de tela: sem eles, a lista aparece e some sem nada anunciar. */}
                   {quantosFaltam > 0 && (
-                    <li className="py-2.5 text-micro font-semibold text-black/60">
-                      e mais {quantosFaltam} {quantosFaltam === 1 ? 'exercício' : 'exercícios'} no treino
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => setBandejaAberta(a => !a)}
+                        aria-expanded={bandejaAberta}
+                        aria-controls="resto-do-treino"
+                        className="w-full flex items-center justify-between gap-2 min-h-[44px] text-micro font-semibold text-black/70 hover:text-black transition-colors"
+                      >
+                        <span>
+                          {bandejaAberta
+                            ? 'Esconder o resto'
+                            : `Ver os outros ${quantosFaltam} ${quantosFaltam === 1 ? 'exercício' : 'exercícios'}`}
+                        </span>
+                        <ChevronDown
+                          className={`w-4 h-4 shrink-0 transition-transform duration-[180ms] ${
+                            bandejaAberta ? 'rotate-180' : ''
+                          }`}
+                          aria-hidden="true"
+                        />
+                      </button>
                     </li>
                   )}
+                </ul>
+              )}
+
+              {/* A bandeja fica FORA da lista de cima para o botão não ficar no meio dela:
+                  o resto dos exercícios entra abaixo, com o mesmo desenho das três linhas. */}
+              {bandejaAberta && quantosFaltam > 0 && (
+                <ul id="resto-do-treino" className="mb-6 -mt-6 divide-y divide-black/10 border-b border-black/10">
+                  {exercicios.slice(3).map(ex => {
+                    const midia = midiaPorExercicio[ex.exerciseId];
+                    return (
+                      <li key={ex.id} className="flex items-center gap-3 py-2.5">
+                        <span className="w-11 h-11 shrink-0 rounded-dia bg-black/15 overflow-hidden grid place-items-center">
+                          {midia ? (
+                            midia.endsWith('.mp4') ? (
+                              <video
+                                src={midia}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <img src={midia} alt="" className="w-full h-full object-cover" />
+                            )
+                          ) : (
+                            <Dumbbell className="w-5 h-5" aria-hidden="true" />
+                          )}
+                        </span>
+
+                        <span className="flex-1 min-w-0 text-sm font-semibold truncate">
+                          {ex.name}
+                        </span>
+
+                        <span className="shrink-0 text-sm font-bold tabular-nums text-black/70">
+                          {ex.sets} × {ex.reps}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
 
