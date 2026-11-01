@@ -244,4 +244,20 @@ describe('planoNutricional — os numeros', () => {
     expect(r.plano.base.ajuste).toBe(0.1);
     expect(r.plano.base.treinosPorSemana).toBe(4);
   });
+
+  it('A BASE GUARDA O PESO QUE ENTROU, para a tela detectar plano velho', () => {
+    // A tela guarda o plano no navegador. Sem o peso usado gravado junto, um calculo de
+    // semanas atras continua aparecendo com cara de atual, e o aluno segue comendo pelos
+    // macros de um corpo que ele nao tem mais.
+    const r = planoNutricional(HOMEM, historico, AGORA);
+    if (!r.ok) throw new Error('deveria calcular');
+    expect(r.plano.base.peso).toBe(80);
+    expect(r.plano.base.objetivo).toBe('Hipertrofia');
+  });
+
+  it('o peso da base acompanha o peso informado', () => {
+    const r = planoNutricional({ ...HOMEM, peso: 110 }, historico, AGORA);
+    if (!r.ok) throw new Error('deveria calcular');
+    expect(r.plano.base.peso).toBe(110);
+  });
 });

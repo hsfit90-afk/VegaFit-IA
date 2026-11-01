@@ -180,6 +180,16 @@ export type PlanoNutricional = {
     faixaDeAtividade: ReturnType<typeof nomeDaFaixa>;
     fator: number;
     ajuste: number;
+    /**
+     * O peso que ENTROU nesta conta.
+     *
+     * A tela guarda o plano no navegador, então um plano de semanas atrás continua
+     * aparecendo com cara de atual. Com o peso usado gravado junto, ela consegue comparar
+     * com o peso de hoje e avisar que o cálculo envelheceu — em vez de o aluno confiar em
+     * macros feitos para um corpo que ele não tem mais.
+     */
+    peso: number;
+    objetivo: string;
   };
 };
 
@@ -269,6 +279,8 @@ export function planoNutricional(
         faixaDeAtividade: nomeDaFaixa(porSemana),
         fator,
         ajuste,
+        peso,
+        objetivo,
       },
     },
   };

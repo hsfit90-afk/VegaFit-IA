@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/app/context/AppContext';
-import { Apple, Target, Flame, Activity, Info, AlertTriangle } from 'lucide-react';
+import { Apple, Target, Flame, Activity, Info, AlertTriangle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { COMO_PREENCHER, type Faltando } from '@/lib/nutricao';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -35,7 +35,17 @@ interface NutritionData {
     faixaDeAtividade: string;
     fator: number;
     ajuste: number;
+    peso?: number;
+    objetivo?: string;
   };
+  /**
+   * Quando este plano foi calculado. Gravado pela tela, não pela rota: o que interessa é
+   * a idade da CÓPIA que está no navegador deste aluno.
+   *
+   * Opcional porque plano guardado antes de 01/11/2026 não tem o campo — a tela omite a
+   * linha em vez de inventar uma data.
+   */
+  calculadoEm?: string;
 }
 
 /** Como cada faixa de atividade se chama para o aluno. */
@@ -102,8 +112,9 @@ export default function NutritionPage() {
 
       if (!result.error) {
         setFaltando(null);
-        setData(result);
-        localStorage.setItem('fitforge_nutrition', JSON.stringify(result));
+        const comData = { ...result, calculadoEm: new Date().toISOString() };
+        setData(comData);
+        localStorage.setItem('fitforge_nutrition', JSON.stringify(comData));
       } else {
         toast.erro("Erro: " + result.error);
       }
@@ -119,11 +130,33 @@ export default function NutritionPage() {
   return (
     <div className={`${PADDING_TELA} ${LARGURA_FOCO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
       <header className="mb-10">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg">
-            <Apple className="w-6 h-6 text-white" />
+        {/* O BOTÃO DE RECALCULAR SUBIU PARA CÁ (01/11/2026).
+
+            Ele existia, mas no FIM da página, dentro do cartão de dica, depois de todas as
+            refeições. O profissional mudou de peso, quis recalcular e não achou — e o
+            plano antigo continuava na tela com cara de atual, porque a tela carrega do
+            armazenamento do navegador ao abrir.
+
+            Aqui ele divide a linha com o título: não dá para perder, e não disputa com
+            nada, porque a tela não tem outra ação. */}
+        <div className="flex items-start justify-between gap-4 mb-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shrink-0">
+              <Apple className="w-6 h-6 text-white" aria-hidden="true" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-outfit font-bold">Nutrição Inteligente</h1>
           </div>
-          <h1 className="text-3xl md:text-4xl font-outfit font-bold">Nutrição Inteligente</h1>
+
+          {data && !loading && (
+            <Button
+              onClick={generateNutrition}
+              variant="outline"
+              className="shrink-0 gap-2"
+            >
+              <RefreshCw className="w-4 h-4" aria-hidden="true" />
+              Recalcular
+            </Button>
+          )}
         </div>
         {/* O TEXTO MUDOU PORQUE O FATO MUDOU. Dizia "calculados pela IA", e era verdade:
             a IA fazia a aritmética dentro do prompt. Desde 01/11/2026 a conta é do código
@@ -185,6 +218,38 @@ export default function NutritionPage() {
 
       {data && !loading && (
         <div className="space-y-8 animate-fade-in">
+
+          {/* O PESO MUDOU DESDE O CÁLCULO.
+
+              O plano fica guardado no navegador, então um cálculo de semanas atrás
+              continua na tela com cara de atual. Sem este aviso, o aluno que engordou ou
+              emagreceu segue comendo pelos macros de um corpo que ele não tem mais — e
+              nada na tela denuncia.
+
+              Compara com meio quilo de tolerância: variação menor que isso é balança, não
+              mudança de corpo, e avisar sobre ela seria ruído diário. */}
+          {typeof data.base?.peso === 'number' &&
+            typeof profile.weight === 'number' &&
+            Math.abs(profile.weight - data.base.peso) >= 0.5 && (
+              <Card className="border-warning/30 bg-warning/5">
+                <CardContent className="flex items-start gap-3 py-5">
+                  <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <h2 className="font-bold mb-1">Este cálculo está desatualizado</h2>
+                    <p className="text-sm text-foreground-muted mb-3">
+                      Ele foi feito com{' '}
+                      <strong className="text-foreground">{data.base.peso} kg</strong>, e o seu peso
+                      hoje é <strong className="text-foreground">{profile.weight} kg</strong>.
+                    </p>
+                    <Button onClick={generateNutrition} size="sm" className="gap-2">
+                      <RefreshCw className="w-4 h-4" aria-hidden="true" />
+                      Recalcular agora
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card variant="glass" className="flex flex-col items-center text-center p-5 border-orange-500/10">
@@ -203,6 +268,45 @@ export default function NutritionPage() {
               <p className="text-3xl font-bold text-white font-mono">{data.targetCalories} <span className="text-sm font-sans font-normal text-orange-300">kcal</span></p>
             </Card>
           </div>
+
+          {/* DE ONDE SAIU O NÚMERO.
+
+              Até 01/11/2026 quem fazia a conta era a IA, dentro do prompt, e não havia o
+              que mostrar: os números apareciam sem origem e mudavam entre duas gerações.
+              Agora a conta é do código, então dá para dizer a fórmula, o peso que entrou,
+              a frequência medida e o ajuste do objetivo.
+
+              A frequência é a que o app CONTOU no histórico das últimas quatro semanas,
+              não uma pergunta ao aluno — perguntar convida a superestimar. */}
+          {data.base && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-micro text-foreground-muted -mt-4">
+              <span>{data.base.formula}</span>
+              {typeof data.base.peso === 'number' && (
+                <span className="tabular-nums">{data.base.peso} kg</span>
+              )}
+              <span className="tabular-nums">
+                {data.base.treinosPorSemana.toLocaleString('pt-BR')} treinos/semana
+                {NOME_DA_FAIXA[data.base.faixaDeAtividade]
+                  ? ` (${NOME_DA_FAIXA[data.base.faixaDeAtividade]})`
+                  : ''}
+              </span>
+              {data.base.ajuste !== 0 && (
+                <span className="tabular-nums">
+                  {data.base.ajuste > 0 ? '+' : ''}
+                  {Math.round(data.base.ajuste * 100)}% pelo objetivo
+                </span>
+              )}
+              {data.calculadoEm && (
+                <span>
+                  calculado em{' '}
+                  {new Date(data.calculadoEm).toLocaleDateString('pt-BR', {
+                    day: 'numeric',
+                    month: 'short',
+                  })}
+                </span>
+              )}
+            </div>
+          )}
 
           <Card>
             <CardHeader className="border-b border-border pb-4 mb-6">
@@ -266,11 +370,11 @@ export default function NutritionPage() {
                 <CardTitle className="text-lg text-orange-400">Dica da IA</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-foreground-muted leading-relaxed mb-6">{data.tips}</p>
-                
-                <Button onClick={generateNutrition} variant="outline" fullWidth>
-                  Recalcular Dados
-                </Button>
+                <p className="text-foreground-muted leading-relaxed">{data.tips}</p>
+
+                {/* O botão que ficava aqui subiu para o cabeçalho. Dois botões para a mesma
+                    ação, um deles no fim de uma página longa, é escolha a mais — e era
+                    justamente o que ninguém achava. */}
               </CardContent>
             </Card>
           </div>
