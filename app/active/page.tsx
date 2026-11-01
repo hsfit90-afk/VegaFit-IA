@@ -174,7 +174,25 @@ export default function ActiveWorkout() {
       });
       
       setActiveExercises(initialized);
-      setStartTime(Date.now());
+
+      /*
+       * ABRIR A TELA NÃO INICIA MAIS O CRONÔMETRO (01/11/2026).
+       *
+       * Aqui havia `setStartTime(Date.now())`. O relógio começava quando a TELA montava,
+       * não quando o aluno treinava — e a barra inferior tem a aba "Treinar", que leva
+       * direto para cá. Tocar naquela aba por curiosidade abria um treino, gravava cache
+       * e punha o relógio a correr.
+       *
+       * O cache dura 8 horas (utils/workoutCache.ts), então dentro desse prazo a tela
+       * reabria mostrando um treino "em andamento" de horas atrás. O profissional viu
+       * 237:22 sem nunca ter tocado em Iniciar treino.
+       *
+       * Pior que o número errado na tela: `finishWorkout` grava `durationSeconds` no
+       * histórico a partir daqui. A duração registrada media TELA ABERTA, não treino.
+       *
+       * Agora o relógio começa na primeira série concluída — ver `toggleSetComplete`.
+       * `startTime` fica em 0 até lá, e `useWorkoutTimer` já trata 0 como parado.
+       */
     }
     
     // Initialize audio
@@ -310,6 +328,17 @@ export default function ActiveWorkout() {
   const toggleSetComplete = (exerciseIndex: number, setIndex: number) => {
     try {
       const isCurrentlyCompleted = activeExercises[exerciseIndex].sets[setIndex].completed;
+
+      /*
+       * O TREINO COMEÇA NA PRIMEIRA SÉRIE CONCLUÍDA, não ao abrir a tela.
+       *
+       * `startTime === 0` significa "ainda não começou". Só a PRIMEIRA marcação arranca o
+       * relógio; desmarcar não o zera, porque desmarcar é corrigir um toque errado, não
+       * desistir do treino — zerar aí perderia o tempo real já decorrido.
+       */
+      if (!isCurrentlyCompleted && startTime === 0) {
+        setStartTime(Date.now());
+      }
       
       setActiveExercises(prev => {
         const updated = [...prev];
@@ -681,7 +710,13 @@ export default function ActiveWorkout() {
 
   const finishWorkout = () => {
     const endTime = Date.now();
-    const durationSeconds = Math.floor((endTime - startTime) / 1000);
+
+    /*
+     * `startTime === 0` quer dizer que nenhuma série foi concluída: o treino nunca
+     * começou. Sem esta guarda a conta daria `Date.now() / 1000` — mais de 1,8 BILHÃO de
+     * segundos, ou 58 anos de treino, gravados no histórico do aluno.
+     */
+    const durationSeconds = startTime === 0 ? 0 : Math.floor((endTime - startTime) / 1000);
     
     let totalVolume = 0;
     activeExercises.forEach(ex => {
@@ -997,9 +1032,27 @@ export default function ActiveWorkout() {
             <ArrowLeft className="w-5 h-5" aria-hidden="true" />
           </Link>
 
-          <p className="font-mono text-3xl md:text-4xl font-bold text-primary leading-none tabular-nums">
-            {formatTime(elapsedSeconds)}
-          </p>
+          {/* O CRONÔMETRO DIZ QUE AINDA NÃO COMEÇOU.
+
+              Desde 01/11/2026 o relógio só arranca na primeira série concluída. Sem este
+              estado, ele mostraria "0:00" verde e parado — e relógio parado na cor de
+              "ligado" parece travado, não parece à espera.
+
+              Apagado e com a palavra embaixo, fica claro que falta uma ação do aluno. */}
+          <div className="text-center">
+            <p
+              className={`font-mono text-3xl md:text-4xl font-bold leading-none tabular-nums ${
+                startTime === 0 ? 'text-foreground-subtle' : 'text-primary'
+              }`}
+            >
+              {formatTime(elapsedSeconds)}
+            </p>
+            {startTime === 0 && (
+              <p className="text-nano uppercase tracking-widest text-foreground-muted mt-1">
+                começa na 1ª série
+              </p>
+            )}
+          </div>
 
           <button
             onClick={finalizarPeloTopo}

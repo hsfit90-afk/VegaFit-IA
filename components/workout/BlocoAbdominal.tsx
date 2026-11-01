@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Flame, ChevronDown, Check, ImageOff, Maximize2 } from 'lucide-react';
 import { VisualizadorDeMidia } from '@/components/workout/VisualizadorDeMidia';
 import { prescrever, normalizarObjetivo, temAbdominalNoDia } from '@/lib/protocolo';
+import { isMobilityOnly } from '@/lib/exerciseType';
 import { filtrarParaCasa } from '@/lib/equipamentoCasa';
 import { treinaEmCasa, mapAnamneseLocationToEquipment } from '@/lib/trainingLocation';
 import { selecionarAbdominal } from '@/lib/preparoFinalizacao';
@@ -98,7 +99,31 @@ export function BlocoAbdominal({
       });
     }
 
-    const core = biblioteca.filter(e => /core|abd/i.test(e.muscleGroup ?? ''));
+    /*
+     * ALONGAMENTO E MOBILIDADE FICAM FORA DO SORTEIO (01/11/2026).
+     *
+     * O defeito: o bloco "Abdominal — depois do treino" prescrevia "Alongamento Inclinado
+     * Lateral em Pé", "Rotação do corpo superior deitado" e "Inclinação Lateral", com
+     * séries e repetições, como se fossem exercício de força.
+     *
+     * A CAUSA NÃO ERA O DADO. Medido em 01/11/2026: o filtro por grupo muscular pega
+     * exatamente os 97 exercícios marcados como Core/Abdômen, e está certo — aqueles três
+     * SÃO da região abdominal. O que eles não são é trabalho de força.
+     *
+     * E o app já sabe disso: `isMobilityOnly` existe desde antes, e `/api/treino` e
+     * `/api/swap` já a consultam justamente para não prescrever mobilidade com série e
+     * repetição. Este bloco era o único lugar que filtrava só por grupo muscular e
+     * ignorava o tipo.
+     *
+     * Por isso o conserto é aqui e não no banco: mover o grupo muscular desses exercícios
+     * seria errado — eles são abdominais mesmo — e quebraria as telas de Mobilidade e
+     * Alongamento, que agrupam por grupo muscular.
+     *
+     * Sobram 90 dos 97 para sortear 3. Nunca falta.
+     */
+    const core = biblioteca.filter(
+      e => /core|abd/i.test(e.muscleGroup ?? '') && !isMobilityOnly(e.name),
+    );
 
     // Mesmo filtro do resto do app: 20 dos 97 exercícios de core pedem aparelho (bola, polia,
     // máquina, barra). Sobram 77 sem nada, então três fazíveis nunca faltam.
