@@ -903,10 +903,17 @@ export default function ActiveWorkout() {
    * A VEZ É A PRIMEIRA SÉRIE NÃO CONCLUÍDA, na ordem da prescrição. Não é uma regra
    * nova: é a mesma conta que a borda acesa à esquerda da linha já fazia desde antes,
    * com `ex.sets.findIndex(s => !s.completed)`. Aqui ela sai de dentro do JSX para poder
-   * ser usada também no cabeçalho e na barra de ação.
+   * ser usada em dois lugares: o cabeçalho ("3 de 6", nome e grupo muscular) e o controle
+   * de menos e mais, que só aparece nesta série.
    *
-   * Tudo `-1` quando o treino está completo — e então o cabeçalho e a barra somem, em vez
-   * de apontar para uma série que não existe.
+   * HOUVE UMA TERCEIRA, E FOI REMOVIDA EM 01/11/2026: uma barra fixa na base da tela com
+   * "Concluir série N". O profissional tirou — ela ocupava a base inteira, cobria conteúdo
+   * e era um segundo caminho para o mesmo gesto, já que o ✓ da linha marca a série e
+   * dispara o descanso do mesmo jeito. Dois botões para a mesma ação é escolha a mais, não
+   * conveniência.
+   *
+   * Tudo `-1` quando o treino está completo — e então o cabeçalho mostra "Treino concluído"
+   * e o controle some, em vez de apontarem para uma série que não existe.
    */
   const indiceDaVez = activeExercises.findIndex(ex => ex.sets.some(s => !s.completed));
   const exercicioDaVez = indiceDaVez >= 0 ? activeExercises[indiceDaVez] : null;
@@ -1614,36 +1621,6 @@ export default function ActiveWorkout() {
         </span>
       </Button>
 
-      {/* A BARRA FIXA: CONCLUIR A SÉRIE DA VEZ, sem procurar a linha.
-
-          O gesto mais repetido do app é marcar uma série concluída, e até aqui ele exigia
-          achar a linha certa no meio da lista e acertar um botão de 44px à direita dela —
-          entre séries, respirando, com o celular apoiado. Agora o mesmo gesto tem um alvo
-          de largura inteira que está sempre no mesmo lugar.
-
-          Chama `toggleSetComplete`, exatamente o que o botão da linha chama. O descanso, o
-          som e o avanço do método continuam saindo de lá — esta barra não sabe nada disso.
-
-          SOME durante o descanso: a tela de descanso cobre tudo de propósito, para o aluno
-          não marcar série por engano, e um botão por cima dela desfaria isso.
-
-          Fica a 96px do fim no celular: a barra de navegação tem 84px mais a área segura
-          do aparelho, e 96px limpa as duas. O aviso de torrada vive na mesma altura e tem
-          z-index maior, então ele passa por cima desta barra pelos segundos em que
-          aparece. */}
-      {exercicioDaVez && serieDaVez >= 0 && restRemaining <= 0 && (
-        <div className="fixed left-0 right-0 bottom-[96px] md:bottom-6 px-5 md:px-8 z-30 pointer-events-none">
-          <div className="mx-auto max-w-3xl pointer-events-auto">
-            <button
-              onClick={() => toggleSetComplete(indiceDaVez, serieDaVez)}
-              className="w-full min-h-[56px] inline-flex items-center justify-center gap-2 rounded-folha bg-primary text-primary-foreground font-unbounded font-bold text-base tracking-tight shadow-[0_8px_30px_rgb(var(--color-primary-rgb)/0.35)] transition-colors duration-[120ms] hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              <Check className="w-5 h-5" aria-hidden="true" />
-              Concluir série {rotuloCurto(exercicioDaVez.sets[serieDaVez].label, serieDaVez)}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
