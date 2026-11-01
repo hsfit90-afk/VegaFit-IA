@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/app/context/AppContext';
 import { Check } from 'lucide-react';
 import { anamneseSteps as steps, type AnamneseStep, type AnamneseField } from '@/lib/anamneseSteps';
@@ -14,7 +14,6 @@ import { validarIdade, IDADE_MINIMA, IDADE_MAXIMA } from '@/lib/idadeMinima';
 import { perfilDaAnamnese, devePesarDeNovo } from '@/lib/anamneseParaPerfil';
 
 export default function AnamnesePage() {
-  const router = useRouter();
   const supabase = createClient();
   const { profile, userId } = useAppContext();
 
@@ -308,7 +307,30 @@ export default function AnamnesePage() {
       }
 
       showToast("Respostas salvas e copiadas!");
-      setTimeout(() => router.push('/'), 2000);
+      /*
+       * VOLTA COM RECARGA DE PÁGINA, E NÃO COM router.push.
+       *
+       * O defeito que isto conserta: o aluno respondia "Peso atual: 110", salvava, e o
+       * painel seguia mostrando 90 kg. O dado ESTAVA no banco — a tela é que nunca releu.
+       *
+       * `AppContext` carrega perfil, histórico e peso num único useEffect com `[supabase]`,
+       * ou seja, uma vez por carregamento de página. O `AppProvider` vive em
+       * `app/layout.tsx`, acima do roteador, então `router.push` — que é navegação do lado
+       * do cliente — NÃO o remonta. Todo o estado em memória continua o de antes.
+       *
+       * Gravar direto no supabase daqui, como esta tela faz, não atualiza esse estado. As
+       * saídas seriam expor um "recarregar" no contexto ou forçar a recarga. A recarga é
+       * a de menor risco: ela garante que TODA tela passe a ver o perfil novo, não só o
+       * painel, e não acrescenta superfície nova ao contexto global — um upsert errado ali
+       * apaga favoritos e banidos.
+       *
+       * `app/register/page.tsx` já usa `window.location.href` pelo mesmo motivo, depois de
+       * criar a conta. É o padrão da casa para "o perfil mudou, releia tudo".
+       *
+       * O custo é uma recarga ao fim de um formulário longo, uma vez. Barato perto de
+       * mostrar ao aluno um peso que ele acabou de corrigir.
+       */
+      setTimeout(() => { window.location.href = '/'; }, 2000);
       
     } catch (err: unknown) {
       // O erro aqui vem do banco ou da rede, e os dois falam inglês. O padrão cobre o caso
