@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/app/context/AppContext';
-import { Dumbbell, Flame, ChevronRight, Activity, Zap, LayoutList, PlayCircle, Timer, Waves, StretchHorizontal, TrendingUp, TrendingDown, Scale } from 'lucide-react';
+import { Dumbbell, Flame, ChevronRight, Activity, Zap, LayoutList, PlayCircle, Timer, Waves, StretchHorizontal, TrendingUp, TrendingDown, Scale, Shuffle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
@@ -402,12 +402,31 @@ export default function Dashboard() {
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
               </button>
 
-              <div className="flex flex-wrap items-center gap-x-5 mt-3">
+              {/* AS DUAS AÇÕES SECUNDÁRIAS VIRARAM PÍLULAS CONTORNADAS (01/11/2026).
+
+                  Eram links de texto em preto a 70%, com sublinhado só no hover. Sobre um
+                  cartão inteiro de cor, texto escuro lê como FRASE, não como coisa clicável —
+                  e "Gerar um treino novo" existe justamente porque no celular não havia
+                  nenhum outro caminho até o gerador. Passar despercebido ali custa caro.
+
+                  CONTORNO A 55%, E O NÚMERO FOI MEDIDO. A vontade era um contorno discreto,
+                  tipo preto/25. Não serve: sobre o verde isso dá 1,75:1, e a WCAG pede 3:1
+                  para a borda de um controle ser perceptível. Preto/50 é onde cruza (3,44:1)
+                  e preto/55 dá 3,98:1, com folga e sem ficar pesado. Fundo preto/10 também
+                  foi descartado: 1,24:1, ou seja, invisível.
+
+                  O texto subiu de preto/70 para preto cheio: 6,18 -> 10,93:1.
+
+                  A HIERARQUIA FICA CLARA: o principal é preenchido de preto, estes dois são
+                  contornados. Mesma família, um degrau abaixo — em vez de três pesos
+                  diferentes disputando a mesma área. */}
+              <div className="flex flex-wrap items-center gap-2 mt-3">
                 {activePlan.sessions.length > 1 && (
                   <button
                     onClick={cycleNextSession}
-                    className="inline-flex items-center min-h-[44px] text-sm font-semibold text-black/70 hover:text-black transition-colors underline-offset-4 hover:underline"
+                    className="inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-dia border border-black/55 text-sm font-semibold text-black transition-colors duration-[120ms] hover:bg-black/10 hover:border-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
                   >
+                    <Shuffle className="w-4 h-4" aria-hidden="true" />
                     Ver outro treino
                   </button>
                 )}
@@ -418,7 +437,7 @@ export default function Dashboard() {
                     como sexta aba do rodapé, que não cabe em tela de 360px. */}
                 <Link
                   href="/generator"
-                  className="inline-flex items-center gap-1.5 min-h-[44px] text-sm font-semibold text-black/70 hover:text-black transition-colors underline-offset-4 hover:underline"
+                  className="inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-dia border border-black/55 text-sm font-semibold text-black transition-colors duration-[120ms] hover:bg-black/10 hover:border-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
                 >
                   <Zap className="w-4 h-4" aria-hidden="true" />
                   Gerar um treino novo
