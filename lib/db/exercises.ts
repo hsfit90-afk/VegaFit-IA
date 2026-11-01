@@ -58,6 +58,42 @@ export const addExercise = async (
   
   if (!user) return null;
 
+  /**
+   * EXERCÍCIO CRIADO PELO MASTER NASCE GLOBAL (user_id = NULL).
+   *
+   * Até 01/11/2026 todo insert gravava `user_id: user.id`, sem exceção. Como a única
+   * tela que chama esta função é `/library`, que é `somenteMaster`, o resultado foi que
+   * o catálogo inteiro — 882 exercícios, medidos — ficou pendurado na conta pessoal do
+   * profissional.
+   *
+   * Isso transformava três ações comuns em destruição total do catálogo, para TODOS os
+   * alunos: o botão "excluir minha conta", remover a conta no painel do Supabase (a
+   * coluna tem ON DELETE CASCADE) e qualquer limpeza de dados por user_id.
+   *
+   * A migração `database/42_catalogo_global.sql` solta os 882 que já existem. Esta linha
+   * é o que impede o problema de voltar: sem ela, o próximo exercício cadastrado seria do
+   * master de novo, e o catálogo se re-armaria com o tempo.
+   *
+   * NULL já é o significado de "global" neste esquema desde `03_exercises_library.sql`, e
+   * as policies de 16 e 17 dão UPDATE e DELETE ao master pelo PAPEL, não pela posse — o
+   * app sempre foi desenhado assim; o estado anterior é que era a anomalia.
+   *
+   * O exercício criado por um ALUNO continua sendo dele. É dado pessoal, e precisa sair
+   * junto com a conta quando ele exerce o direito de exclusão.
+   */
+  const { data: perfil } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const ehMaster = perfil?.role === 'master';
+
+  /* Falhar a leitura do papel cai no caso seguro: o exercício fica com dono. Melhor um
+     exercício que deveria ser global nascer pessoal — isso se conserta com um UPDATE —
+     do que o contrário, que criaria exercício sem dono em nome de um aluno. */
+  const donoDoExercicio = ehMaster ? null : user.id;
+
   let mediaUrl = exercise.mediaUrl;
 
   // Upload file if provided
@@ -85,7 +121,7 @@ export const addExercise = async (
   const { data, error } = await supabase
     .from('exercises')
     .insert({
-      user_id: user.id,
+      user_id: donoDoExercicio,
       name: exercise.name,
       muscle_group: exercise.muscleGroup,
       equipment: exercise.equipment,
