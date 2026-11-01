@@ -5,7 +5,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import { AtivarLembretes } from '@/components/AtivarLembretes';
 import { computePeriodization } from '@/lib/periodization';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart, CalendarDays, Lock, Pause } from 'lucide-react';
+import { Check, Play, Trophy, Zap, RefreshCw, Trash2, Share2, Timer, Flame, ImageOff, Heart, CalendarDays, Lock, Pause, ArrowLeft } from 'lucide-react';
 import { ActiveExercise, ActiveSet, WorkoutHistoryEntry } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -20,6 +20,7 @@ import { useMiniPause } from '@/hooks/useMiniPause';
 import { useWorkoutPersistence } from '@/hooks/useWorkoutPersistence';
 import { tipoDoBloco, AVISO_DO_BISET } from '@/lib/blocosDeTreino';
 import { RestTimerOverlay } from '@/components/workout/RestTimerOverlay';
+import { ControleDaSerie } from '@/components/workout/ControleDaSerie';
 import { PeriodizationResetNotice } from '@/components/workout/PeriodizationResetNotice';
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
@@ -30,6 +31,7 @@ import { BlocoAbdominal } from '@/components/workout/BlocoAbdominal';
 import { BlocoAlongamento } from '@/components/workout/BlocoAlongamento';
 import { traduzirErro } from '@/utils/mensagensDeErro';
 import { PADDING_TELA, LARGURA_FOCO, RODAPE_SEGURO } from '@/lib/layout';
+import Link from 'next/link';
 
 export default function ActiveWorkout() {
   const { workoutPlans, addHistoryEntry, profile, currentSessionIndex, advanceSession, updateWorkoutPlan, userId, banExerciseForUser, toggleFavoriteExercise, history, activePlanId } = useAppContext();
@@ -891,8 +893,64 @@ export default function ActiveWorkout() {
   const completedSets = activeExercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
   const progressPercent = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
+  /**
+   * O EXERCÍCIO E A SÉRIE DA VEZ — adicionados no redesenho de 31/10/2026.
+   *
+   * A tela mostra todos os exercícios empilhados, de propósito: rolar a lista é como se
+   * confere o que vem. Só que nada dizia em que ponto do treino a pessoa está, e a
+   * pergunta "falta muito?" exigia rolar até achar a primeira linha não marcada.
+   *
+   * A VEZ É A PRIMEIRA SÉRIE NÃO CONCLUÍDA, na ordem da prescrição. Não é uma regra
+   * nova: é a mesma conta que a borda acesa à esquerda da linha já fazia desde antes,
+   * com `ex.sets.findIndex(s => !s.completed)`. Aqui ela sai de dentro do JSX para poder
+   * ser usada em dois lugares: o cabeçalho ("3 de 6", nome e grupo muscular) e o controle
+   * de menos e mais, que só aparece nesta série.
+   *
+   * HOUVE UMA TERCEIRA, E FOI REMOVIDA EM 01/11/2026: uma barra fixa na base da tela com
+   * "Concluir série N". O profissional tirou — ela ocupava a base inteira, cobria conteúdo
+   * e era um segundo caminho para o mesmo gesto, já que o ✓ da linha marca a série e
+   * dispara o descanso do mesmo jeito. Dois botões para a mesma ação é escolha a mais, não
+   * conveniência.
+   *
+   * Tudo `-1` quando o treino está completo — e então o cabeçalho mostra "Treino concluído"
+   * e o controle some, em vez de apontarem para uma série que não existe.
+   */
+  const indiceDaVez = activeExercises.findIndex(ex => ex.sets.some(s => !s.completed));
+  const exercicioDaVez = indiceDaVez >= 0 ? activeExercises[indiceDaVez] : null;
+  const serieDaVez = exercicioDaVez ? exercicioDaVez.sets.findIndex(s => !s.completed) : -1;
+
+  /**
+   * Finalizar a partir do CABEÇALHO pede confirmação. O botão do rodapé não.
+   *
+   * Não é inconsistência: são dois gestos diferentes. O do rodapé fica depois da lista
+   * inteira — chegar nele já é a confirmação, e ele diz quantas séries faltam embaixo do
+   * próprio texto. O do cabeçalho é fixo e está a um toque de distância durante o treino
+   * todo, ao lado do cronômetro.
+   *
+   * E `finishWorkout` NÃO tem volta: ele grava no histórico, avança a sessão e limpa o
+   * cache do treino em andamento. Um toque errado no alto da tela custaria o treino.
+   * Por isso o diálogo só aparece quando ainda falta série; com tudo concluído, finalizar
+   * é o fim esperado e perguntar seria atrito.
+   */
+  const finalizarPeloTopo = async () => {
+    const faltam = totalSets - completedSets;
+    if (faltam > 0) {
+      const ok = await confirmar({
+        titulo: 'Finalizar o treino agora?',
+        mensagem:
+          `Ainda ${faltam === 1 ? 'falta' : 'faltam'} ${faltam} ${faltam === 1 ? 'série' : 'séries'}. ` +
+          'O que você já registrou vai para o histórico do mesmo jeito.',
+        perdas: [`${faltam} ${faltam === 1 ? 'série sem registro' : 'séries sem registro'}`],
+        textoConfirmar: 'Finalizar assim',
+        textoCancelar: 'Continuar treinando',
+      });
+      if (!ok) return;
+    }
+    finishWorkout();
+  };
+
   return (
-    <div className={`${PADDING_TELA} ${LARGURA_FOCO} mx-auto animate-fade-in ${RODAPE_SEGURO}`}>
+    <div className={`${PADDING_TELA} ${LARGURA_FOCO} mx-auto animate-fade-in ${RODAPE_SEGURO} font-manrope`}>
       {/* A barra de progresso sangra de ponta a ponta, por baixo do cabeçalho.
           As margens negativas desfazem o padding da tela (p-5 md:p-8) e o padding interno o
           devolve ao conteúdo — assim a linha toca as duas bordas enquanto o texto continua
@@ -919,21 +977,81 @@ export default function ActiveWorkout() {
             justamente na parte que diz o que se vai treinar. Empilhado, o nome usa a largura
             inteira e pode ocupar duas linhas; o cronômetro e a contagem dividem a linha de
             baixo, que é curta e cabe folgada. */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 md:gap-4 mb-3">
+        {/* LINHA 1 — SAIR, CRONÔMETRO, FINALIZAR.
+
+            O botão de sair não existia: para largar o treino a pessoa usava o voltar do
+            navegador ou a barra inferior, e nenhum dos dois parece uma porta. Ele é um
+            <Link> e não um botão de verdade porque sair não desfaz nada — o treino em
+            andamento fica no cache (useWorkoutPersistence) e volta inteiro ao reabrir.
+
+            O CRONÔMETRO FICA EM FONTE MONOESPAÇADA, e não na Unbounded como o resto dos
+            números do redesenho. É decisão funcional: ele muda a cada segundo, e em fonte
+            de largura variável o "1" é mais estreito que o "8" — o número dança na tela a
+            cada tique. Relógio que tremula é pior que relógio fora da fonte do desenho. */}
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <Link
+            href="/"
+            aria-label="Sair do treino e voltar ao início"
+            className="w-11 h-11 -ml-2 shrink-0 grid place-items-center rounded-dia text-foreground-muted hover:text-foreground hover:bg-surface-light transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
+          </Link>
+
+          <p className="font-mono text-3xl md:text-4xl font-bold text-primary leading-none tabular-nums">
+            {formatTime(elapsedSeconds)}
+          </p>
+
+          <button
+            onClick={finalizarPeloTopo}
+            className="shrink-0 min-h-[44px] px-4 rounded-dia border border-border text-sm font-semibold text-foreground-muted hover:text-foreground hover:border-border-light transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            Finalizar
+          </button>
+        </div>
+
+        {/* LINHA 2 — ONDE A PESSOA ESTÁ.
+
+            "Exercício 3 de 6" é a informação que faltava: a tela empilha todos os
+            exercícios, então sem isso a única forma de saber o ponto do treino era rolar
+            até achar a primeira linha não marcada.
+
+            O nome do exercício da vez e o grupo muscular vêm ao lado porque a pergunta
+            seguinte é "qual mesmo?" — e no meio do treino, com o celular apoiado no banco,
+            a resposta precisa estar no alto e não a uma rolagem de distância.
+
+            Com o treino completo `exercicioDaVez` é null, e a linha mostra só a sessão: não
+            faz sentido apontar para uma série que não existe mais. */}
+        <div className="flex items-end justify-between gap-3 mb-3">
           <div className="min-w-0">
-            <p className="text-nano uppercase tracking-widest text-foreground-muted mb-1">
-              Em treino
-            </p>
-            <h1 className="text-lg md:text-xl font-outfit font-bold leading-tight md:truncate">
+            <p className="text-nano uppercase tracking-widest text-foreground-muted mb-1 truncate">
               {currentSession.name}
-            </h1>
+            </p>
+
+            {exercicioDaVez ? (
+              <h1 className="text-lg md:text-xl font-unbounded font-medium leading-tight truncate">
+                {exercicioDaVez.name}
+              </h1>
+            ) : (
+              <h1 className="text-lg md:text-xl font-unbounded font-medium leading-tight truncate">
+                Treino concluído
+              </h1>
+            )}
+
+            {exercicioDaVez?.muscleGroup && (
+              <p className="text-micro text-foreground-muted mt-0.5 truncate">
+                {exercicioDaVez.muscleGroup}
+              </p>
+            )}
           </div>
 
-          <div className="flex items-end justify-between gap-4 md:block md:text-right shrink-0">
-            <p className="font-mono text-3xl md:text-4xl font-bold text-primary leading-none tabular-nums">
-              {formatTime(elapsedSeconds)}
-            </p>
-            <p className="text-nano uppercase tracking-wider text-foreground-muted tabular-nums md:mt-1.5">
+          <div className="shrink-0 text-right">
+            {exercicioDaVez && (
+              <p className="text-sm font-semibold tabular-nums leading-none">
+                <span className="text-primary">{indiceDaVez + 1}</span>
+                <span className="text-foreground-muted"> de {activeExercises.length}</span>
+              </p>
+            )}
+            <p className="text-nano uppercase tracking-wider text-foreground-muted tabular-nums mt-1.5">
               {completedSets}/{totalSets} séries · {Math.round(progressPercent)}%
             </p>
           </div>
@@ -950,6 +1068,7 @@ export default function ActiveWorkout() {
       <RestTimerOverlay
         segundosRestantes={restRemaining}
         onPular={() => setRestEndTime(0)}
+        onAdicionar15s={() => setRestEndTime(fim => fim + 15_000)}
         formatarTempo={formatTime}
       />
 
@@ -1378,6 +1497,28 @@ export default function ActiveWorkout() {
                   </div>
                 </div>
 
+                {/* O CONTROLE DE MENOS E MAIS, SÓ NA SÉRIE DA VEZ.
+
+                    O campo de digitar continua na linha acima, intacto: quem quer cravar
+                    27,5 digita. O que isto resolve é o caso comum — "igual à última, mais
+                    2,5" — que era uma digitação em teclado numérico com o peso na mão.
+
+                    SÓ NA SÉRIE DA VEZ, de propósito. Em todas as linhas, um exercício de
+                    quatro séries viraria dezesseis alvos de toque empilhados, e a linha
+                    que importa deixaria de se destacar.
+
+                    Ele chama `handleSetUpdate`, o MESMO caminho do campo de digitar.
+                    Nenhuma gravação nova, nenhuma regra nova: o componente recebe dois
+                    números e devolve dois números. */}
+                {exIndex === indiceDaVez && setIndex === serieDaVez && (
+                  <ControleDaSerie
+                    className="mt-2"
+                    carga={set.weight || 0}
+                    repeticoes={set.reps || 0}
+                    onAjustar={(campo, valor) => handleSetUpdate(exIndex, setIndex, campo, valor)}
+                  />
+                )}
+
                 {/* O que fazer NESTA série. A dica do topo explica o que a técnica é, uma vez;
                     isso não basta com o peso na mão, olhando uma linha que diz "D · 16 · 8" —
                     o aluno precisa saber se faz 8 repetições ou vai até a falha. Some depois
@@ -1479,6 +1620,7 @@ export default function ActiveWorkout() {
           {completedSets} de {totalSets} séries concluídas
         </span>
       </Button>
+
     </div>
   );
 }

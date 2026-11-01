@@ -25,6 +25,25 @@
   --font-outfit: var(--fonte-outfit), var(--fonte-inter), ui-sans-serif, system-ui, sans-serif;
 
   /*
+   * AS DUAS FONTES DO REDESENHO (31/10/2026) — e o alcance delas.
+   *
+   * A direcao Pulso pede Unbounded nos titulos e numeros, e Manrope no corpo. Elas
+   * entram como token, nao como classe solta, pelo motivo escrito vinte linhas acima:
+   * classe de fonte sem token no @theme simplesmente nao existe, e o elemento herda do
+   * pai sem avisar. Foi o que aconteceu com font-outfit por meses.
+   *
+   * SAO USADAS SO EM DUAS TELAS: Hoje e Treino em andamento. As outras 29 continuam em
+   * Inter e Outfit. Nao e indecisao: trocar a tipografia do app inteiro mudaria 31 telas
+   * que ninguem pediu, e o pedido foi redesenhar duas. O escopo e a propria classe --
+   * quem nao escreve font-unbounded nao recebe Unbounded.
+   *
+   * A pilha de reserva cai na Outfit e na Inter, que ja estao baixadas: enquanto a fonte
+   * nova carrega, o texto fica numa metrica proxima em vez de pular para a do sistema.
+   */
+  --font-unbounded: var(--fonte-unbounded), var(--fonte-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-manrope: var(--fonte-manrope), var(--fonte-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /*
    * SUPERFÍCIES — três níveis, separados por TOM e não por borda.
    *
    * É assim que um app parece "liso": o cartão se distingue do fundo porque é mais claro,
@@ -154,6 +173,25 @@
   --radius-sm: 0.5rem;    /* 8px  — selo, miniatura, campo pequeno */
   --radius-md: 0.75rem;   /* 12px — cartão, botão, entrada */
   --radius-full: 999px;   /* pílula, avatar, indicador */
+
+  /*
+   * OS QUATRO RAIOS DA DIREÇÃO PULSO — e por que NÃO se chamam lg, xl, 2xl, 3xl.
+   *
+   * O redesenho de Hoje e Treino (31/10/2026) pede raios de 14, 18, 22 e 26px. A tentação é
+   * declará-los como --radius-lg/xl/2xl/3xl, que são os nomes que o Tailwind já usa.
+   *
+   * SERIA UM ESTRAGO EM SILÊNCIO. No Tailwind v4 um token do @theme SUBSTITUI o padrão de
+   * mesmo nome, e este app usa "rounded-xl" 208 vezes e "rounded-lg" 66. Declarar
+   * --radius-xl aqui repintaria o canto de 274 elementos em 31 telas — nenhum deles pedido,
+   * nenhum deles visível em tsc, lint, teste ou build.
+   *
+   * Então o nome é o PAPEL, não o tamanho, como já é o caso das superfícies e das sombras.
+   * Quem escreve "rounded-dia" sabe que está arredondando o quadrado de um dia da semana.
+   */
+  --radius-dia: 0.875rem;     /* 14px — quadrado do dia da semana, selo pequeno */
+  --radius-bloco: 1.125rem;   /* 18px — cartão de apoio, campo de número */
+  --radius-cartao: 1.375rem;  /* 22px — o cartão principal do treino de hoje */
+  --radius-folha: 1.625rem;   /* 26px — folha, sobreposição, barra de descanso */
 
   /*
    * SOMBRAS — duas de elevação e um brilho.

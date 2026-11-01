@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { Inter, Outfit } from 'next/font/google';
+import { Inter, Outfit, Unbounded, Manrope } from 'next/font/google';
 import { AppProvider } from '@/app/context/AppContext';
 import { ClientLayout } from '@/components/ClientLayout';
 /**
@@ -15,6 +15,20 @@ import { ClientLayout } from '@/components/ClientLayout';
  */
 const inter = Inter({ subsets: ['latin'], variable: '--fonte-inter' });
 const outfit = Outfit({ subsets: ['latin'], variable: '--fonte-outfit' });
+
+/*
+ * AS DUAS DO REDESENHO DE 31/10/2026 — e por que os pesos estão cravados.
+ *
+ * Inter e Outfit são baixadas como fonte variável, que carrega todos os pesos num
+ * arquivo. A Unbounded variável pesa ~85 KB, e esta tela usa dois pesos dela: 500 no
+ * rótulo e 700 no número grande. Pedir só os dois corta o arquivo a cerca de um terço.
+ *
+ * É o oposto do erro de 21/10/2026, quando o app baixava NOVE arquivos de fonte e não
+ * aplicava nenhum. Fonte é peso de rede em celular de aluno na rua: só entra a que
+ * aparece na tela.
+ */
+const unbounded = Unbounded({ subsets: ['latin'], weight: ['500', '700'], variable: '--fonte-unbounded' });
+const manrope = Manrope({ subsets: ['latin'], variable: '--fonte-manrope' });
 
 export const metadata: Metadata = {
   title: 'VegaFit IA',
@@ -48,7 +62,7 @@ export const viewport: Viewport = {
  */
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${outfit.variable}`}>
+    <html lang="pt-BR" className={`${inter.variable} ${outfit.variable} ${unbounded.variable} ${manrope.variable}`}>
       {/*
         O FUNDO DA PÁGINA É `background`, NÃO `background-deep`.
 
